@@ -34,8 +34,8 @@ jobs:
 
       - name: Push to mirror
         run: |
-          git push mirror --all
-          git push mirror --tags
+          git push mirror --all --force
+          git push mirror --tags --force
 
       - name: Verify mirror
         run: |
