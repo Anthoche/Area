@@ -45,8 +45,9 @@
 
 .input-field:focus {
   border-color: #a788ff;
-  box-shadow: 0 0 4px #480CA8;
+  box-shadow: 0 0 4px rgba(167, 136, 255, 0.5);
 }
+
 
 .or-separator {
   display: flex;
@@ -73,9 +74,9 @@
   background: #ccc;
 }
 
-
 .btn-base {
   width: 100%;
+  padding: 12px;
   border: none;
   border-radius: 25px;
   font-weight: 600;
@@ -89,12 +90,12 @@
 
 .login-btn {
   margin-top: 12px;
-  background: #480CA8;
+  background: #422c69;
   color: #ffffff;
 }
 
 .login-btn:hover {
-  background: #7d5bc7;
+  background: #d9c7ff;
 }
 
 .forgot-row {
