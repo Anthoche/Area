@@ -17,6 +17,8 @@ class AppTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
       ),
     );
   }
