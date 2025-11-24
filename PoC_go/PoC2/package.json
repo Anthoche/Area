@@ -1,0 +1,16 @@
+{
+  "name": "poc2-node",
+  "version": "1.0.0",
+  "description": "PoC API CRUD in-memory (compare Go)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "start:cluster": "node cluster.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
