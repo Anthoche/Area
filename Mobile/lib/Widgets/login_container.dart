@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 class LoginContainer extends StatelessWidget {
   final Widget child;
-
   const LoginContainer({super.key, required this.child});
 
   @override
