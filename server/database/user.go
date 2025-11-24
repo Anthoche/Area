@@ -13,7 +13,30 @@ type User struct {
 	PasswordHash string
 }
 
-func getUserByID(id int64) (User, error) {
+func GetUsers() ([]User, error) {
+	var users []User
+
+	rows, err := db.Query("SELECT * FROM users")
+	if err != nil {
+		return nil, fmt.Errorf("getUsers: %v", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user User
+
+		if err := rows.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.PasswordHash); err != nil {
+			return nil, fmt.Errorf("getUsers: %v", err)
+		}
+		users = append(users, user)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("getUsers: %v", err)
+	}
+	return users, nil
+}
+
+func GetUserByID(id int64) (User, error) {
 	var user User
 
 	row := db.QueryRow("SELECT * FROM users WHERE id = $1", id)
@@ -26,7 +49,7 @@ func getUserByID(id int64) (User, error) {
 	return user, nil
 }
 
-func getUserByEmail(email string) (User, error) {
+func GetUserByEmail(email string) (User, error) {
 	var user User
 
 	row := db.QueryRow("SELECT * FROM users WHERE email = $1", email)
@@ -39,7 +62,7 @@ func getUserByEmail(email string) (User, error) {
 	return user, nil
 }
 
-func createUser(firstName string, lastName string, email string, passwordHash string) (int64, error) {
+func CreateUser(firstName string, lastName string, email string, passwordHash string) (int64, error) {
 	var id int64
 
 	err := db.QueryRow(
@@ -53,7 +76,7 @@ func createUser(firstName string, lastName string, email string, passwordHash st
 	return id, nil
 }
 
-func deleteUser(id int64) error {
+func DeleteUser(id int64) error {
 	_, err := db.Exec("DELETE FROM users WHERE id = $1", id)
 
 	if err != nil {
@@ -62,7 +85,7 @@ func deleteUser(id int64) error {
 	return nil
 }
 
-func updateUser(id int64, firstName string, lastName string, email string, passwordHash string) error {
+func UpdateUser(id int64, firstName string, lastName string, email string, passwordHash string) error {
 	_, err := db.Exec(
 		"UPDATE users SET firstname = $1, lastname = $2, email = $3, password_hash = $4 WHERE id = $5",
 		firstName, lastName, email, passwordHash, id,

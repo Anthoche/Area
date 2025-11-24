@@ -19,7 +19,7 @@ const (
 	dbname   = "tests"
 )
 
-func connect() {
+func Connect() {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
@@ -35,13 +35,13 @@ func connect() {
 	}
 }
 
-func disconnect() {
-	if (db != nil && isConnected()) {
+func Disconnect() {
+	if (db != nil && IsConnected()) {
 		db.Close()
 	}
 }
 
-func isConnected() bool {
+func IsConnected() bool {
 	err := db.Ping()
 	return  err == nil
 }

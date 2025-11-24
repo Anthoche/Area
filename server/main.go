@@ -17,7 +17,7 @@ func main() {
 		port = "8080"
 	}
 
-	database.connect()
+	database.Connect()
 	store := auth.NewMemoryStore() // In-memory user store DB
 	service := auth.NewService(store)
 
