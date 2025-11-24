@@ -31,8 +31,10 @@ type loginRequest struct {
 }
 
 type registerRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
 }
 
 func (h *handler) login() http.Handler {
@@ -94,12 +96,14 @@ func (h *handler) register() http.Handler {
 		}
 
 		payload.Email = strings.TrimSpace(payload.Email)
-		if payload.Email == "" || payload.Password == "" {
-			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "email and password are required"})
+		payload.FirstName = strings.TrimSpace(payload.FirstName)
+		payload.LastName = strings.TrimSpace(payload.LastName)
+		if payload.Email == "" || payload.Password == "" || payload.FirstName == "" || payload.LastName == "" {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "email, password, firstName and lastName are required"})
 			return
 		}
 
-		user, err := h.auth.Register(r.Context(), payload.Email, payload.Password)
+		user, err := h.auth.Register(r.Context(), payload.Email, payload.Password, payload.FirstName, payload.LastName)
 		switch {
 		case errors.Is(err, auth.ErrUserExists):
 			writeJSON(w, http.StatusConflict, errorResponse{Error: "user already exists"})

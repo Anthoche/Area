@@ -8,8 +8,10 @@ import (
 )
 
 type User struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
+	ID        string `json:"id"`
+	Email     string `json:"email"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
 }
 
 var (
@@ -65,12 +67,16 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (*Us
 }
 
 // Register creates a new user with a hashed password in the store.
-func (s *Service) Register(ctx context.Context, email, password string) (*User, error) {
+func (s *Service) Register(ctx context.Context, email, password, firstName, lastName string) (*User, error) {
 	hashed, err := HashPassword(password)
 	if err != nil {
 		return nil, err
 	}
-	user := &User{Email: email}
+	user := &User{
+		Email:     email,
+		FirstName: firstName,
+		LastName:  lastName,
+	}
 	if err := s.store.Create(ctx, user, hashed); err != nil {
 		return nil, err
 	}
