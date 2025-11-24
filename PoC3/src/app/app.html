@@ -1,0 +1,20 @@
+<div class="page-container">
+  <div class="login-card">
+    <h2 class="title">KIKONECT</h2>
+    <input
+      class="input"
+      type="email"
+      placeholder="Email"
+      [(ngModel)]="email"
+    />
+    <input
+      class="input"
+      type="password"
+      placeholder="Password"
+      [(ngModel)]="password"
+    />
+    <button class="login-btn" (click)="login()">
+      Login
+    </button>
+  </div>
+</div>
