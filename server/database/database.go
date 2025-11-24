@@ -14,9 +14,9 @@ var db *sql.DB
 const (
 	host     = "localhost"
 	port     = 5432
-	user     = "postgres"
-	password = "test"
-	dbname   = "tests"
+	user     = "user"
+	password = "password"
+	dbname   = "area"
 )
 
 func Connect() {

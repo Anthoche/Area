@@ -31,12 +31,10 @@ type loginRequest struct {
 }
 
 type registerRequest struct {
-	Email        string `json:"email"`
-	Password     string `json:"password"`
-	FirstName    string `json:"firstName"`
-	FirstNameAlt string `json:"firstname"`
-	LastName     string `json:"lastName"`
-	LastNameAlt  string `json:"lastname"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	FirstName string `json:"firstname"`
+	LastName  string `json:"lastname"`
 }
 
 func (h *handler) login() http.Handler {
@@ -74,7 +72,7 @@ func (h *handler) login() http.Handler {
 			return
 		}
 
-		writeJSON(w, http.StatusOK, map[string]any{"user": user})
+		writeJSON(w, http.StatusOK, user)
 	})
 }
 
@@ -98,8 +96,8 @@ func (h *handler) register() http.Handler {
 		}
 
 		payload.Email = strings.TrimSpace(payload.Email)
-		payload.FirstName = strings.TrimSpace(firstNonEmpty(payload.FirstName, payload.FirstNameAlt))
-		payload.LastName = strings.TrimSpace(firstNonEmpty(payload.LastName, payload.LastNameAlt))
+		payload.FirstName = strings.TrimSpace(payload.FirstName)
+		payload.LastName = strings.TrimSpace(payload.LastName)
 		if payload.Email == "" || payload.Password == "" || payload.FirstName == "" || payload.LastName == "" {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "email, password, firstName and lastName are required"})
 			return
@@ -115,7 +113,7 @@ func (h *handler) register() http.Handler {
 			return
 		}
 
-		writeJSON(w, http.StatusCreated, map[string]any{"user": user})
+		writeJSON(w, http.StatusCreated, user)
 	})
 }
 

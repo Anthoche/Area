@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"strconv"
 
 	"area/server/database"
 	"github.com/lib/pq"
@@ -26,7 +25,7 @@ func (DBStore) Create(ctx context.Context, user *User, passwordHash string) erro
 		}
 		return err
 	}
-	user.ID = formatID(id)
+	user.ID = id
 	return nil
 }
 
@@ -39,7 +38,7 @@ func (DBStore) GetByEmail(ctx context.Context, email string) (*User, string, err
 		return nil, "", err
 	}
 	return &User{
-		ID:        formatID(dbUser.Id),
+		ID:        dbUser.Id,
 		Email:     dbUser.Email,
 		FirstName: dbUser.FirstName,
 		LastName:  dbUser.LastName,
@@ -49,8 +48,4 @@ func (DBStore) GetByEmail(ctx context.Context, email string) (*User, string, err
 func isUniqueViolation(err error) bool {
 	pqErr, ok := err.(*pq.Error)
 	return ok && pqErr.Code == "23505"
-}
-
-func formatID(id int64) string {
-	return "user-" + strconv.FormatInt(id, 10)
 }
