@@ -33,8 +33,8 @@ type loginRequest struct {
 type registerRequest struct {
 	Email     string `json:"email"`
 	Password  string `json:"password"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
+	FirstName string `json:"firstname"`
+	LastName  string `json:"lastname"`
 }
 
 func (h *handler) login() http.Handler {
@@ -72,7 +72,7 @@ func (h *handler) login() http.Handler {
 			return
 		}
 
-		writeJSON(w, http.StatusOK, map[string]any{"user": user})
+		writeJSON(w, http.StatusOK, user)
 	})
 }
 
@@ -113,7 +113,7 @@ func (h *handler) register() http.Handler {
 			return
 		}
 
-		writeJSON(w, http.StatusCreated, map[string]any{"user": user})
+		writeJSON(w, http.StatusCreated, user)
 	})
 }
 
@@ -146,4 +146,13 @@ func ensureNoTrailingData(decoder *json.Decoder) error {
 		return err
 	}
 	return nil
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return v
+		}
+	}
+	return ""
 }

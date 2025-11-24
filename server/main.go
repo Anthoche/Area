@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"area/server/auth"
+	"area/server/database"
 	"area/server/httpapi"
 )
 
@@ -16,7 +17,9 @@ func main() {
 		port = "8080"
 	}
 
-	store := auth.NewMemoryStore() // In-memory user store DB
+	database.Connect()
+	defer database.Disconnect()
+	store := auth.NewDBStore() // PostgreSQL-backed user store
 	service := auth.NewService(store)
 
 	server := &http.Server{
