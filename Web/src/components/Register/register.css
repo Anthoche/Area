@@ -1,0 +1,53 @@
+.reg-page {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #ffffff;
+}
+
+.reg-card {
+  width: 320px;
+  padding: 28px;
+  border-radius: 18px;
+  background: white;
+  text-align: center;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 18px;
+  color: #2d2d2d;
+}
+
+.reg-form .input-field {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  border: 1px solid #d4cdd8;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+}
+
+.reg-form .input-field:focus {
+  border-color: #a788ff;
+  box-shadow: 0 0 6px rgba(167, 136, 255, 0.12);
+}
+
+.register-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 18px;
+  background: #4c3dad;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.register-btn:hover {
+  background: #3b2f9a;
+}
