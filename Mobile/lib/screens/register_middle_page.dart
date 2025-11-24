@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:poc_area/screens/register_middle_page.dart';
-import 'home_page.dart';
+import 'register_page.dart';
 
 // widgets
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 
-class LoginPage extends StatelessWidget {
+class RegisterMiddlePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,29 +23,49 @@ class LoginPage extends StatelessWidget {
                   width: 250,
                   alignment: Alignment.center,
                 ),
+                // Register text
+                const Text(
+                  "Create an account",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  "Enter your email to sign up for this app",
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 30),
                 // EMAIL FIELD
                 const AppTextField(label: "Email"),
                 const SizedBox(height: 25),
-                // PASSWORD FIELD
-                const AppTextField(label: "Password", obscure: true),
-                const SizedBox(height: 30),
-                // LOGIN BUTTON
+                // CONTINUE BUTTON
                 PrimaryButton(
-                  text: "Login",
+                  text: "Continue",
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => Homepage()),
+                      MaterialPageRoute(builder: (_) => RegisterPage()),
                     );
                   },
                 ),
                 const SizedBox(height: 10),
                 // Separation text
-                const Text("──────────  or  ──────────"),
+                const Text(
+                  "──────────  or  ──────────",
+                  style: TextStyle(color: Colors.black),
+                ),
                 const SizedBox(height: 10),
                 // LOGIN google BUTTON
                 PrimaryButton(
-                  text: "Login with Google",
+                  text: "Sign in with Google",
                   onPressed: () {},
                   icon: Image.asset(
                     'lib/assets/G_logo.png',
@@ -56,30 +75,13 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 10),
                 // LOGIN github BUTTON
                 PrimaryButton(
-                  text: "Login with Github",
+                  text: "Sign in with Github",
                   onPressed: () {},
                   icon: Image.asset(
                     'lib/assets/github_logo.png',
                     height: 20,
                   ),
                 ),
-                // Register link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text("Don't have an account?"),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => RegisterMiddlePage()),
-                        );
-                      },
-                      child: Text("Sign up", style: TextStyle(decoration: TextDecoration.underline)),
-                    ),
-                  ],
-                )
               ],
             ),
           ),

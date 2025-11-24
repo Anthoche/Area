@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'home_page.dart';
 
 // widgets
 import '../widgets/app_text_field.dart';
@@ -32,14 +33,6 @@ class RegisterPage extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const Text(
-                  "Enter your email to sign up for this app",
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.black,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
                 // TEXT FIELDS
                 const SizedBox(height: 30),
                 const AppTextField(label: "First Name"),
@@ -52,7 +45,12 @@ class RegisterPage extends StatelessWidget {
                 const SizedBox(height: 30),
                 const AppTextField(label: "Confirm Password", obscure: true),
                 const SizedBox(height: 30),
-                PrimaryButton(text: "Register", onPressed: () {})
+                PrimaryButton(text: "Register", onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => Homepage()),
+                  );
+                })
               ],
             ),
           ),
