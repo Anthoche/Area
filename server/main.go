@@ -8,6 +8,7 @@ import (
 
 	"area/server/auth"
 	"area/server/httpapi"
+	"area/server/database"
 )
 
 func main() {
@@ -16,6 +17,7 @@ func main() {
 		port = "8080"
 	}
 
+	database.connect()
 	store := auth.NewMemoryStore() // In-memory user store DB
 	service := auth.NewService(store)
 
