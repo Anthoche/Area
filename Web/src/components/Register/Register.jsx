@@ -9,48 +9,53 @@ export default function Register() {
     const [password, setPassword] = useState("");
     const [confirm, setConfirm] = useState("");
 
-    const mockApiUrl = "https://6924b40b82b59600d721165a.mockapi.io/test";
     const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email || !password || !confirm || !firstName || !lastName) {
-        alert("Please fill in all fields.");
-        return;
-    }
-    const emailRegex = /^[\w.-]+@[\w.-]+\.\w+$/;
-    if (!emailRegex.test(email)) {
-        alert("Please enter a valid email address.");
-        return;
-    }
-    if (password !== confirm) {
-        alert("Passwords do not match.");
-        return;
-    }
-    try {
-        const resCheck = await fetch(mockApiUrl);
-        if (!resCheck.ok) throw new Error("Failed to fetch users for validation");
-        const users = await resCheck.json();
-        if (users.find(u => u.email === email)) {
-        alert("Email already registered. Please login instead.");
-        return;
+        e.preventDefault();
+        if (!email || !password || !confirm || !firstName || !lastName) {
+            alert("Please fill in all fields.");
+            return;
         }
-        const res = await fetch(mockApiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, password }),
-        });
-        if (!res.ok) throw new Error("Failed to register user");
-        const newUser = await res.json();
-        console.log("Registered user:", newUser);
-        alert("Registration successful! You can now login.");
-        setEmail("");
-        setPassword("");
-        setConfirm("");
-        setFirstName("");
-        setLastName("");
-    } catch (err) {
-        console.error("Error:", err);
-        alert("Registration failed. Check network or try again.");
-    }
+        const emailRegex = /^[\w.-]+@[\w.-]+\.\w+$/;
+        if (!emailRegex.test(email)) {
+            alert("Please enter a valid email address.");
+            return;
+        }
+        if (password !== confirm) {
+            alert("Passwords do not match.");
+            return;
+        }
+        try {
+            const res = await fetch("http://localhost:8080/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    firstname: firstName,
+                    lastname: lastName,
+                }),
+                }
+            );
+            if (res.status === 409) {
+                alert("Email already registered. Please login instead.");
+                return;
+            }
+            if (!res.ok) {
+                alert("Server error. Please try again later.");
+                return;
+            }
+            const data = await res.json();
+            console.log("Registration success:", data);
+            alert("Registration successful! You can now login.");
+            setEmail("");
+            setPassword("");
+            setConfirm("");
+            setFirstName("");
+            setLastName("");
+        } catch (err) {
+            console.error("Network or fetch error:", err);
+            alert("Network error. Please check your connection or backend.");
+        }
     };
 
     return (
