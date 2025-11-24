@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"area/server/auth"
-	"area/server/httpapi"
 	"area/server/database"
+	"area/server/httpapi"
 )
 
 func main() {
@@ -18,7 +18,8 @@ func main() {
 	}
 
 	database.Connect()
-	store := auth.NewMemoryStore() // In-memory user store DB
+	defer database.Disconnect()
+	store := auth.NewDBStore() // PostgreSQL-backed user store
 	service := auth.NewService(store)
 
 	server := &http.Server{

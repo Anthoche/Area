@@ -36,12 +36,12 @@ func Connect() {
 }
 
 func Disconnect() {
-	if (db != nil && IsConnected()) {
+	if db != nil && IsConnected() {
 		db.Close()
 	}
 }
 
 func IsConnected() bool {
 	err := db.Ping()
-	return  err == nil
+	return err == nil
 }

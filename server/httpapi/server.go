@@ -31,10 +31,12 @@ type loginRequest struct {
 }
 
 type registerRequest struct {
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
+	Email        string `json:"email"`
+	Password     string `json:"password"`
+	FirstName    string `json:"firstName"`
+	FirstNameAlt string `json:"firstname"`
+	LastName     string `json:"lastName"`
+	LastNameAlt  string `json:"lastname"`
 }
 
 func (h *handler) login() http.Handler {
@@ -96,8 +98,8 @@ func (h *handler) register() http.Handler {
 		}
 
 		payload.Email = strings.TrimSpace(payload.Email)
-		payload.FirstName = strings.TrimSpace(payload.FirstName)
-		payload.LastName = strings.TrimSpace(payload.LastName)
+		payload.FirstName = strings.TrimSpace(firstNonEmpty(payload.FirstName, payload.FirstNameAlt))
+		payload.LastName = strings.TrimSpace(firstNonEmpty(payload.LastName, payload.LastNameAlt))
 		if payload.Email == "" || payload.Password == "" || payload.FirstName == "" || payload.LastName == "" {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "email, password, firstName and lastName are required"})
 			return
@@ -146,4 +148,13 @@ func ensureNoTrailingData(decoder *json.Decoder) error {
 		return err
 	}
 	return nil
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return v
+		}
+	}
+	return ""
 }
