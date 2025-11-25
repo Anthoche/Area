@@ -1,8 +1,15 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./register.css";
 import logo from "../../../lib/assets/Kikonect_logo.png";
 
+const API_BASE =
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.API_URL ||
+    `${window.location.protocol}//${window.location.hostname}:8080`;
+
 export default function Register() {
+    const navigate = useNavigate();
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
@@ -25,7 +32,7 @@ export default function Register() {
             return;
         }
         try {
-            const res = await fetch("http://localhost:8080/register", {
+            const res = await fetch(`${API_BASE}/register`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -46,12 +53,12 @@ export default function Register() {
             }
             const data = await res.json();
             console.log("Registration success:", data);
-            alert("Registration successful! You can now login.");
             setEmail("");
             setPassword("");
             setConfirm("");
             setFirstName("");
             setLastName("");
+            navigate("/");
         } catch (err) {
             console.error("Network or fetch error:", err);
             alert("Network error. Please check your connection or backend.");

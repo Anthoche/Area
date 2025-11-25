@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -16,6 +17,21 @@ class _LoginPageState extends State<LoginPage> {
   // Controllers
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  String? errorMessage;
+  late final String apiBase;
+
+  @override
+  void initState() {
+    super.initState();
+    apiBase = dotenv.env['API_URL'] ?? 'http://localhost:8080';
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   // isValidEmail is a function that will check if the email is valid
   bool isValidEmail(String email) {
@@ -28,43 +44,45 @@ class _LoginPageState extends State<LoginPage> {
     return emailController.text.isEmpty || passwordController.text.isEmpty;
   }
 
-  // Popup error
-  void showErrorPopup(String message) {
-    showDialog(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text(
-            "Error",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.red,
-            ),
-          ),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   // Login request
-  Future<void> loginUser() async {
-    final url = Uri.parse("http://localhost:8080/login");
+  Future<bool> loginUser() async {
+    final url = Uri.parse("$apiBase/login");
     final body = {
       "email": emailController.text,
       "password": passwordController.text,
     };
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(body),
-    );
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() => errorMessage = null);
+        return true;
+      }
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        setState(() => errorMessage = "Invalid email or password.");
+        return false;
+      }
+      final error = _extractError(response.body);
+      setState(() => errorMessage = error ?? "Server error. Please try again later.");
+      return false;
+    } catch (_) {
+      setState(() => errorMessage = "Network error. Please check your connection or backend.");
+      return false;
+    }
+  }
+
+  String? _extractError(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map && decoded["error"] is String) return decoded["error"];
+    } catch (_) {
+      return null;
+    }
+    return null;
   }
 
   @override
@@ -93,17 +111,26 @@ class _LoginPageState extends State<LoginPage> {
               PrimaryButton(
                 text: "Login",
                 onPressed: () async {
+                  setState(() => errorMessage = null);
                   if (isFieldsEmpty()) {
-                    showErrorPopup("Please fill in all fields.");
+                    setState(() => errorMessage = "Please fill in all fields.");
                     return;
                   }
                   if (!isValidEmail(emailController.text)) {
-                    showErrorPopup("Please enter a valid email address.");
+                    setState(() => errorMessage = "Please enter a valid email address.");
                     return;
                   }
                   await loginUser();
                 },
               ),
+              if (errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+              ],
               const SizedBox(height: 10),
               // Separation text
               const Text("──────────  or  ──────────"),

@@ -16,7 +16,7 @@ services:
       timeout: 10s
     volumes:
       - data:/var/lib/postgresql
-      - ./server/resources/database_scheme.sql:/docker-entrypoint-initdb.d/database_scheme.sql
+      - ./backend/resources/database_scheme.sql:/docker-entrypoint-initdb.d/database_scheme.sql
     ports:
       - "5432:5432"
     networks:
@@ -47,6 +47,11 @@ services:
       - "443:443"
     networks:
       - frontend
+
+  mobile:
+    build:
+      context: frontend/mobile
+    profiles: ["build-only"]
 
 networks:
   backend:
