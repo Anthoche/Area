@@ -22,6 +22,32 @@ services:
     networks:
       - backend
 
+  api:
+    build: backend
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+    ports:
+      - "8080:8080"
+    networks:
+      - backend
+      - frontend
+
+  web:
+    build: frontend/web
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+#      api:
+#        condition: service_started
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - frontend
+
 networks:
   backend:
   frontend:

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"area/server/auth"
+	"area/src/auth"
 )
 
 // NewMux wires HTTP routes that the frontend can call.
