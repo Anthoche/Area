@@ -40,8 +40,8 @@ services:
       db:
         condition: service_healthy
         restart: true
-#      api:
-#        condition: service_started
+      api:
+        condition: service_started
     ports:
       - "80:80"
       - "443:443"
