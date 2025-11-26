@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // widgets
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 
 class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
@@ -19,56 +20,23 @@ class _RegisterPageState extends State<RegisterPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
-  String? errorMessage;
-  late final String apiBase;
-
-  @override
-  void initState() {
-    super.initState();
-    apiBase = dotenv.env['API_URL'] ?? 'http://localhost:8080';
-  }
-
-  @override
-  void dispose() {
-    firstNameController.dispose();
-    lastNameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    super.dispose();
-  }
 
   //register user is the function that will send data to the backend
-  Future<bool> registerUser() async {
-    final url = Uri.parse("$apiBase/register");
+  Future<void> registerUser() async {
+    final apiUrl = dotenv.env['API_URL'];
+    final url = Uri.parse("$apiUrl/register");
     final body = {
       "firstname": firstNameController.text,
       "lastname": lastNameController.text,
       "email": emailController.text,
       "password": passwordController.text,
     };
-    try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(body),
-      );
 
-      if (response.statusCode == 201) {
-        setState(() => errorMessage = null);
-        return true;
-      }
-      if (response.statusCode == 409) {
-        setState(() => errorMessage = "Email already registered.");
-        return false;
-      }
-      final error = _extractError(response.body);
-      setState(() => errorMessage = error ?? "Server error. Please try again later.");
-      return false;
-    } catch (e) {
-      setState(() => errorMessage = "Network error. Please check your connection or backend.");
-      return false;
-    }
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(body),
+    );
   }
 
   // passwordMatch is a function that will check if the password and confirm password are the same
@@ -91,14 +59,32 @@ class _RegisterPageState extends State<RegisterPage> {
         confirmPasswordController.text.isEmpty;
   }
 
-  String? _extractError(String body) {
-    try {
-      final decoded = jsonDecode(body);
-      if (decoded is Map && decoded["error"] is String) return decoded["error"];
-    } catch (_) {
-      return null;
-    }
-    return null;
+  // showErrorPopup is a function that will show an error popup
+  void showErrorPopup(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            "Error",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "OK",
+                style: TextStyle(color: Colors.blue),
+              ),
+            )
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -141,36 +127,23 @@ class _RegisterPageState extends State<RegisterPage> {
                 AppTextField(label: "Confirm Password", obscure: true, controller: confirmPasswordController),
                 const SizedBox(height: 30),
                 // REGISTER BUTTON
-                PrimaryButton(
-                  text: "Register",
+                PrimaryButton(text: "Register",
                   onPressed: () async {
-                    setState(() => errorMessage = null);
                     if (isFieldsEmpty()) {
-                      setState(() => errorMessage = "Please fill in all fields.");
+                      showErrorPopup("Please fill in all fields.");
                       return;
                     }
                     if (!isValidEmail(emailController.text)) {
-                      setState(() => errorMessage = "Please enter a valid email address.");
+                      showErrorPopup("Please enter a valid email address.");
                       return;
                     }
                     if (!passwordMatch()) {
-                      setState(() => errorMessage = "Passwords do not match.");
+                      showErrorPopup("Passwords do not match");
                       return;
                     }
-                    final ok = await registerUser();
-                    if (ok && mounted) {
-                      Navigator.pop(context);
-                    }
+                    await registerUser();
                   },
-                ),
-                if (errorMessage != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    errorMessage!,
-                    style: const TextStyle(color: Colors.red),
-                    textAlign: TextAlign.center,
-                  ),
-                ]
+                )
               ],
             ),
           ),

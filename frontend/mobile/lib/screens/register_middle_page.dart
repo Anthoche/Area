@@ -6,6 +6,7 @@ import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 
 class RegisterMiddlePage extends StatelessWidget {
+  const RegisterMiddlePage({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,7 +53,7 @@ class RegisterMiddlePage extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => RegisterPage()),
+                      MaterialPageRoute(builder: (_) => const RegisterPage()),
                     );
                   },
                 ),

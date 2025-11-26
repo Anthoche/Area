@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   db:
     image: "postgres:latest"
@@ -22,7 +23,7 @@ services:
     networks:
       - backend
 
-  api:
+  server:
     build: backend
     depends_on:
       db:
@@ -34,24 +35,30 @@ services:
       - backend
       - frontend
 
-  web:
-    build: frontend/web
-    depends_on:
-      db:
-        condition: service_healthy
-        restart: true
-      api:
-        condition: service_started
-    ports:
-      - "80:80"
-      - "443:443"
+  client_mobile:
+    build:
+      context: frontend/mobile
+    volumes:
+      - shared_apk:/app/shared_output
+    command: >
+      sh -c "flutter pub get &&
+             flutter build apk --release &&
+             cp build/app/outputs/flutter-apk/app-release.apk /app/shared_output/client.apk &&
+             echo 'APK copy with success'"
     networks:
       - frontend
 
-  mobile:
-    build:
-      context: frontend/mobile
-    profiles: ["build-only"]
+  client_web:
+    build: frontend/web
+    depends_on:
+      - server
+      - client_mobile
+    ports:
+      - "8081:80"
+    volumes:
+      - shared_apk:/usr/share/nginx/html/apk
+    networks:
+      - frontend
 
 networks:
   backend:
@@ -59,3 +66,4 @@ networks:
 
 volumes:
   data:
+  shared_apk:

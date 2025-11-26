@@ -1,15 +1,15 @@
-FROM ghcr.io/cirruslabs/flutter:3.10.6 as build
+FROM ghcr.io/cirruslabs/flutter:3.24.3
 
 WORKDIR /app
 
-COPY pubspec.yaml pubspec.lock* ./
+COPY pubspec.* ./
+
 RUN flutter pub get
 
 COPY . .
 
-RUN flutter pub get
+RUN yes | flutter doctor --android-licenses || true
 
-RUN flutter build apk --release
+RUN flutter build apk --debug --no-pub || true
 
-FROM scratch AS artifact
-COPY --from=build /app/build/app/outputs/flutter-apk/app-release.apk /
+CMD ["echo", "Container mobile prêt. En attente de la commande de build..."]
