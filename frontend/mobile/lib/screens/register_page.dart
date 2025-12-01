@@ -8,7 +8,9 @@ import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+  final String? email;
+
+  const RegisterPage({super.key, this.email});
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
@@ -20,6 +22,14 @@ class _RegisterPageState extends State<RegisterPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.email != null) {
+      emailController.text = widget.email!;
+    }
+  }
 
   //register user is the function that will send data to the backend
   Future<void> registerUser() async {

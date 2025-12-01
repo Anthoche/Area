@@ -5,8 +5,16 @@ import 'register_page.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 
-class RegisterMiddlePage extends StatelessWidget {
+class RegisterMiddlePage extends StatefulWidget {
   const RegisterMiddlePage({super.key});
+
+  @override
+  State<RegisterMiddlePage> createState() => _RegisterMiddlePageState();
+}
+
+class _RegisterMiddlePageState extends State<RegisterMiddlePage> {
+  final TextEditingController emailController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,7 +53,10 @@ class RegisterMiddlePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
                 // EMAIL FIELD
-                const AppTextField(label: "Email"),
+                AppTextField(
+                  label: "Email",
+                  controller: emailController,
+                ),
                 const SizedBox(height: 25),
                 // CONTINUE BUTTON
                 PrimaryButton(
@@ -53,7 +64,9 @@ class RegisterMiddlePage extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const RegisterPage()),
+                      MaterialPageRoute(
+                        builder: (_) => RegisterPage(email: emailController.text),
+                      ),
                     );
                   },
                 ),
