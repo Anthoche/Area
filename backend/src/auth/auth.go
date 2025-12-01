@@ -1,14 +1,14 @@
 package auth
 
 import (
-	"context"
+	"area/src/database"
 	"errors"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	ID        int64 `json:"id"`
+	ID        int64  `json:"id"`
 	Email     string `json:"email"`
 	FirstName string `json:"firstname"`
 	LastName  string `json:"lastname"`
@@ -37,8 +37,8 @@ func CheckPassword(hashed, password string) error {
 
 // UserStore defines the storage operations needed for auth.
 type UserStore interface {
-	Create(ctx context.Context, user *User, passwordHash string) error
-	GetByEmail(ctx context.Context, email string) (*User, string, error)
+	Create(user *User, passwordHash string) error
+	GetByEmail(email string) (*User, string, error)
 }
 
 // Service handles authentication and user creation against a user store.
@@ -52,8 +52,11 @@ func NewService(store UserStore) *Service {
 }
 
 // Authenticate verifies email/password against the stored hash.
-func (s *Service) Authenticate(ctx context.Context, email, password string) (*User, error) {
-	user, hashed, err := s.store.GetByEmail(ctx, email)
+func (s *Service) Authenticate(email, password string) (*User, error) {
+	if !database.UserExists(email) {
+		return nil, ErrInvalidCredentials
+	}
+	user, hashed, err := s.store.GetByEmail(email)
 	switch {
 	case errors.Is(err, ErrInvalidCredentials):
 		return nil, ErrInvalidCredentials
@@ -67,7 +70,10 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (*Us
 }
 
 // Register creates a new user with a hashed password in the store.
-func (s *Service) Register(ctx context.Context, email, password, firstName, lastName string) (*User, error) {
+func (s *Service) Register(email, password, firstName, lastName string) (*User, error) {
+	if database.UserExists(email) {
+		return nil, ErrUserExists
+	}
 	hashed, err := HashPassword(password)
 	if err != nil {
 		return nil, err
@@ -77,7 +83,7 @@ func (s *Service) Register(ctx context.Context, email, password, firstName, last
 		FirstName: firstName,
 		LastName:  lastName,
 	}
-	if err := s.store.Create(ctx, user, hashed); err != nil {
+	if err := s.store.Create(user, hashed); err != nil {
 		return nil, err
 	}
 	return user, nil

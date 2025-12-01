@@ -62,7 +62,7 @@ func (h *handler) login() http.Handler {
 			return
 		}
 
-		user, err := h.auth.Authenticate(r.Context(), payload.Email, payload.Password)
+		user, err := h.auth.Authenticate(payload.Email, payload.Password)
 		switch {
 		case errors.Is(err, auth.ErrInvalidCredentials):
 			writeJSON(w, http.StatusUnauthorized, errorResponse{Error: "invalid email or password"})
@@ -103,7 +103,7 @@ func (h *handler) register() http.Handler {
 			return
 		}
 
-		user, err := h.auth.Register(r.Context(), payload.Email, payload.Password, payload.FirstName, payload.LastName)
+		user, err := h.auth.Register(payload.Email, payload.Password, payload.FirstName, payload.LastName)
 		switch {
 		case errors.Is(err, auth.ErrUserExists):
 			writeJSON(w, http.StatusConflict, errorResponse{Error: "user already exists"})

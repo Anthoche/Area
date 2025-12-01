@@ -1,18 +1,22 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 
-	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-var db *sql.DB
+var sqlDB *sql.DB
+var db *gorm.DB
+var dbContext context.Context
 
 // Temporaire, à remplacer par des secrets (.env)
 const (
-	host     = "db"
+	host     = "localhost"
 	port     = 5432
 	user     = "user"
 	password = "password"
@@ -20,33 +24,40 @@ const (
 )
 
 func Connect() {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+	dsn := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
 	var err error
-	db, err = sql.Open("postgres", psqlInfo)
+
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	pingErr := db.Ping()
-	if pingErr != nil {
-		log.Fatal(pingErr)
+	sqlDB, err = db.DB()
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	dbContext = context.Background()
+	db.AutoMigrate(&User{})
 }
 
 func Disconnect() {
-	if db != nil && IsConnected() {
-		db.Close()
+	if sqlDB != nil && IsConnected() {
+		sqlDB.Close()
 	}
 }
 
 func IsConnected() bool {
-	err := db.Ping()
+	err := sqlDB.Ping()
 	return err == nil
 }
 
-// DB exposes the shared sql.DB handle for packages that need direct queries.
-func GetDB() *sql.DB {
+func GetDB() *gorm.DB {
 	return db
+}
+
+func getDBContext() context.Context {
+	return dbContext
 }
