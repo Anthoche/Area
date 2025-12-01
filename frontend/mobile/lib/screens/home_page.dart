@@ -18,9 +18,28 @@ class Homepage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      drawer: null,
+      drawer: Drawer(
+        backgroundColor: Colors.white,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.white),
+              child: Center(
+                child: Text(
+                  'Menu',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            ListTile(
+              title: const Text('test'),
+              onTap: () {},
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -101,8 +120,45 @@ class Homepage extends StatelessWidget {
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
-      floatingActionButton: null,
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF7209B7),
+        foregroundColor: Colors.white,
+        shape: const CircleBorder(),
+        elevation: 4,
+        onPressed: () {
+          _showAddOptions(context);
+        },
+        child: const Icon(Icons.add, size: 30),
+      ),
     );
+  }
+
+  void _showAddOptions(BuildContext context) {
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        overlay.size.width - 150,
+        overlay.size.height - 200,
+        16,
+        0,
+      ),
+      items: [
+        const PopupMenuItem<String>(
+          value: 'option1',
+          child: Row(
+            children: [
+              Text('Option 1'),
+            ],
+          ),
+        ),
+      ],
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ).then((value) {
+      if (value == 'option1') {}
+    });
   }
 
   Color _getColor(int index) {
@@ -112,7 +168,6 @@ class Homepage extends StatelessWidget {
       const Color(0xFFFF4081),
       const Color(0xFF00E676),
       const Color(0xFFD500F9),
-      const Color(0xFF00E676),
     ];
     return colors[index % colors.length];
   }
