@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"area/server/database"
+	"area/src/database"
 	"github.com/lib/pq"
 )
 

@@ -1,3 +1,4 @@
 .vscode/
 .idea/
 backend/resources/.env
+*.apk
