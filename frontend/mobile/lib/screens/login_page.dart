@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'register_middle_page.dart';
+import 'home_page.dart';
 
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
@@ -113,8 +114,12 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 10),
               // LOGIN google BUTTON
               PrimaryButton(
-                text: "Login with Google",
-                onPressed: () {},
+                text: "Login with Google", //temporaire histoire de test la page
+                onPressed: () {
+                  Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const Homepage()),
+                );},
                 icon: Image.asset(
                   'lib/assets/G_logo.png',
                   height: 20,
