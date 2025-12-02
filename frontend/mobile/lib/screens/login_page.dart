@@ -64,11 +64,36 @@ class _LoginPageState extends State<LoginPage> {
       "email": emailController.text,
       "password": passwordController.text,
     };
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(body),
-    );
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(body),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        // logged
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const Homepage()),
+        );
+      } else {
+        // error
+        try {
+          final responseData = jsonDecode(response.body);
+          showErrorPopup(responseData['message'] ?? "Login failed");
+        } catch (_) {
+          showErrorPopup("Login failed with status: ${response.statusCode}");
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        showErrorPopup("Network error: $e");
+      }
+    }
   }
 
   @override
