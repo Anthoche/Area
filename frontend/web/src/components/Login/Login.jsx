@@ -39,7 +39,7 @@ export default function Login() {
       }
       const data = await res.json();
       console.log("Login success:", data);
-      alert("Login successful!");
+      navigate("/home");
     } catch (err) {
       console.error("Network or fetch error:", err);
       alert("Network error.");
