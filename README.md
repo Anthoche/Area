@@ -10,6 +10,7 @@
 KiKonect is an “Area”-style automation platform.  
 Backend in Go + PostgreSQL, web in React/Vite, mobile build in Flutter.  
 Workflows can be manual, interval, or webhook-triggered; they enqueue jobs executed via HTTP to an `action_url`.
+If you want to extend the platform (new triggers, services, actions, etc.), read the [Contributing Guide](CONTRIBUTING.md).
 
 ## ✨ Key Features
 
