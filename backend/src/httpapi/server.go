@@ -5,24 +5,32 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"area/src/auth"
+	"area/src/workflows"
 )
 
 // NewMux wires HTTP routes that the frontend can call.
-func NewMux(service *auth.Service) http.Handler {
-	server := &handler{auth: service}
+func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handler {
+	server := &handler{
+		auth:      authService,
+		workflows: wfService,
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/login", server.login())
 	mux.Handle("/register", server.register())
 	mux.Handle("/healthz", server.health())
+	mux.Handle("/workflows", server.workflowsHandler())
+	mux.Handle("/workflows/", server.workflowTrigger())
 	return withCORS(mux)
 }
 
 type handler struct {
-	auth *auth.Service
+	auth      *auth.Service
+	workflows *workflows.Service
 }
 
 type loginRequest struct {
@@ -35,6 +43,12 @@ type registerRequest struct {
 	Password  string `json:"password"`
 	FirstName string `json:"firstname"`
 	LastName  string `json:"lastname"`
+}
+
+type workflowRequest struct {
+	Name        string `json:"name"`
+	TriggerType string `json:"trigger_type"`
+	ActionURL   string `json:"action_url"`
 }
 
 func (h *handler) login() http.Handler {
@@ -165,11 +179,106 @@ func ensureNoTrailingData(decoder *json.Decoder) error {
 	return nil
 }
 
-func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if strings.TrimSpace(v) != "" {
-			return v
+func (h *handler) workflowsHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			h.listWorkflows(w, r)
+		case http.MethodPost:
+			h.createWorkflow(w, r)
+		default:
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
+	})
+}
+
+func (h *handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
+	if h.workflows == nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "workflows not configured"})
+		return
 	}
-	return ""
+
+	var payload workflowRequest
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&payload); err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid JSON payload"})
+		return
+	}
+	if err := ensureNoTrailingData(decoder); err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "unexpected data in payload"})
+		return
+	}
+
+	wf, err := h.workflows.CreateWorkflow(r.Context(), payload.Name, payload.TriggerType, payload.ActionURL)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusCreated, wf)
+}
+
+func (h *handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
+	if h.workflows == nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "workflows not configured"})
+		return
+	}
+	items, err := h.workflows.ListWorkflows(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not list workflows"})
+		return
+	}
+	writeJSON(w, http.StatusOK, items)
+}
+
+func (h *handler) workflowTrigger() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if h.workflows == nil {
+			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "workflows not configured"})
+			return
+		}
+		if !strings.HasPrefix(r.URL.Path, "/workflows/") || !strings.HasSuffix(r.URL.Path, "/trigger") {
+			http.NotFound(w, r)
+			return
+		}
+		parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+		if len(parts) != 3 {
+			http.NotFound(w, r)
+			return
+		}
+		idStr := parts[1]
+		workflowID, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid workflow id"})
+			return
+		}
+
+		payload := make(map[string]any)
+		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&payload); err != nil && !errors.Is(err, io.EOF) {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid JSON payload"})
+			return
+		}
+		if err := ensureNoTrailingData(decoder); err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "unexpected data in payload"})
+			return
+		}
+
+		run, err := h.workflows.Trigger(r.Context(), workflowID, payload)
+		if err != nil {
+			switch {
+			case errors.Is(err, workflows.ErrWorkflowNotFound):
+				writeJSON(w, http.StatusNotFound, errorResponse{Error: "workflow not found"})
+			default:
+				writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not trigger workflow"})
+			}
+			return
+		}
+		writeJSON(w, http.StatusAccepted, run)
+	})
 }
