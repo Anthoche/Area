@@ -43,7 +43,8 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 	}
 	switch triggerType {
 	case "interval":
-		if minutes, err := intervalFromConfig(triggerConfig); err != nil || minutes <= 0 {
+		cfg, err := intervalConfigFromJSON(triggerConfig)
+		if err != nil || cfg.IntervalMinutes <= 0 {
 			return nil, errors.New("interval_minutes must be > 0 for interval trigger")
 		}
 	case "webhook", "manual":
@@ -76,4 +77,9 @@ func (s *Service) TriggerWebhook(ctx context.Context, token string, payload map[
 		return nil, ErrWorkflowNotFound
 	}
 	return s.Trigger(ctx, wf.ID, payload)
+}
+
+// IntervalConfigFromJSON exposes interval config parsing to callers (e.g., scheduler).
+func IntervalConfigFromJSON(raw json.RawMessage) (IntervalConfig, error) {
+	return intervalConfigFromJSON(raw)
 }

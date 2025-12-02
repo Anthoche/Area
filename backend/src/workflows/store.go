@@ -56,6 +56,11 @@ type Job struct {
 	EndedAt    *time.Time      `json:"ended_at,omitempty"`
 }
 
+type IntervalConfig struct {
+	IntervalMinutes int                    `json:"interval_minutes"`
+	Payload         map[string]interface{} `json:"payload,omitempty"`
+}
+
 type Store struct {
 	db *sql.DB
 }
@@ -73,8 +78,8 @@ func (s *Store) CreateWorkflow(ctx context.Context, name, triggerType, actionURL
 	var id int64
 	var nextRun sql.NullTime
 	if triggerType == "interval" {
-		if minutes, err := intervalFromConfig(triggerConfig); err == nil && minutes > 0 {
-			nextRun = sql.NullTime{Time: time.Now().Add(time.Duration(minutes) * time.Minute), Valid: true}
+		if cfg, err := intervalConfigFromJSON(triggerConfig); err == nil && cfg.IntervalMinutes > 0 {
+			nextRun = sql.NullTime{Time: time.Now().Add(time.Duration(cfg.IntervalMinutes) * time.Minute), Valid: true}
 		}
 	}
 	err := s.db.QueryRowContext(ctx, `
@@ -325,11 +330,11 @@ func (s *Store) ClaimDueIntervalWorkflows(ctx context.Context, now time.Time) ([
 	}
 
 	for _, wf := range due {
-		minutes, err := intervalFromConfig(wf.TriggerConfig)
-		if err != nil || minutes <= 0 {
+		cfg, err := intervalConfigFromJSON(wf.TriggerConfig)
+		if err != nil || cfg.IntervalMinutes <= 0 {
 			continue
 		}
-		next := now.Add(time.Duration(minutes) * time.Minute)
+		next := now.Add(time.Duration(cfg.IntervalMinutes) * time.Minute)
 		if _, err := tx.ExecContext(ctx, `
 			UPDATE workflows SET next_run_at = $1 WHERE id = $2`, next, wf.ID); err != nil {
 			return nil, fmt.Errorf("update next_run_at: %w", err)
@@ -379,15 +384,13 @@ func nullableString(s *string) any {
 	return sql.NullString{String: *s, Valid: true}
 }
 
-func intervalFromConfig(raw json.RawMessage) (int, error) {
+func intervalConfigFromJSON(raw json.RawMessage) (IntervalConfig, error) {
 	if len(raw) == 0 {
-		return 0, errors.New("empty config")
+		return IntervalConfig{}, errors.New("empty config")
 	}
-	var cfg struct {
-		IntervalMinutes int `json:"interval_minutes"`
-	}
+	var cfg IntervalConfig
 	if err := json.Unmarshal(raw, &cfg); err != nil {
-		return 0, err
+		return IntervalConfig{}, err
 	}
-	return cfg.IntervalMinutes, nil
+	return cfg, nil
 }

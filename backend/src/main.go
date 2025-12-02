@@ -74,7 +74,14 @@ func main() {
 				continue
 			}
 			for _, wf := range due {
-				_, err := wfService.Trigger(context.Background(), wf.ID, map[string]any{"source": "interval"})
+				cfg, err := workflows.IntervalConfigFromJSON(wf.TriggerConfig)
+				payload := map[string]any{"source": "interval"}
+				if err == nil && len(cfg.Payload) > 0 {
+					for k, v := range cfg.Payload {
+						payload[k] = v
+					}
+				}
+				_, err = wfService.Trigger(context.Background(), wf.ID, payload)
 				if err != nil {
 					log.Printf("scheduler trigger wf %d: %v", wf.ID, err)
 				}

@@ -12,12 +12,12 @@ import (
 var db *sql.DB
 
 func Connect() {
-	host := os.Getenv("POSTGRES_HOST")
-	port := os.Getenv("POSTGRES_PORT")
-	user := os.Getenv("POSTGRES_USER")
-	password := os.Getenv("POSTGRES_PASSWORD")
-	dbname := os.Getenv("POSTGRES_DB")
-	sslmode := os.Getenv("POSTGRES_SSLMODE")
+	host := mustEnv("POSTGRES_HOST")
+	port := mustEnv("POSTGRES_PORT")
+	user := mustEnv("POSTGRES_USER")
+	password := mustEnv("POSTGRES_PASSWORD")
+	dbname := mustEnv("POSTGRES_DB")
+	sslmode := firstNonEmpty(os.Getenv("POSTGRES_SSLMODE"), "disable")
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=%s",
@@ -48,4 +48,21 @@ func IsConnected() bool {
 // DB exposes the shared sql.DB handle for packages that need direct queries.
 func GetDB() *sql.DB {
 	return db
+}
+
+func mustEnv(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		log.Fatalf("missing required env var %s", key)
+	}
+	return val
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
