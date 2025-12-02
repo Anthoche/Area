@@ -24,11 +24,13 @@ const (
 )
 
 type Workflow struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"`
-	TriggerType string    `json:"trigger_type"`
-	ActionURL   string    `json:"action_url"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID            int64           `json:"id"`
+	Name          string          `json:"name"`
+	TriggerType   string          `json:"trigger_type"`
+	TriggerConfig json.RawMessage `json:"trigger_config"`
+	ActionURL     string          `json:"action_url"`
+	NextRunAt     *time.Time      `json:"next_run_at,omitempty"`
+	CreatedAt     time.Time       `json:"created_at"`
 }
 
 type Run struct {
@@ -67,13 +69,19 @@ func NewDefaultStore() *Store {
 	return &Store{db: database.GetDB()}
 }
 
-func (s *Store) CreateWorkflow(ctx context.Context, name, triggerType, actionURL string) (*Workflow, error) {
+func (s *Store) CreateWorkflow(ctx context.Context, name, triggerType, actionURL string, triggerConfig json.RawMessage) (*Workflow, error) {
 	var id int64
+	var nextRun sql.NullTime
+	if triggerType == "interval" {
+		if minutes, err := intervalFromConfig(triggerConfig); err == nil && minutes > 0 {
+			nextRun = sql.NullTime{Time: time.Now().Add(time.Duration(minutes) * time.Minute), Valid: true}
+		}
+	}
 	err := s.db.QueryRowContext(ctx, `
-		INSERT INTO workflows (name, trigger_type, action_url)
-		VALUES ($1, $2, $3)
+		INSERT INTO workflows (name, trigger_type, trigger_config, action_url, next_run_at)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id`,
-		name, triggerType, actionURL,
+		name, triggerType, triggerConfig, actionURL, nextRun,
 	).Scan(&id)
 	if err != nil {
 		return nil, fmt.Errorf("create workflow: %w", err)
@@ -83,7 +91,7 @@ func (s *Store) CreateWorkflow(ctx context.Context, name, triggerType, actionURL
 
 func (s *Store) ListWorkflows(ctx context.Context) ([]Workflow, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, name, trigger_type, action_url, created_at
+		SELECT id, name, trigger_type, trigger_config, action_url, next_run_at, created_at
 		FROM workflows
 		ORDER BY created_at DESC`)
 	if err != nil {
@@ -94,8 +102,12 @@ func (s *Store) ListWorkflows(ctx context.Context) ([]Workflow, error) {
 	var out []Workflow
 	for rows.Next() {
 		var wf Workflow
-		if err := rows.Scan(&wf.ID, &wf.Name, &wf.TriggerType, &wf.ActionURL, &wf.CreatedAt); err != nil {
+		var nextRun sql.NullTime
+		if err := rows.Scan(&wf.ID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &nextRun, &wf.CreatedAt); err != nil {
 			return nil, fmt.Errorf("list workflows: %w", err)
+		}
+		if nextRun.Valid {
+			wf.NextRunAt = &nextRun.Time
 		}
 		out = append(out, wf)
 	}
@@ -108,16 +120,20 @@ func (s *Store) ListWorkflows(ctx context.Context) ([]Workflow, error) {
 func (s *Store) GetWorkflow(ctx context.Context, id int64) (*Workflow, error) {
 	var wf Workflow
 	row := s.db.QueryRowContext(ctx, `
-		SELECT id, name, trigger_type, action_url, created_at
+		SELECT id, name, trigger_type, trigger_config, action_url, next_run_at, created_at
 		FROM workflows
 		WHERE id = $1`,
 		id,
 	)
-	if err := row.Scan(&wf.ID, &wf.Name, &wf.TriggerType, &wf.ActionURL, &wf.CreatedAt); err != nil {
+	var nextRun sql.NullTime
+	if err := row.Scan(&wf.ID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &nextRun, &wf.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, sql.ErrNoRows
 		}
 		return nil, fmt.Errorf("get workflow: %w", err)
+	}
+	if nextRun.Valid {
+		wf.NextRunAt = &nextRun.Time
 	}
 	return &wf, nil
 }
@@ -270,6 +286,85 @@ func (s *Store) MarkJobFailed(ctx context.Context, jobID int64, reason string) e
 	return nil
 }
 
+// ClaimDueIntervalWorkflows locks and returns interval workflows whose next_run_at <= now, and advances next_run_at.
+func (s *Store) ClaimDueIntervalWorkflows(ctx context.Context, now time.Time) ([]Workflow, error) {
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx, `
+		SELECT id, name, trigger_type, trigger_config, action_url, next_run_at, created_at
+		FROM workflows
+		WHERE trigger_type = 'interval'
+		  AND next_run_at IS NOT NULL
+		  AND next_run_at <= $1
+		FOR UPDATE SKIP LOCKED`,
+		now,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("claim due interval: %w", err)
+	}
+	defer rows.Close()
+
+	var due []Workflow
+	for rows.Next() {
+		var wf Workflow
+		var nextRun sql.NullTime
+		if err := rows.Scan(&wf.ID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &nextRun, &wf.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan interval wf: %w", err)
+		}
+		if nextRun.Valid {
+			wf.NextRunAt = &nextRun.Time
+		}
+		due = append(due, wf)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows interval: %w", err)
+	}
+
+	for _, wf := range due {
+		minutes, err := intervalFromConfig(wf.TriggerConfig)
+		if err != nil || minutes <= 0 {
+			continue
+		}
+		next := now.Add(time.Duration(minutes) * time.Minute)
+		if _, err := tx.ExecContext(ctx, `
+			UPDATE workflows SET next_run_at = $1 WHERE id = $2`, next, wf.ID); err != nil {
+			return nil, fmt.Errorf("update next_run_at: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit interval claim: %w", err)
+	}
+	return due, nil
+}
+
+// FindWorkflowByToken returns a webhook workflow matching the token stored in trigger_config.
+func (s *Store) FindWorkflowByToken(ctx context.Context, token string) (*Workflow, error) {
+	var wf Workflow
+	var nextRun sql.NullTime
+	err := s.db.QueryRowContext(ctx, `
+		SELECT id, name, trigger_type, trigger_config, action_url, next_run_at, created_at
+		FROM workflows
+		WHERE trigger_type = 'webhook' AND trigger_config->>'token' = $1
+		LIMIT 1`,
+		token,
+	).Scan(&wf.ID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &nextRun, &wf.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, sql.ErrNoRows
+		}
+		return nil, fmt.Errorf("find workflow token: %w", err)
+	}
+	if nextRun.Valid {
+		wf.NextRunAt = &nextRun.Time
+	}
+	return &wf, nil
+}
+
 func nullableTime(t *time.Time) any {
 	if t == nil {
 		return nil
@@ -282,4 +377,17 @@ func nullableString(s *string) any {
 		return nil
 	}
 	return sql.NullString{String: *s, Valid: true}
+}
+
+func intervalFromConfig(raw json.RawMessage) (int, error) {
+	if len(raw) == 0 {
+		return 0, errors.New("empty config")
+	}
+	var cfg struct {
+		IntervalMinutes int `json:"interval_minutes"`
+	}
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return 0, err
+	}
+	return cfg.IntervalMinutes, nil
 }

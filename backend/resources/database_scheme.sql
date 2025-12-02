@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS workflows (
     id               SERIAL PRIMARY KEY,
     name             VARCHAR(255) NOT NULL,
     trigger_type     VARCHAR(64) NOT NULL,
+    trigger_config   JSONB NOT NULL DEFAULT '{}'::jsonb,
     action_url       TEXT NOT NULL,
+    next_run_at      TIMESTAMPTZ,
     created_at       TIMESTAMPTZ DEFAULT NOW()
 );
 

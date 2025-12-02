@@ -25,6 +25,7 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/healthz", server.health())
 	mux.Handle("/workflows", server.workflowsHandler())
 	mux.Handle("/workflows/", server.workflowTrigger())
+	mux.Handle("/hooks/", server.webhook())
 	return withCORS(mux)
 }
 
@@ -46,9 +47,11 @@ type registerRequest struct {
 }
 
 type workflowRequest struct {
-	Name        string `json:"name"`
-	TriggerType string `json:"trigger_type"`
-	ActionURL   string `json:"action_url"`
+	Name            string          `json:"name"`
+	TriggerType     string          `json:"trigger_type"`
+	ActionURL       string          `json:"action_url"`
+	TriggerConfig   json.RawMessage `json:"trigger_config"`
+	IntervalMinutes *int            `json:"interval_minutes,omitempty"`
 }
 
 func (h *handler) login() http.Handler {
@@ -210,7 +213,11 @@ func (h *handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wf, err := h.workflows.CreateWorkflow(r.Context(), payload.Name, payload.TriggerType, payload.ActionURL)
+	cfg := payload.TriggerConfig
+	if len(cfg) == 0 && payload.IntervalMinutes != nil && payload.TriggerType == "interval" {
+		cfg, _ = json.Marshal(map[string]int{"interval_minutes": *payload.IntervalMinutes})
+	}
+	wf, err := h.workflows.CreateWorkflow(r.Context(), payload.Name, payload.TriggerType, payload.ActionURL, cfg)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{Error: err.Error()})
 		return
@@ -277,6 +284,53 @@ func (h *handler) workflowTrigger() http.Handler {
 			default:
 				writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not trigger workflow"})
 			}
+			return
+		}
+		writeJSON(w, http.StatusAccepted, run)
+	})
+}
+
+// webhook handles external POST /hooks/{token} to trigger a webhook workflow.
+func (h *handler) webhook() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if h.workflows == nil {
+			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "workflows not configured"})
+			return
+		}
+		if !strings.HasPrefix(r.URL.Path, "/hooks/") {
+			http.NotFound(w, r)
+			return
+		}
+		parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+		if len(parts) != 2 {
+			http.NotFound(w, r)
+			return
+		}
+		token := parts[1]
+
+		payload := make(map[string]any)
+		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&payload); err != nil && !errors.Is(err, io.EOF) {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid JSON payload"})
+			return
+		}
+		if err := ensureNoTrailingData(decoder); err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "unexpected data in payload"})
+			return
+		}
+
+		run, err := h.workflows.TriggerWebhook(r.Context(), token, payload)
+		if err != nil {
+			if errors.Is(err, workflows.ErrWorkflowNotFound) {
+				writeJSON(w, http.StatusNotFound, errorResponse{Error: "workflow not found"})
+				return
+			}
+			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not trigger workflow"})
 			return
 		}
 		writeJSON(w, http.StatusAccepted, run)

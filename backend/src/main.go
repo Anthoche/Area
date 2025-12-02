@@ -62,6 +62,26 @@ func main() {
 	executor := workflows.NewExecutor(wfStore, sender, 2*time.Second)
 	go executor.RunLoop(context.Background())
 
+	// Interval scheduler: triggers workflows of type "interval" when due.
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			now := time.Now()
+			due, err := wfStore.ClaimDueIntervalWorkflows(context.Background(), now)
+			if err != nil {
+				log.Printf("scheduler: %v", err)
+				continue
+			}
+			for _, wf := range due {
+				_, err := wfService.Trigger(context.Background(), wf.ID, map[string]any{"source": "interval"})
+				if err != nil {
+					log.Printf("scheduler trigger wf %d: %v", wf.ID, err)
+				}
+			}
+		}
+	}()
+
 	server := &http.Server{
 		Addr:              ":" + port,
 		Handler:           httpapi.NewMux(authService, wfService),
