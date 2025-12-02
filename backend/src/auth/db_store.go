@@ -17,6 +17,7 @@ func NewDBStore() *DBStore {
 	return &DBStore{}
 }
 
+// Create inserts a new user row and updates the passed user with its ID.
 func (DBStore) Create(ctx context.Context, user *User, passwordHash string) error {
 	id, err := database.CreateUser(ctx, user.FirstName, user.LastName, user.Email, passwordHash)
 	if err != nil {
@@ -29,6 +30,7 @@ func (DBStore) Create(ctx context.Context, user *User, passwordHash string) erro
 	return nil
 }
 
+// GetByEmail returns a user and their hashed password for the given email.
 func (DBStore) GetByEmail(ctx context.Context, email string) (*User, string, error) {
 	dbUser, err := database.GetUserByEmail(ctx, email)
 	if err != nil {
@@ -45,6 +47,7 @@ func (DBStore) GetByEmail(ctx context.Context, email string) (*User, string, err
 	}, dbUser.PasswordHash, nil
 }
 
+// isUniqueViolation checks if the error corresponds to a PostgreSQL unique constraint violation.
 func isUniqueViolation(err error) bool {
 	pqErr, ok := err.(*pq.Error)
 	return ok && pqErr.Code == "23505"

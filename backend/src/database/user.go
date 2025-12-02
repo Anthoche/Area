@@ -14,6 +14,7 @@ type User struct {
 	PasswordHash string
 }
 
+// GetUsers returns all users from the database.
 func GetUsers(ctx context.Context) ([]User, error) {
 	var users []User
 
@@ -37,6 +38,7 @@ func GetUsers(ctx context.Context) ([]User, error) {
 	return users, nil
 }
 
+// GetUserByID fetches a single user by numeric ID.
 func GetUserByID(ctx context.Context, id int64) (User, error) {
 	var user User
 
@@ -50,6 +52,7 @@ func GetUserByID(ctx context.Context, id int64) (User, error) {
 	return user, nil
 }
 
+// GetUserByEmail fetches a user record matching the provided email.
 func GetUserByEmail(ctx context.Context, email string) (User, error) {
 	var user User
 
@@ -63,6 +66,7 @@ func GetUserByEmail(ctx context.Context, email string) (User, error) {
 	return user, nil
 }
 
+// CreateUser inserts a new user and returns its generated ID.
 func CreateUser(ctx context.Context, firstName string, lastName string, email string, passwordHash string) (int64, error) {
 	var id int64
 
@@ -78,6 +82,7 @@ func CreateUser(ctx context.Context, firstName string, lastName string, email st
 	return id, nil
 }
 
+// DeleteUser removes the user with the given ID.
 func DeleteUser(ctx context.Context, id int64) error {
 	_, err := db.ExecContext(ctx, "DELETE FROM users WHERE id = $1", id)
 
@@ -87,6 +92,7 @@ func DeleteUser(ctx context.Context, id int64) error {
 	return nil
 }
 
+// UpdateUser updates user attributes and password hash.
 func UpdateUser(ctx context.Context, id int64, firstName string, lastName string, email string, passwordHash string) error {
 	_, err := db.ExecContext(
 		ctx,
