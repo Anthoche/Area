@@ -6,9 +6,9 @@ import (
 	"os"
 	"time"
 
-	"area/server/auth"
-	"area/server/database"
-	"area/server/httpapi"
+	"area/src/auth"
+	"area/src/database"
+	"area/src/httpapi"
 )
 
 func main() {
