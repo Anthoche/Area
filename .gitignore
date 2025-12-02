@@ -4,3 +4,4 @@ backend/resources/.env
 *.apk
 .cache/
 .env
+.gocache/
