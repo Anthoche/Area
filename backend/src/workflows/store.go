@@ -65,6 +65,7 @@ type Store struct {
 	db *sql.DB
 }
 
+// NewStore builds a Store backed by the provided database handle.
 func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
 }
@@ -74,6 +75,7 @@ func NewDefaultStore() *Store {
 	return &Store{db: database.GetDB()}
 }
 
+// CreateWorkflow persists a new workflow with its trigger configuration.
 func (s *Store) CreateWorkflow(ctx context.Context, name, triggerType, actionURL string, triggerConfig json.RawMessage) (*Workflow, error) {
 	var id int64
 	var nextRun sql.NullTime
@@ -94,6 +96,7 @@ func (s *Store) CreateWorkflow(ctx context.Context, name, triggerType, actionURL
 	return s.GetWorkflow(ctx, id)
 }
 
+// ListWorkflows returns all workflows ordered by creation date.
 func (s *Store) ListWorkflows(ctx context.Context) ([]Workflow, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, name, trigger_type, trigger_config, action_url, next_run_at, created_at
@@ -122,6 +125,7 @@ func (s *Store) ListWorkflows(ctx context.Context) ([]Workflow, error) {
 	return out, nil
 }
 
+// GetWorkflow fetches a workflow by ID.
 func (s *Store) GetWorkflow(ctx context.Context, id int64) (*Workflow, error) {
 	var wf Workflow
 	row := s.db.QueryRowContext(ctx, `
@@ -143,6 +147,7 @@ func (s *Store) GetWorkflow(ctx context.Context, id int64) (*Workflow, error) {
 	return &wf, nil
 }
 
+// CreateRun creates a new pending run for a workflow.
 func (s *Store) CreateRun(ctx context.Context, workflowID int64) (*Run, error) {
 	var id int64
 	if err := s.db.QueryRowContext(ctx, `
@@ -169,6 +174,7 @@ type RunUpdate struct {
 	Error     *string
 }
 
+// UpdateRun updates run metadata such as status or timestamps.
 func (s *Store) UpdateRun(ctx context.Context, runID int64, upd RunUpdate) error {
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE workflow_runs
@@ -185,6 +191,7 @@ func (s *Store) UpdateRun(ctx context.Context, runID int64, upd RunUpdate) error
 	return nil
 }
 
+// CreateJob inserts a pending job belonging to a workflow run.
 func (s *Store) CreateJob(ctx context.Context, workflowID, runID int64, payload json.RawMessage) (*Job, error) {
 	var id int64
 	var createdAt, updatedAt time.Time
@@ -208,6 +215,7 @@ func (s *Store) CreateJob(ctx context.Context, workflowID, runID int64, payload 
 	}, nil
 }
 
+// FetchNextPendingJob locks and returns the oldest pending job.
 func (s *Store) FetchNextPendingJob(ctx context.Context) (*Job, error) {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
@@ -263,6 +271,7 @@ func (s *Store) FetchNextPendingJob(ctx context.Context) (*Job, error) {
 	return &job, nil
 }
 
+// MarkJobSuccess marks a job as succeeded and closes its timestamps.
 func (s *Store) MarkJobSuccess(ctx context.Context, jobID int64) error {
 	now := time.Now()
 	_, err := s.db.ExecContext(ctx, `
@@ -277,6 +286,7 @@ func (s *Store) MarkJobSuccess(ctx context.Context, jobID int64) error {
 	return nil
 }
 
+// MarkJobFailed marks a job as failed with the provided reason.
 func (s *Store) MarkJobFailed(ctx context.Context, jobID int64, reason string) error {
 	now := time.Now()
 	_, err := s.db.ExecContext(ctx, `
@@ -370,6 +380,7 @@ func (s *Store) FindWorkflowByToken(ctx context.Context, token string) (*Workflo
 	return &wf, nil
 }
 
+// nullableTime converts a pointer time to a value usable in SQL queries.
 func nullableTime(t *time.Time) any {
 	if t == nil {
 		return nil
@@ -377,6 +388,7 @@ func nullableTime(t *time.Time) any {
 	return sql.NullTime{Time: *t, Valid: true}
 }
 
+// nullableString converts a string pointer to a SQL-compatible nullable value.
 func nullableString(s *string) any {
 	if s == nil {
 		return nil
@@ -384,6 +396,7 @@ func nullableString(s *string) any {
 	return sql.NullString{String: *s, Valid: true}
 }
 
+// intervalConfigFromJSON parses an IntervalConfig from raw JSON.
 func intervalConfigFromJSON(raw json.RawMessage) (IntervalConfig, error) {
 	if len(raw) == 0 {
 		return IntervalConfig{}, errors.New("empty config")

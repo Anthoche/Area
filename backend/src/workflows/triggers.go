@@ -11,6 +11,7 @@ type Triggerer struct {
 	store *Store
 }
 
+// NewTriggerer creates a Triggerer bound to a Store.
 func NewTriggerer(store *Store) *Triggerer {
 	return &Triggerer{store: store}
 }

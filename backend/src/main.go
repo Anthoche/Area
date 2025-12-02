@@ -21,10 +21,12 @@ type httpSender struct {
 	client *http.Client
 }
 
+// newHTTPSender builds an httpSender with a default timeout.
 func newHTTPSender() *httpSender {
 	return &httpSender{client: &http.Client{Timeout: 10 * time.Second}}
 }
 
+// Send posts the given payload as JSON to the target URL.
 func (s *httpSender) Send(ctx context.Context, url string, payload []byte) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payload))
 	if err != nil {
@@ -42,6 +44,7 @@ func (s *httpSender) Send(ctx context.Context, url string, payload []byte) error
 	return nil
 }
 
+// main boots the API server, background workers, and graceful shutdown handling.
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -50,7 +53,7 @@ func main() {
 
 	database.Connect()
 	defer database.Disconnect()
-	userStore := auth.NewDBStore() // PostgreSQL-backed user store
+	userStore := auth.NewDBStore()
 	authService := auth.NewService(userStore)
 
 	wfStore := workflows.NewDefaultStore()

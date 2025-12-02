@@ -11,6 +11,7 @@ import (
 
 var db *sql.DB
 
+// Connect initializes the shared PostgreSQL connection using environment variables.
 func Connect() {
 	host := mustEnv("POSTGRES_HOST")
 	port := mustEnv("POSTGRES_PORT")
@@ -34,12 +35,14 @@ func Connect() {
 	}
 }
 
+// Disconnect closes the database connection if it is open.
 func Disconnect() {
 	if db != nil && IsConnected() {
 		db.Close()
 	}
 }
 
+// IsConnected reports whether the database connection is alive.
 func IsConnected() bool {
 	err := db.Ping()
 	return err == nil
@@ -50,6 +53,7 @@ func GetDB() *sql.DB {
 	return db
 }
 
+// mustEnv reads an environment variable or exits if it is missing.
 func mustEnv(key string) string {
 	val := os.Getenv(key)
 	if val == "" {
@@ -58,6 +62,7 @@ func mustEnv(key string) string {
 	return val
 }
 
+// firstNonEmpty returns the first non-empty string in the provided list.
 func firstNonEmpty(values ...string) string {
 	for _, v := range values {
 		if v != "" {

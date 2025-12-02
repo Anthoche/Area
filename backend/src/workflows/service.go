@@ -17,6 +17,7 @@ type Service struct {
 	Triggerer *Triggerer
 }
 
+// NewService constructs a workflow service with its store and triggerer.
 func NewService(store *Store, triggerer *Triggerer) *Service {
 	return &Service{
 		Store:     store,
@@ -24,6 +25,7 @@ func NewService(store *Store, triggerer *Triggerer) *Service {
 	}
 }
 
+// Trigger enqueues a workflow run with the provided payload.
 func (s *Service) Trigger(ctx context.Context, workflowID int64, payload map[string]any) (*Run, error) {
 	if s.Triggerer == nil {
 		return nil, ErrTriggerUnavailable
@@ -34,6 +36,7 @@ func (s *Service) Trigger(ctx context.Context, workflowID int64, payload map[str
 	return s.Triggerer.EnqueueRun(ctx, workflowID, payload)
 }
 
+// CreateWorkflow validates input and stores a new workflow.
 func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionURL string, triggerConfig json.RawMessage) (*Workflow, error) {
 	name = strings.TrimSpace(name)
 	triggerType = strings.TrimSpace(triggerType)
@@ -58,10 +61,12 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 	return s.Store.CreateWorkflow(ctx, name, triggerType, actionURL, triggerConfig)
 }
 
+// ListWorkflows returns all persisted workflows.
 func (s *Service) ListWorkflows(ctx context.Context) ([]Workflow, error) {
 	return s.Store.ListWorkflows(ctx)
 }
 
+// GetWorkflow fetches a workflow by ID or returns ErrWorkflowNotFound.
 func (s *Service) GetWorkflow(ctx context.Context, id int64) (*Workflow, error) {
 	wf, err := s.Store.GetWorkflow(ctx, id)
 	if err != nil {

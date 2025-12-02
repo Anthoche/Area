@@ -20,6 +20,7 @@ type Executor struct {
 	interval time.Duration
 }
 
+// NewExecutor constructs an Executor that polls at the given interval.
 func NewExecutor(store *Store, sender OutboundSender, interval time.Duration) *Executor {
 	return &Executor{
 		store:    store,
@@ -51,6 +52,7 @@ func (e *Executor) RunLoop(ctx context.Context) {
 	}
 }
 
+// processOne fetches and executes the next pending job if available.
 func (e *Executor) processOne(ctx context.Context) {
 	job, err := e.store.FetchNextPendingJob(ctx)
 	if err != nil {

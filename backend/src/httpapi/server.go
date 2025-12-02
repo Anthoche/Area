@@ -54,6 +54,7 @@ type workflowRequest struct {
 	IntervalMinutes *int            `json:"interval_minutes,omitempty"`
 }
 
+// login handles POST /login authentication requests.
 func (h *handler) login() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -93,6 +94,7 @@ func (h *handler) login() http.Handler {
 	})
 }
 
+// register handles POST /register user creation requests.
 func (h *handler) register() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -134,6 +136,7 @@ func (h *handler) register() http.Handler {
 	})
 }
 
+// health serves a simple health-check endpoint.
 func (h *handler) health() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -148,6 +151,7 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
+// writeJSON serializes a value to JSON with the given status code.
 func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -182,6 +186,7 @@ func ensureNoTrailingData(decoder *json.Decoder) error {
 	return nil
 }
 
+// workflowsHandler routes workflow listing and creation requests.
 func (h *handler) workflowsHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -195,6 +200,7 @@ func (h *handler) workflowsHandler() http.Handler {
 	})
 }
 
+// createWorkflow validates input and persists a new workflow.
 func (h *handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	if h.workflows == nil {
 		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "workflows not configured"})
@@ -225,6 +231,7 @@ func (h *handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, wf)
 }
 
+// listWorkflows responds with all workflows for the current user/session.
 func (h *handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	if h.workflows == nil {
 		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "workflows not configured"})
@@ -238,6 +245,7 @@ func (h *handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, items)
 }
 
+// workflowTrigger handles POST /workflows/{id}/trigger to enqueue a run.
 func (h *handler) workflowTrigger() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {

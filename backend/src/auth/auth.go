@@ -23,6 +23,7 @@ var (
 
 var bcryptCost int
 
+// init configures the bcrypt cost from environment variables.
 func init() {
 	costStr := os.Getenv("BCRYPT_COST")
 	cost, err := strconv.Atoi(costStr)
