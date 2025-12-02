@@ -3,3 +3,6 @@
 backend/resources/.env
 *.apk
 frontend/mobile/lib/widgets/filter_tag.dart
+.cache/
+.env
+.gocache/
