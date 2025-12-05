@@ -26,6 +26,8 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/workflows", server.workflowsHandler())
 	mux.Handle("/workflows/", server.workflowTrigger())
 	mux.Handle("/hooks/", server.webhook())
+	mux.Handle("/oauth/google/exchange", server.exchangeGoogleToken())
+	mux.Handle("/oauth/github/exchange", server.exchangeGithubToken())
 	return withCORS(mux)
 }
 
@@ -52,6 +54,10 @@ type workflowRequest struct {
 	ActionURL       string          `json:"action_url"`
 	TriggerConfig   json.RawMessage `json:"trigger_config"`
 	IntervalMinutes *int            `json:"interval_minutes,omitempty"`
+}
+
+type OAuthAccessResponse struct {
+	AccessToken string `json:"access_token"`
 }
 
 // login handles POST /login authentication requests.
@@ -342,5 +348,29 @@ func (h *handler) webhook() http.Handler {
 			return
 		}
 		writeJSON(w, http.StatusAccepted, run)
+	})
+}
+
+func (h *handler) exchangeGoogleToken() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// TODO: validate token
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	})
+}
+
+func (h *handler) exchangeGithubToken() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// TODO: validate token
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 }
