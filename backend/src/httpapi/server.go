@@ -357,9 +357,19 @@ func (h *handler) exchangeGoogleToken() http.Handler {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
+		oauthState, _ := r.Cookie("oauthstate")
 
-		// TODO: validate token
-		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		if r.FormValue("state") != oauthState.Value {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "Invalid oauth google state"})
+			return
+		}
+
+		data, err := auth.GetUserDataFromGoogle(r.FormValue("code"))
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusAccepted, map[string]string{"data": string(data)})
 	})
 }
 
@@ -369,8 +379,18 @@ func (h *handler) exchangeGithubToken() http.Handler {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
+		oauthState, _ := r.Cookie("oauthstate")
 
-		// TODO: validate token
-		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		if r.FormValue("state") != oauthState.Value {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "Invalid oauth github state"})
+			return
+		}
+
+		data, err := auth.GetUserDataFromGithub(r.FormValue("code"))
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusAccepted, map[string]string{"data": data.String()})
 	})
 }
