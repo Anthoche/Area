@@ -25,7 +25,8 @@
 .logo-img {
   display: block;
   margin: auto;
-  height: 200px;
+  margin-bottom: -20px;
+  height: 250px;
   object-fit: contain;
 }
 
@@ -36,7 +37,7 @@
 .input-field {
   width: 100%;
   padding: 12px;
-  margin-top: 10px;
+  margin-top: 20px;
   border: 1px solid #d4cdd8;
   border-radius: 5px;
   outline: none;
@@ -89,7 +90,7 @@
 
 .login-btn {
   margin-top: 12px;
-  background: #422c69;
+  background: #48179c;
   color: #ffffff;
 }
 
@@ -165,8 +166,14 @@
   font-size: 18px;
 }
 
-/* Apply base styles to the interactive buttons */
 .social-icon {
   margin-right: 8px;
   font-size: 18px;
+}
+
+.logoG-img {
+  display: block;
+  margin-left: 10px;
+  height: 20px;
+  object-fit: contain;
 }

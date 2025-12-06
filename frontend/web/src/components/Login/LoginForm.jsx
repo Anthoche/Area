@@ -1,5 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import logoGoogle from "../../../lib/assets/G_logo.png";
+import logoGithub from "../../../lib/assets/github_logo.png";
 
 export default function LoginForm({
   email,
@@ -47,7 +49,7 @@ export default function LoginForm({
       </div>
 
       <button type="submit" className="login-btn">
-        Continue
+        Login
       </button>
 
       <div className="or-separator">
@@ -60,15 +62,19 @@ export default function LoginForm({
           className="login-btn google"
           onClick={onGoogleLogin}
         >
-          Continue with Google
+          Login with Google
+          <img src={logoGoogle} alt="G_logo" className="logoG-img" />
+
         </button>
+        
 
         <button
           type="button"
           className="login-btn github"
           onClick={onGithubLogin}
         >
-          Continue with Github
+          Login with Github
+          <img src={logoGithub} alt="github_logo" className="logoG-img" />
         </button>
       </div>
 
@@ -78,7 +84,7 @@ export default function LoginForm({
           className="forgot-btn"
           onClick={goToRegister}
         >
-          Don’t have an account ? Sign In
+          Don’t have an account ? Sign Up
         </button>
       </div>
     </form>
