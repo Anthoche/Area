@@ -1,4 +1,5 @@
 import React from "react";
+import "./filtertag.css";
 
 export default function FilterTag({ label }) {
   return (

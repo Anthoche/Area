@@ -1,0 +1,12 @@
+.filter-tag {
+  background: #fafafa;
+  border: 1px solid #eee;
+  padding: 7.5px 15px;
+  border-radius: 25px;
+}
+
+.tags-row {
+  margin: 15px 0 25px;
+  display: flex;
+  gap: 12.5px;
+}
