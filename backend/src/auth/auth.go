@@ -3,10 +3,17 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 
+	gh "github.com/google/go-github/github"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/github"
+	"golang.org/x/oauth2/google"
 )
 
 type User struct {
@@ -20,6 +27,22 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrUserExists         = errors.New("user already exists")
 )
+
+var googleOauthConfig = &oauth2.Config{
+	ClientID:     os.Getenv("GOOGLE_OAUTH_CLIENT_ID"),
+	ClientSecret: os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
+	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
+	Endpoint:     google.Endpoint,
+}
+
+const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
+
+var githubOauthConfig = &oauth2.Config{
+	ClientID:     os.Getenv("GITHUB_OAUTH_CLIENT_ID"),
+	ClientSecret: os.Getenv("GITHUB_OAUTH_CLIENT_SECRET"),
+	Scopes:       []string{"user:email", "repo"},
+	Endpoint:     github.Endpoint,
+}
 
 var bcryptCost int
 
@@ -92,6 +115,39 @@ func (s *Service) Register(ctx context.Context, email, password, firstName, last
 	}
 	if err := s.store.Create(ctx, user, hashed); err != nil {
 		return nil, err
+	}
+	return user, nil
+}
+
+func GetUserDataFromGoogle(code string) ([]byte, error) {
+	token, err := googleOauthConfig.Exchange(context.Background(), code)
+
+	if err != nil {
+		return nil, fmt.Errorf("code exchange wrong: %s", err.Error())
+	}
+	response, err := http.Get(oauthGoogleUrlAPI + token.AccessToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting user info: %s", err.Error())
+	}
+	defer response.Body.Close()
+	contents, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed read response: %s", err.Error())
+	}
+	return contents, nil
+}
+
+func GetUserDataFromGithub(code string) (*gh.User, error) {
+	token, err := githubOauthConfig.Exchange(context.Background(), code)
+
+	if err != nil {
+		return nil, fmt.Errorf("code exchange wrong: %s", err.Error())
+	}
+	oauthClient := githubOauthConfig.Client(context.Background(), token)
+	client := gh.NewClient(oauthClient)
+	user, _, err := client.Users.Get(context.Background(), "")
+	if err != nil {
+		return nil, fmt.Errorf("failed read response: %s", err.Error())
 	}
 	return user, nil
 }
