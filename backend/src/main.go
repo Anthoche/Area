@@ -15,6 +15,8 @@ import (
 	"area/src/database"
 	"area/src/httpapi"
 	"area/src/workflows"
+
+	"github.com/joho/godotenv"
 )
 
 type httpSender struct {
@@ -46,6 +48,11 @@ func (s *httpSender) Send(ctx context.Context, url string, payload []byte) error
 
 // main boots the API server, background workers, and graceful shutdown handling.
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Printf("Error loading .env file, ignoring it.")
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
