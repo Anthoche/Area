@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'register_middle_page.dart';
 
@@ -8,6 +9,7 @@ import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
@@ -55,7 +57,8 @@ class _LoginPageState extends State<LoginPage> {
 
   // Login request
   Future<void> loginUser() async {
-    final url = Uri.parse("http://localhost:8080/login");
+    final apiUrl = dotenv.env['API_URL'];
+    final url = Uri.parse("$apiUrl/login");
     final body = {
       "email": emailController.text,
       "password": passwordController.text,
@@ -133,12 +136,12 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text("Don't have an account? "),
+                  const Text("Don't have an account? "),
                   TextButton(
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => RegisterMiddlePage()),
+                        MaterialPageRoute(builder: (_) => const RegisterMiddlePage()),
                       );
                     },
                     child: const Text("Sign up", style: TextStyle(decoration: TextDecoration.underline),

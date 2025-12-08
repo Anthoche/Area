@@ -3,12 +3,14 @@ package auth
 import (
 	"context"
 	"errors"
+	"os"
+	"strconv"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	ID        int64 `json:"id"`
+	ID        int64  `json:"id"`
 	Email     string `json:"email"`
 	FirstName string `json:"firstname"`
 	LastName  string `json:"lastname"`
@@ -19,7 +21,18 @@ var (
 	ErrUserExists         = errors.New("user already exists")
 )
 
-const bcryptCost = 12
+var bcryptCost int
+
+// init configures the bcrypt cost from environment variables.
+func init() {
+	costStr := os.Getenv("BCRYPT_COST")
+	cost, err := strconv.Atoi(costStr)
+	if err != nil {
+		bcryptCost = bcrypt.DefaultCost
+	} else {
+		bcryptCost = cost
+	}
+}
 
 // HashPassword hashes a plaintext password with bcrypt.
 func HashPassword(password string) (string, error) {

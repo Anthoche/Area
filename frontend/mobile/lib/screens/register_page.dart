@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // widgets
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 
 class RegisterPage extends StatefulWidget {
+  final String? email;
+
+  const RegisterPage({super.key, this.email});
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
@@ -19,15 +23,25 @@ class _RegisterPageState extends State<RegisterPage> {
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.email != null) {
+      emailController.text = widget.email!;
+    }
+  }
+
   //register user is the function that will send data to the backend
   Future<void> registerUser() async {
-    final url = Uri.parse("http://localhost:8080/register");
+    final apiUrl = dotenv.env['API_URL'];
+    final url = Uri.parse("$apiUrl/register");
     final body = {
-      "first_name": firstNameController.text,
-      "last_name": lastNameController.text,
+      "firstname": firstNameController.text,
+      "lastname": lastNameController.text,
       "email": emailController.text,
       "password": passwordController.text,
     };
+
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
@@ -131,14 +145,14 @@ class _RegisterPageState extends State<RegisterPage> {
                     }
                     if (!isValidEmail(emailController.text)) {
                       showErrorPopup("Please enter a valid email address.");
-                      return; // stop ici
+                      return;
                     }
                     if (!passwordMatch()) {
                       showErrorPopup("Passwords do not match");
-                     return;
+                      return;
                     }
                     await registerUser();
-                },
+                  },
                 )
               ],
             ),

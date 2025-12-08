@@ -1,13 +1,14 @@
+version: '3.8'
 services:
   db:
     image: "postgres:latest"
     restart: on-failure
     environment:
-      - POSTGRES_PORT=5432
-      - POSTGRES_HOST=db
-      - POSTGRES_DB=area
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 10s
@@ -16,11 +17,55 @@ services:
       timeout: 10s
     volumes:
       - data:/var/lib/postgresql
-      - ./server/resources/database_scheme.sql:/docker-entrypoint-initdb.d/database_scheme.sql
+      - ./backend/resources/database_scheme.sql:/docker-entrypoint-initdb.d/database_scheme.sql
     ports:
       - "5432:5432"
     networks:
       - backend
+
+  server:
+    build: backend
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+    ports:
+      - "${PORT}:8080"
+    networks:
+      - backend
+      - frontend
+    environment:
+      - PORT=${PORT}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+  client_mobile:
+    build:
+      context: frontend/mobile
+    volumes:
+      - shared_apk:/app/shared_output
+    command: >
+      sh -c "flutter pub get &&
+             flutter build apk --release &&
+             cp build/app/outputs/flutter-apk/app-release.apk /app/shared_output/client.apk &&
+             echo 'APK copy with success'"
+    networks:
+      - frontend
+
+  client_web:
+    build: frontend/web
+    depends_on:
+      - server
+      - client_mobile
+    ports:
+      - "8081:80"
+    volumes:
+      - shared_apk:/usr/share/nginx/html/apk
+    networks:
+      - frontend
 
 networks:
   backend:
@@ -28,3 +73,4 @@ networks:
 
 volumes:
   data:
+  shared_apk:
