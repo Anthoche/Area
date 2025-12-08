@@ -64,7 +64,6 @@ flutter:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
   assets:
-    - .env
     - lib/assets/G_logo.png
     - lib/assets/github_logo.png
     - lib/assets/Kikonect_logo.png
