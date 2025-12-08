@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'register_middle_page.dart';
+import 'home_page.dart';
 
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
@@ -63,11 +64,36 @@ class _LoginPageState extends State<LoginPage> {
       "email": emailController.text,
       "password": passwordController.text,
     };
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(body),
-    );
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(body),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        // logged
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const Homepage()),
+        );
+      } else {
+        // error
+        try {
+          final responseData = jsonDecode(response.body);
+          showErrorPopup(responseData['message'] ?? "Login failed");
+        } catch (_) {
+          showErrorPopup("Login failed with status: ${response.statusCode}");
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        showErrorPopup("Network error: $e");
+      }
+    }
   }
 
   @override
@@ -113,8 +139,12 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 10),
               // LOGIN google BUTTON
               PrimaryButton(
-                text: "Login with Google",
-                onPressed: () {},
+                text: "Login with Google", //temporaire histoire de test la page
+                onPressed: () {
+                  Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const Homepage()),
+                );},
                 icon: Image.asset(
                   'lib/assets/G_logo.png',
                   height: 20,
