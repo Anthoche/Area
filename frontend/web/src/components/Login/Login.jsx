@@ -53,6 +53,9 @@ export default function Login() {
         setUserId(data.id);
         localStorage.setItem("user_id", data.id);
       }
+      if (data?.email) {
+        localStorage.setItem("user_email", data.email);
+      }
       navigate("/home");
     } catch (err) {
       console.error("Network or fetch error:", err);
