@@ -13,6 +13,10 @@ export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [userId, setUserId] = useState(() => {
+    const stored = localStorage.getItem("user_id");
+    return stored ? Number(stored) : null;
+  });
   const handleForgotPassword = () => {
     alert("Forgot password clicked. Implement password reset flow.");
   };
@@ -44,6 +48,11 @@ export default function Login() {
       }
       const data = await res.json();
       console.log("Login success:", data);
+       // persist the user id for later OAuth calls
+      if (data?.id) {
+        setUserId(data.id);
+        localStorage.setItem("user_id", data.id);
+      }
       navigate("/home");
     } catch (err) {
       console.error("Network or fetch error:", err);
@@ -63,8 +72,17 @@ export default function Login() {
         setPassword={setPassword}
         handleSubmit={handleSubmit}
         handleForgotPassword={handleForgotPassword}
-        onGoogleLogin={() => alert('Google login clicked - to be implemented OAuth flow')}
-        onGithubLogin={() => alert('Github login clicked - to be implemented OAuth flow')}
+        onGoogleLogin={() => {
+          const id = userId || Number(localStorage.getItem("user_id"));
+          const uiRedirect = encodeURIComponent("http://localhost:8081/home");
+          const baseUrl = `${API_BASE}/oauth/google/login?ui_redirect=${uiRedirect}`;
+          const url =
+            id && id > 0
+              ? `${baseUrl}&user_id=${id}`
+              : baseUrl;
+          window.location.href = url;
+        }}
+        onGithubLogin={() => alert('Github login clicked - not implemented')}
         />
         }
       </div>

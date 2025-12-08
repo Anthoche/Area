@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"io"
 	"fmt"
 	"log"
 	"net/http"
@@ -41,7 +42,8 @@ func (s *httpSender) Send(ctx context.Context, url string, payload []byte) error
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("http sender: status %d", resp.StatusCode)
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("http sender: status %d: %s", resp.StatusCode, string(body))
 	}
 	return nil
 }

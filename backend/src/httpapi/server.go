@@ -3,12 +3,18 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
+	"net/url"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"area/src/auth"
+	goog "area/src/integrations/google"
 	"area/src/workflows"
 )
 
@@ -17,6 +23,7 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	server := &handler{
 		auth:      authService,
 		workflows: wfService,
+		google:    goog.NewClient(),
 	}
 
 	mux := http.NewServeMux()
@@ -28,12 +35,17 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/hooks/", server.webhook())
 	mux.Handle("/oauth/google/exchange", server.exchangeGoogleToken())
 	mux.Handle("/oauth/github/exchange", server.exchangeGithubToken())
+	mux.Handle("/oauth/google/login", server.googleLogin())
+	mux.Handle("/oauth/google/callback", server.googleCallback())
+	mux.Handle("/actions/google/email", server.googleSendEmail())
+	mux.Handle("/actions/google/calendar", server.googleCreateEvent())
 	return withCORS(mux)
 }
 
 type handler struct {
 	auth      *auth.Service
 	workflows *workflows.Service
+	google    *goog.Client
 }
 
 type loginRequest struct {
@@ -190,6 +202,34 @@ func ensureNoTrailingData(decoder *json.Decoder) error {
 		return err
 	}
 	return nil
+}
+
+func randomState() string {
+	rand.Seed(time.Now().UnixNano())
+	return fmt.Sprintf("%d", rand.Int63())
+}
+
+func currentUserID(r *http.Request) (int64, error) {
+	user := r.Header.Get("X-User-ID")
+	if user == "" {
+		user = r.URL.Query().Get("user_id")
+	}
+	if user == "" {
+		return 0, fmt.Errorf("missing user identifier")
+	}
+	id, err := strconv.ParseInt(user, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid user identifier")
+	}
+	return id, nil
+}
+
+func optionalUserID(r *http.Request) *int64 {
+	id, err := currentUserID(r)
+	if err != nil || id <= 0 {
+		return nil
+	}
+	return &id
 }
 
 // workflowsHandler routes workflow listing and creation requests.
@@ -392,5 +432,161 @@ func (h *handler) exchangeGithubToken() http.Handler {
 			return
 		}
 		writeJSON(w, http.StatusAccepted, map[string]string{"data": data.String()})
+	})
+}
+
+// googleLogin redirects to Google OAuth consent.
+func (h *handler) googleLogin() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		state := randomState()
+		http.SetCookie(w, &http.Cookie{
+			Name:     "oauthstate",
+			Value:    state,
+			Path:     "/",
+			HttpOnly: true,
+		})
+		if uiRedirect := r.URL.Query().Get("ui_redirect"); uiRedirect != "" {
+			http.SetCookie(w, &http.Cookie{
+				Name:     "oauthredirect",
+				Value:    url.QueryEscape(uiRedirect),
+				Path:     "/",
+				HttpOnly: true,
+			})
+		}
+		redirectURI := r.URL.Query().Get("redirect_uri")
+		if redirectURI == "" {
+			redirectURI = os.Getenv("GOOGLE_OAUTH_REDIRECT_URI")
+		}
+		if redirectURI == "" {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "redirect_uri is required"})
+			return
+		}
+		url := h.google.AuthURL(state, redirectURI)
+		http.Redirect(w, r, url, http.StatusFound)
+	})
+}
+
+// googleCallback exchanges code for token and stores it; returns token_id.
+func (h *handler) googleCallback() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		stateCookie, _ := r.Cookie("oauthstate")
+		if stateCookie == nil || r.URL.Query().Get("state") != stateCookie.Value {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid oauth state"})
+			return
+		}
+		userID := optionalUserID(r)
+		code := r.URL.Query().Get("code")
+		if code == "" {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "missing code"})
+			return
+		}
+		redirectURI := r.URL.Query().Get("redirect_uri")
+		if redirectURI == "" {
+			redirectURI = os.Getenv("GOOGLE_OAUTH_REDIRECT_URI")
+		}
+		if redirectURI == "" {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "redirect_uri is required"})
+			return
+		}
+		tokenID, err := h.google.ExchangeAndStore(r.Context(), code, redirectURI, userID)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: err.Error()})
+			return
+		}
+		if uiCookie, _ := r.Cookie("oauthredirect"); uiCookie != nil && uiCookie.Value != "" {
+			if dest, err := url.QueryUnescape(uiCookie.Value); err == nil {
+				if redir, err := url.Parse(dest); err == nil && (redir.Scheme == "http" || redir.Scheme == "https") {
+					q := redir.Query()
+					q.Set("token_id", strconv.FormatInt(tokenID, 10))
+					redir.RawQuery = q.Encode()
+					http.Redirect(w, r, redir.String(), http.StatusFound)
+					return
+				}
+			}
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"token_id": tokenID})
+	})
+}
+
+func (h *handler) googleSendEmail() http.Handler {
+	type payload struct {
+		TokenID int64  `json:"token_id"`
+		To      string `json:"to"`
+		Subject string `json:"subject"`
+		Body    string `json:"body"`
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		userID := optionalUserID(r)
+		var p payload
+		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&p); err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid JSON payload"})
+			return
+		}
+		if err := ensureNoTrailingData(decoder); err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "unexpected data in payload"})
+			return
+		}
+		if p.TokenID == 0 || p.To == "" || p.Subject == "" {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "token_id, to and subject are required"})
+			return
+		}
+		if err := h.google.SendEmail(r.Context(), userID, p.TokenID, p.To, p.Subject, p.Body); err != nil {
+			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"status": "sent"})
+	})
+}
+
+func (h *handler) googleCreateEvent() http.Handler {
+	type payload struct {
+		TokenID  int64    `json:"token_id"`
+		Summary  string   `json:"summary"`
+		Start    string   `json:"start"`
+		End      string   `json:"end"`
+		Attendee []string `json:"attendees"`
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		userID := optionalUserID(r)
+		var p payload
+		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&p); err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid JSON payload"})
+			return
+		}
+		if err := ensureNoTrailingData(decoder); err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "unexpected data in payload"})
+			return
+		}
+		if p.TokenID == 0 || p.Summary == "" || p.Start == "" || p.End == "" {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "token_id, summary, start, end are required"})
+			return
+		}
+		start, err := time.Parse(time.RFC3339, p.Start)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid start datetime"})
+			return
+		}
+		end, err := time.Parse(time.RFC3339, p.End)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid end datetime"})
+			return
+		}
+		if err := h.google.CreateCalendarEvent(r.Context(), userID, p.TokenID, p.Summary, start, end, p.Attendee); err != nil {
+			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"status": "created"})
 	})
 }
