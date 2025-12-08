@@ -28,7 +28,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-        restart: true
     ports:
       - "${PORT}:8080"
     networks:
