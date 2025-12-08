@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:poc_area/screens/login_page.dart';
 import 'package:poc_area/screens/register_middle_page.dart';
 import 'package:poc_area/screens/register_page.dart';
@@ -18,6 +19,10 @@ Finder findAppTextField(String label) {
 }
 
 void main() {
+  setUpAll(() {
+    dotenv.testLoad(fileInput: 'API_URL=http://test.com');
+  });
+
   group('Shared Widgets Tests', () {
     testWidgets('AppTextField renders label and respects obscureText', (WidgetTester tester) async {
       await tester.pumpWidget(
