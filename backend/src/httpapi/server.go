@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/swaggest/swgui/v5emb"
+
 	"area/src/auth"
 	goog "area/src/integrations/google"
 	"area/src/workflows"
@@ -34,6 +36,12 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/oauth/google/callback", googleHTTP.Callback())
 	mux.Handle("/actions/google/email", googleHTTP.SendEmail())
 	mux.Handle("/actions/google/calendar", googleHTTP.CreateEvent())
+	mux.Handle("/resources/openapi.json", server.openAPISpec())
+	mux.Handle("/docs/", v5emb.New(
+		"KiKonect API Reference",
+		"/resources/openapi.json",
+		"/docs/",
+	))
 	return withCORS(mux)
 }
 
@@ -398,5 +406,18 @@ func (h *handler) exchangeGithubToken() http.Handler {
 			return
 		}
 		writeJSON(w, http.StatusAccepted, map[string]string{"data": string(data)})
+	})
+}
+
+// openAPISpec serves the OpenAPI specification JSON file
+func (h *handler) openAPISpec() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+
+		http.ServeFile(w, r, "resources/openapi.json")
 	})
 }

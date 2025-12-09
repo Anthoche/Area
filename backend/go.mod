@@ -11,4 +11,7 @@ require (
 
 require (
 	github.com/joho/godotenv v1.5.1
+	github.com/swaggest/swgui v1.8.5
 )
+
+require github.com/vearutop/statigz v1.4.0 // indirect
