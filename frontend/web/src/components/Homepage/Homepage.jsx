@@ -18,6 +18,8 @@ export default function Homepage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [creating, setCreating] = useState(false);
   const [triggering, setTriggering] = useState(false);
+  const [togglingTimer, setTogglingTimer] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const userEmail = localStorage.getItem("user_email") || "user@example.com";
@@ -27,6 +29,7 @@ export default function Homepage() {
     intervalMinutes: 5,
     reaction: "discord",
     discordUrl: "",
+    discordContent: "Hello from Area",
     emailTo: "",
     emailSubject: "Hello",
     emailBody: "Envoyé depuis Area",
@@ -82,10 +85,13 @@ export default function Homepage() {
       const res = await fetch(`${API_BASE}/workflows`);
       if (!res.ok) throw new Error("failed to load workflows");
       const data = await res.json();
-      setWorkflows(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setWorkflows(list);
+      return list;
     } catch (err) {
       console.error(err);
       alert("Impossible de charger les konects");
+      return [];
     } finally {
       setLoading(false);
     }
@@ -135,6 +141,9 @@ export default function Homepage() {
           : [],
       };
     }
+    if (url.includes("discord")) {
+      return { content: form.discordContent || "Hello from Area" };
+    }
     return { content: "Hello from Area" };
   };
 
@@ -169,7 +178,13 @@ export default function Homepage() {
         action_url: actionUrl,
         trigger_config:
           form.triggerType === "interval"
-            ? { interval_minutes: Number(form.intervalMinutes) || 1 }
+            ? {
+                interval_minutes: Number(form.intervalMinutes) || 1,
+                payload:
+                  form.reaction === "discord"
+                    ? { content: form.discordContent || "Hello from Area" }
+                    : {},
+              }
             : {},
       };
       const res = await fetch(`${API_BASE}/workflows`, {
@@ -222,6 +237,53 @@ export default function Homepage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!selectedWorkflow) return;
+    if (!window.confirm("Supprimer ce Konnect ?")) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`${API_BASE}/workflows/${selectedWorkflow.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+      await fetchWorkflows();
+      setSelectedWorkflow(null);
+      setPanelOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("Suppression impossible: " + err.message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleToggleTimer = async () => {
+    if (!selectedWorkflow) return;
+    const action = selectedWorkflow.enabled ? "disable" : "enable";
+    setTogglingTimer(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/workflows/${selectedWorkflow.id}/enabled?action=${action}`,
+        { method: "POST" }
+      );
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+      const list = await fetchWorkflows();
+      const refreshed = list.find((w) => w.id === selectedWorkflow.id) || null;
+      setSelectedWorkflow(refreshed);
+    } catch (err) {
+      console.error(err);
+      alert("Action timer impossible: " + err.message);
+    } finally {
+      setTogglingTimer(false);
+    }
+  };
+
   return (
     <div className={`layout-root ${panelOpen ? "panel-open" : ""}`}>
       <aside className="sidebar">
@@ -245,38 +307,36 @@ export default function Homepage() {
 
       <div className={`content-container ${panelOpen ? "panel-open" : ""}`}>
         <main className="main-content">
-          <div className="top-row">
-            <h1 className="main-title">My Konect</h1>
-            <button
-              className="profile-btn"
-              onClick={() => setShowProfile((p) => !p)}
-              aria-label="Profile"
-            >
-              👤
-            </button>
-          </div>
-          {showProfile && (
-            <div className="profile-card">
-              <div className="profile-email">{userEmail}</div>
+          <div className="section-card">
+            <div className="top-row">
+              <h1 className="main-title">KiKoNect</h1>
               <button
-                className="ghost"
-                onClick={() => {
-                  localStorage.clear();
-                  window.location.href = "/";
-                }}
+                className="profile-btn"
+                onClick={() => setShowProfile((p) => !p)}
+                aria-label="Profile"
               >
-                Logout
+                👤
               </button>
             </div>
-          )}
-          <div className="filters-card">
-            <div className="filters-row">
-              <SearchBar
-                value={searchTerm}
-                onChange={setSearchTerm}
-                placeholder="Search a Konect"
-              />
-            </div>
+            {showProfile && (
+              <div className="profile-card">
+                <div className="profile-email">{userEmail}</div>
+                <button
+                  className="ghost"
+                  onClick={() => {
+                    localStorage.clear();
+                    window.location.href = "/";
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+            <SearchBar
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search a Konect"
+            />
             <div className="tags-row">
               {filters.map((f) => (
                 <FilterTag
@@ -288,41 +348,46 @@ export default function Homepage() {
               ))}
             </div>
           </div>
-          <h2 className="section-header">My Konects</h2>
-          <div className="services-grid">
-            <ServiceCard
-              title="Create Konect"
-              color="rgba(0,0,0,0.05)"
-              icons={["＋"]}
-              ghost
-              onClick={() => {
-                setShowCreate(true);
-                setPanelOpen(true);
-                setSelectedWorkflow(null);
-              }}
-            />
-            {workflows
-              .filter(matchesFilters)
-              .filter((wf) =>
-                (wf.name || "")
-                  .toLowerCase()
-                  .includes(searchTerm.trim().toLowerCase())
-              )
-              .map((wf, idx) => (
-                <ServiceCard
-                  key={wf.id}
-                  title={wf.name}
-                  color={["#00D2FF", "#FF4081", "#00E676", "#D500F9"][idx % 4]}
-                  onClick={() => {
-                    setSelectedWorkflow(wf);
-                    setPanelOpen(true);
-                    setShowCreate(false);
-                  }}
-                />
-              ))}
-            {!workflows.length && (
-              <div className="muted">No Konect yet. Create the first one!</div>
-            )}
+
+          <div className="section-card">
+            <h2 className="section-header centered">My Konects</h2>
+            <div className="services-grid">
+              <ServiceCard
+                title="Create Konect"
+                color="rgba(0,0,0,0.05)"
+                icons={["＋"]}
+                ghost
+                onClick={() => {
+                  setShowCreate(true);
+                  setPanelOpen(true);
+                  setSelectedWorkflow(null);
+                }}
+              />
+              {workflows
+                .filter(matchesFilters)
+                .filter((wf) =>
+                  (wf.name || "")
+                    .toLowerCase()
+                    .includes(searchTerm.trim().toLowerCase())
+                )
+                .map((wf, idx) => (
+                  <ServiceCard
+                    key={wf.id}
+                    title={wf.name}
+                    color={
+                      ["#00D2FF", "#FF4081", "#00E676", "#D500F9"][idx % 4]
+                    }
+                    onClick={() => {
+                      setSelectedWorkflow(wf);
+                      setPanelOpen(true);
+                      setShowCreate(false);
+                    }}
+                  />
+                ))}
+              {!workflows.length && (
+                <div className="muted">No Konect yet. Create the first one!</div>
+              )}
+            </div>
           </div>
         </main>
 
@@ -392,6 +457,18 @@ export default function Homepage() {
                         setForm({ ...form, discordUrl: e.target.value })
                       }
                       placeholder="https://discord.com/api/webhooks/..."
+                    />
+                  </label>
+                )}
+                {form.reaction === "discord" && (
+                  <label className="field">
+                    <span>Message</span>
+                    <textarea
+                      value={form.discordContent}
+                      onChange={(e) =>
+                        setForm({ ...form, discordContent: e.target.value })
+                      }
+                      placeholder="Message à envoyer"
                     />
                   </label>
                 )}
@@ -499,12 +576,34 @@ export default function Homepage() {
                     rows={8}
                   />
                 </label>
+                {selectedWorkflow?.trigger_type !== "manual" ? (
+                  <button
+                    className="primary-btn"
+                    onClick={handleToggleTimer}
+                    disabled={togglingTimer}
+                  >
+                    {togglingTimer
+                      ? "Applying…"
+                      : selectedWorkflow?.enabled
+                      ? "Stop Konect"
+                      : "Start Konect"}
+                  </button>
+                ) : (
+                  <button
+                    className="primary-btn"
+                    onClick={handleTrigger}
+                    disabled={triggering}
+                  >
+                    {triggering ? "Triggering…" : "Trigger now"}
+                  </button>
+                )}
                 <button
-                  className="primary-btn"
-                  onClick={handleTrigger}
-                  disabled={triggering}
+                  className="danger-btn"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  style={{ marginTop: 10 }}
                 >
-                  {triggering ? "Triggering…" : "Trigger now"}
+                  {deleting ? "Deleting…" : "Delete Konnect"}
                 </button>
               </>
             ) : (

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/swaggest/swgui/v5emb"
 
@@ -28,7 +29,7 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/register", server.register())
 	mux.Handle("/healthz", server.health())
 	mux.Handle("/workflows", server.workflowsHandler())
-	mux.Handle("/workflows/", server.workflowTrigger())
+	mux.Handle("/workflows/", server.workflowResource())
 	mux.Handle("/hooks/", server.webhook())
 	mux.Handle("/oauth/google/exchange", server.exchangeGoogleToken())
 	mux.Handle("/oauth/github/exchange", server.exchangeGithubToken())
@@ -183,7 +184,7 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,OPTIONS,DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
 
 		if r.Method == http.MethodOptions {
@@ -265,23 +266,21 @@ func (h *handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, items)
 }
 
-// workflowTrigger handles POST /workflows/{id}/trigger to enqueue a run.
-func (h *handler) workflowTrigger() http.Handler {
+// workflowResource handles:
+// - POST /workflows/{id}/trigger to enqueue a run
+// - DELETE /workflows/{id} to delete a workflow
+func (h *handler) workflowResource() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
 		if h.workflows == nil {
 			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "workflows not configured"})
 			return
 		}
-		if !strings.HasPrefix(r.URL.Path, "/workflows/") || !strings.HasSuffix(r.URL.Path, "/trigger") {
+		if !strings.HasPrefix(r.URL.Path, "/workflows/") {
 			http.NotFound(w, r)
 			return
 		}
 		parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-		if len(parts) != 3 {
+		if len(parts) < 2 {
 			http.NotFound(w, r)
 			return
 		}
@@ -289,6 +288,58 @@ func (h *handler) workflowTrigger() http.Handler {
 		workflowID, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid workflow id"})
+			return
+		}
+
+		// POST /workflows/{id}/enabled?action=enable|disable
+		if len(parts) == 3 && parts[2] == "enabled" && r.Method == http.MethodPost {
+			action := r.URL.Query().Get("action")
+			switch action {
+			case "enable":
+				if err := h.workflows.SetEnabled(r.Context(), workflowID, true, time.Now()); err != nil {
+					if errors.Is(err, workflows.ErrWorkflowNotFound) {
+						writeJSON(w, http.StatusNotFound, errorResponse{Error: "workflow not found"})
+						return
+					}
+					writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not enable workflow"})
+					return
+				}
+				writeJSON(w, http.StatusOK, map[string]string{"status": "enabled"})
+				return
+			case "disable":
+				if err := h.workflows.SetEnabled(r.Context(), workflowID, false, time.Now()); err != nil {
+					if errors.Is(err, workflows.ErrWorkflowNotFound) {
+						writeJSON(w, http.StatusNotFound, errorResponse{Error: "workflow not found"})
+						return
+					}
+					writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not disable workflow"})
+					return
+				}
+				writeJSON(w, http.StatusOK, map[string]string{"status": "disabled"})
+				return
+			default:
+				writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid action"})
+				return
+			}
+		}
+
+		// DELETE /workflows/{id}
+		if len(parts) == 2 && r.Method == http.MethodDelete {
+			if err := h.workflows.DeleteWorkflow(r.Context(), workflowID); err != nil {
+				if errors.Is(err, workflows.ErrWorkflowNotFound) {
+					writeJSON(w, http.StatusNotFound, errorResponse{Error: "workflow not found"})
+					return
+				}
+				writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not delete workflow"})
+				return
+			}
+			writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+			return
+		}
+
+		// POST /workflows/{id}/trigger
+		if !(len(parts) == 3 && parts[2] == "trigger" && r.Method == http.MethodPost) {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 

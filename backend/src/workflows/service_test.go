@@ -24,10 +24,10 @@ func TestServiceTrigger_Success(t *testing.T) {
 
 	now := time.Now()
 	// GetWorkflow query
-	mock.ExpectQuery("SELECT id, name, trigger_type, trigger_config, action_url, next_run_at, created_at FROM workflows WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at FROM workflows WHERE id = \\$1").
 		WithArgs(int64(2)).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "trigger_type", "trigger_config", "action_url", "next_run_at", "created_at"}).
-			AddRow(int64(2), "wf", "manual", []byte(`{}`), "https://example.com", sql.NullTime{}, now))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "trigger_type", "trigger_config", "action_url", "enabled", "next_run_at", "created_at"}).
+			AddRow(int64(2), "wf", "manual", []byte(`{}`), "https://example.com", true, sql.NullTime{}, now))
 
 	// CreateRun insert
 	mock.ExpectQuery("INSERT INTO workflow_runs").
@@ -70,12 +70,12 @@ func TestServiceCreateWorkflow_ManualDefaultsConfig(t *testing.T) {
 
 	now := time.Now()
 	mock.ExpectQuery("INSERT INTO workflows").
-		WithArgs("name", "manual", []byte("{}"), "https://example.com", sql.NullTime{}).
+		WithArgs("name", "manual", []byte("{}"), "https://example.com", true, sql.NullTime{}).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(int64(1)))
-	mock.ExpectQuery("SELECT id, name, trigger_type, trigger_config, action_url, next_run_at, created_at FROM workflows WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at FROM workflows WHERE id = \\$1").
 		WithArgs(int64(1)).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "trigger_type", "trigger_config", "action_url", "next_run_at", "created_at"}).
-			AddRow(int64(1), "name", "manual", []byte(`{}`), "https://example.com", sql.NullTime{}, now))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "trigger_type", "trigger_config", "action_url", "enabled", "next_run_at", "created_at"}).
+			AddRow(int64(1), "name", "manual", []byte(`{}`), "https://example.com", true, sql.NullTime{}, now))
 
 	svc := NewService(store, NewTriggerer(store))
 	wf, err := svc.CreateWorkflow(context.Background(), "name", "manual", "https://example.com", nil)
@@ -106,10 +106,10 @@ func TestServiceListWorkflows(t *testing.T) {
 	defer cleanup()
 
 	now := time.Now()
-	mock.ExpectQuery("SELECT id, name, trigger_type, trigger_config, action_url, next_run_at, created_at FROM workflows").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "trigger_type", "trigger_config", "action_url", "next_run_at", "created_at"}).
-			AddRow(int64(1), "wf1", "manual", []byte(`{}`), "url1", sql.NullTime{}, now).
-			AddRow(int64(2), "wf2", "manual", []byte(`{}`), "url2", sql.NullTime{}, now))
+	mock.ExpectQuery("SELECT id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at FROM workflows").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "trigger_type", "trigger_config", "action_url", "enabled", "next_run_at", "created_at"}).
+			AddRow(int64(1), "wf1", "manual", []byte(`{}`), "url1", true, sql.NullTime{}, now).
+			AddRow(int64(2), "wf2", "manual", []byte(`{}`), "url2", true, sql.NullTime{}, now))
 
 	svc := NewService(store, NewTriggerer(store))
 	items, err := svc.ListWorkflows(context.Background())
@@ -125,7 +125,7 @@ func TestServiceGetWorkflow_ErrorMapping(t *testing.T) {
 	store, mock, cleanup := newMockStore(t)
 	defer cleanup()
 
-	mock.ExpectQuery("SELECT id, name, trigger_type, trigger_config, action_url, next_run_at, created_at FROM workflows WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at FROM workflows WHERE id = \\$1").
 		WithArgs(int64(1)).
 		WillReturnError(sql.ErrNoRows)
 
@@ -139,7 +139,7 @@ func TestServiceTriggerWebhook_NotFound(t *testing.T) {
 	store, mock, cleanup := newMockStore(t)
 	defer cleanup()
 
-	mock.ExpectQuery("SELECT id, name, trigger_type, trigger_config, action_url, next_run_at, created_at FROM workflows WHERE trigger_type = 'webhook' AND trigger_config->>'token' = \\$1").
+	mock.ExpectQuery("SELECT id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at FROM workflows WHERE trigger_type = 'webhook' AND enabled = TRUE AND trigger_config->>'token' = \\$1").
 		WithArgs("abc").
 		WillReturnError(sql.ErrNoRows)
 
