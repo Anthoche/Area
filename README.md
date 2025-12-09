@@ -22,8 +22,8 @@ The application offers the following functionalities (high level user flow):
 4. Each service offers the following components:
   - type Action
   - type REAction
-5. The authenticated user composes a KoNect by interconnecting an Action to a REAction previously configured.
-6. The application triggers KoNect automatically thanks to hooks.
+5. The authenticated user composes a *Konect* by interconnecting an Action to a REAction previously configured.
+6. The application triggers *Konects* automatically thanks to hooks.
 
 
 ## ✨ Key Features
@@ -76,38 +76,63 @@ Area/
 │   └── Meeting/
 ```
 
+
+
+
+
+
+
+
+
+
+
 ## 🏗️ Architecture
 
-Le projet est composé de 4 briques principales déployées par `docker-compose` :
+The project is composed of **four main components** deployed with `docker-compose`:
 
-- **API backend (Go)**
-  - Serveur HTTP exposé sur le port `8080` (configurable via `PORT`).
-  - Routes principales : auth (`/login`, `/register`), workflows (`/workflows`, `/hooks/{token}`), endpoints d'OAuth (`/auth/*` et `/oauth/*`).
-  - Gère la logique des workflows : création, planification (interval), files d'exécution et exécution des jobs.
-  - Accède à PostgreSQL pour persistance (schéma : `backend/resources/database_scheme.sql`).
+### **API Backend (Go)**
+- HTTP server exposed on port `8080` (configurable using `PORT`).
+- Main routes: auth (`/login`, `/register`), workflows (`/workflows`, `/hooks/{token}`), OAuth endpoints (`/auth/*`, `/oauth/*`).
+- Manages workflow logic: creation, interval scheduling, job queueing, and execution.
+- Uses PostgreSQL for persistence (schema: `backend/resources/database_scheme.sql`).
 
-- **PostgreSQL**
-  - Base de données relationnelle contenant utilisateurs, workflows, runs et jobs.
-  - Configurée via les variables d'environnement (`POSTGRES_*`).
+### **PostgreSQL**
+- Relational database storing users, workflows, runs, and jobs.
+- Configured via environment variables (`POSTGRES_*`).
 
-- **Frontend web (React + Vite)**
-  - App en développement sur `5173` (Vite) et build servie par le service nginx du compose sur `8081`.
-  - Communique avec l'API backend via l'URL configurée (`VITE_API_URL`).
-  - Gère l'init OAuth côté client (pattern `json-init` utilisé pour stocker le `state` en `localStorage` afin d'éviter les problèmes de cookie cross-port).
+### **Web Frontend (React + Vite)**
+- Development server on `5173` (Vite), production build served via nginx on `8081`.
+- Communicates with API through `VITE_API_URL`.
+- Handles OAuth initialization on the client (using a `json-init` flow that stores `state` in `localStorage` to avoid cross-port cookie issues).
 
-- **Mobile (Flutter)**
-  - Projet Flutter construit par le service `client_mobile` qui produit un APK.
+### **Mobile (Flutter)**
+- Built by the `client_mobile` service in Docker Compose, generating an APK.
 
-Flux importants et remarques opérationnelles
-- OAuth: le backend construit/valide l'URL de callback enregistrée et fait l'échange de code -> token ; le frontend lance l'auth via l'endpoint JSON du backend, stocke `state` en `localStorage`, puis poste le `code` au backend pour échange.
-- CORS: l'API renvoie des en-têtes permissifs pour permettre l'appel depuis le client web (en environnement dev). En production, verrouiller `Access-Control-Allow-Origin`.
-- Variables d'environnement: `docker-compose` lit `.env` via `env_file`, mais il est préférable d'énumérer explicitement les variables critiques dans le bloc `environment:` du service `server` pour assurer leur disponibilité.
-- Exécution & scalabilité: l'executor (composant du backend) draine les jobs et POSTe les payloads vers `action_url`. Pour monter en charge, séparer l'executor en workers horizontaux et utiliser une file de messages durable (ou verrou distribué) pour l'attribution des jobs.
+### Important Execution Notes
+- **OAuth**: backend validates callback URL and exchanges code→token; frontend stores OAuth `state` in `localStorage` and posts the `code` back to backend.
+- **CORS**: backend uses permissive headers for development; in production origin should be restricted.
+- **Environment variables**: although `.env` is loaded automatically, core variables should be explicitly listed in the compose file.
+- **Scalability**: executor sends POST payloads to `action_url`; scaling horizontally requires splitting workers and/or using distributed locking or message queues.
 
-Fichiers importants
-- `backend/src/` : code Go de l'API.
-- `backend/resources/database_scheme.sql` : schéma initial de la base.
-- `docker-compose.yml` : orchestration locale (db, server, client_web, client_mobile).
+### Key Files
+- `backend/src/` — Go API source code  
+- `backend/resources/database_scheme.sql` — database schema  
+- `docker-compose.yml` — local orchestration  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## 🚀 Quick Start (Docker Compose)
