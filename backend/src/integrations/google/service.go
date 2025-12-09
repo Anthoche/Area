@@ -8,31 +8,37 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"area/src/database"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
 
-// Client wraps token retrieval and Google API calls without extra dependencies.
+// OAuthToken stores the access credentials we use to call Google APIs.
+type OAuthToken struct {
+	AccessToken  string
+	RefreshToken string
+	Expiry       time.Time
+}
+
+// Client wraps token retrieval and Google API calls without third-party OAuth libs.
 type Client struct {
-	oauthConfig *oauth2.Config
-	httpClient  *http.Client
+	clientID     string
+	clientSecret string
+	scopes       []string
+	httpClient   *http.Client
 }
 
 func NewClient() *Client {
 	return &Client{
-		oauthConfig: &oauth2.Config{
-			ClientID:     mustEnv("GOOGLE_OAUTH_CLIENT_ID"),
-			ClientSecret: mustEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
-			Scopes: []string{
-				"https://www.googleapis.com/auth/gmail.send",
-				"https://www.googleapis.com/auth/calendar.events",
-				"https://www.googleapis.com/auth/userinfo.email",
-			},
-			Endpoint: google.Endpoint,
+		clientID:     mustEnv("GOOGLE_OAUTH_CLIENT_ID"),
+		clientSecret: mustEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
+		scopes: []string{
+			"https://www.googleapis.com/auth/gmail.send",
+			"https://www.googleapis.com/auth/calendar.events",
+			"https://www.googleapis.com/auth/userinfo.email",
 		},
 		httpClient: &http.Client{Timeout: 10 * time.Second},
 	}
@@ -40,21 +46,25 @@ func NewClient() *Client {
 
 // AuthURL builds the authorization URL with a given state and redirect URI.
 func (c *Client) AuthURL(state, redirectURI string) string {
-	cfg := *c.oauthConfig
-	cfg.RedirectURL = redirectURI
-	return cfg.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
+	v := url.Values{}
+	v.Set("client_id", c.clientID)
+	v.Set("redirect_uri", redirectURI)
+	v.Set("response_type", "code")
+	v.Set("scope", strings.Join(c.scopes, " "))
+	v.Set("access_type", "offline")
+	v.Set("prompt", "consent")
+	v.Set("state", state)
+	return "https://accounts.google.com/o/oauth2/auth?" + v.Encode()
 }
 
 // Exchange saves the token and returns its id and the user email if available.
 func (c *Client) ExchangeAndStore(ctx context.Context, code string, redirectURI string, userID *int64) (int64, string, error) {
-	cfg := *c.oauthConfig
-	cfg.RedirectURL = redirectURI
-	token, err := cfg.Exchange(ctx, code)
+	tokenResp, err := c.exchangeCode(ctx, code, redirectURI)
 	if err != nil {
-		return -1, "", fmt.Errorf("exchange code: %w", err)
+		return -1, "", err
 	}
-	email, _ := c.fetchEmail(ctx, token.AccessToken)
-	id, err := database.InsertGoogleToken(ctx, userID, token.AccessToken, token.RefreshToken, token.Expiry)
+	email, _ := c.fetchEmail(ctx, tokenResp.AccessToken)
+	id, err := database.InsertGoogleToken(ctx, userID, tokenResp.AccessToken, tokenResp.RefreshToken, tokenResp.Expiry)
 	if err != nil {
 		return -1, "", err
 	}
@@ -82,6 +92,75 @@ func (c *Client) fetchEmail(ctx context.Context, accessToken string) (string, er
 		return "", err
 	}
 	return data.Email, nil
+}
+
+type tokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int64  `json:"expires_in"`
+	TokenType    string `json:"token_type"`
+}
+
+func (c *Client) exchangeCode(ctx context.Context, code, redirectURI string) (*OAuthToken, error) {
+	values := url.Values{}
+	values.Set("grant_type", "authorization_code")
+	values.Set("code", code)
+	values.Set("redirect_uri", redirectURI)
+	values.Set("client_id", c.clientID)
+	values.Set("client_secret", c.clientSecret)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://oauth2.googleapis.com/token", strings.NewReader(values.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("exchange code status %d: %s", resp.StatusCode, string(body))
+	}
+	var tr tokenResponse
+	if err := json.Unmarshal(body, &tr); err != nil {
+		return nil, err
+	}
+	expiry := time.Now().Add(time.Duration(tr.ExpiresIn) * time.Second)
+	return &OAuthToken{AccessToken: tr.AccessToken, RefreshToken: tr.RefreshToken, Expiry: expiry}, nil
+}
+
+func (c *Client) refresh(ctx context.Context, refreshToken string) (*OAuthToken, error) {
+	values := url.Values{}
+	values.Set("grant_type", "refresh_token")
+	values.Set("refresh_token", refreshToken)
+	values.Set("client_id", c.clientID)
+	values.Set("client_secret", c.clientSecret)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://oauth2.googleapis.com/token", strings.NewReader(values.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("refresh status %d: %s", resp.StatusCode, string(body))
+	}
+	var tr tokenResponse
+	if err := json.Unmarshal(body, &tr); err != nil {
+		return nil, err
+	}
+	expiry := time.Now().Add(time.Duration(tr.ExpiresIn) * time.Second)
+	if tr.RefreshToken == "" {
+		tr.RefreshToken = refreshToken
+	}
+	return &OAuthToken{AccessToken: tr.AccessToken, RefreshToken: tr.RefreshToken, Expiry: expiry}, nil
 }
 
 // SendEmail sends a simple text email via Gmail API.
@@ -159,7 +238,7 @@ func buildRawEmail(to, subject, body string) string {
 	return fmt.Sprintf("To: %s\r\nSubject: %s\r\n\r\n%s", to, subject, body)
 }
 
-func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) (*oauth2.Token, error) {
+func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) (*OAuthToken, error) {
 	var t *database.GoogleToken
 	var err error
 	if userID != nil && *userID > 0 {
@@ -170,16 +249,18 @@ func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) 
 	if err != nil {
 		return nil, err
 	}
-	token := &oauth2.Token{
+	token := &OAuthToken{
 		AccessToken:  t.AccessToken,
 		RefreshToken: t.RefreshToken,
 		Expiry:       t.Expiry,
 	}
-	if token.Valid() {
+	if time.Now().Before(token.Expiry.Add(-30 * time.Second)) {
 		return token, nil
 	}
-	src := c.oauthConfig.TokenSource(ctx, token)
-	newToken, err := src.Token()
+	if token.RefreshToken == "" {
+		return nil, fmt.Errorf("token expired and no refresh_token stored")
+	}
+	newToken, err := c.refresh(ctx, token.RefreshToken)
 	if err != nil {
 		return nil, err
 	}

@@ -397,6 +397,6 @@ func (h *handler) exchangeGithubToken() http.Handler {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: err.Error()})
 			return
 		}
-		writeJSON(w, http.StatusAccepted, map[string]string{"data": data.String()})
+		writeJSON(w, http.StatusAccepted, map[string]string{"data": string(data)})
 	})
 }
