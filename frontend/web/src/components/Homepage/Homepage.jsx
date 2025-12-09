@@ -18,6 +18,7 @@ export default function Homepage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [creating, setCreating] = useState(false);
   const [triggering, setTriggering] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const userEmail = localStorage.getItem("user_email") || "user@example.com";
@@ -219,6 +220,29 @@ export default function Homepage() {
       alert("Echec du déclenchement: " + err.message);
     } finally {
       setTriggering(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedWorkflow) return;
+    if (!window.confirm("Supprimer ce Konnect ?")) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`${API_BASE}/workflows/${selectedWorkflow.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+      await fetchWorkflows();
+      setSelectedWorkflow(null);
+      setPanelOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("Suppression impossible: " + err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -505,6 +529,14 @@ export default function Homepage() {
                   disabled={triggering}
                 >
                   {triggering ? "Triggering…" : "Trigger now"}
+                </button>
+                <button
+                  className="danger-btn"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  style={{ marginTop: 10 }}
+                >
+                  {deleting ? "Deleting…" : "Delete Konnect"}
                 </button>
               </>
             ) : (

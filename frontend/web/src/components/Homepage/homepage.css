@@ -347,3 +347,16 @@
   width: 100%;
   text-align: center;
 }
+
+.danger-btn {
+  background: linear-gradient(120deg, #ef4444, #f97316);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);
+  margin-left: 10px;
+}

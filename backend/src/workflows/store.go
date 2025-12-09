@@ -147,6 +147,19 @@ func (s *Store) GetWorkflow(ctx context.Context, id int64) (*Workflow, error) {
 	return &wf, nil
 }
 
+// DeleteWorkflow removes a workflow (cascades to runs/jobs via FK).
+func (s *Store) DeleteWorkflow(ctx context.Context, id int64) error {
+	res, err := s.db.ExecContext(ctx, `DELETE FROM workflows WHERE id = $1`, id)
+	if err != nil {
+		return fmt.Errorf("delete workflow: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 // CreateRun creates a new pending run for a workflow.
 func (s *Store) CreateRun(ctx context.Context, workflowID int64) (*Run, error) {
 	var id int64

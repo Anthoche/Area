@@ -2,6 +2,7 @@ package workflows
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -73,6 +74,17 @@ func (s *Service) GetWorkflow(ctx context.Context, id int64) (*Workflow, error) 
 		return nil, ErrWorkflowNotFound
 	}
 	return wf, nil
+}
+
+// DeleteWorkflow removes a workflow and its related runs/jobs.
+func (s *Service) DeleteWorkflow(ctx context.Context, id int64) error {
+	if err := s.Store.DeleteWorkflow(ctx, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrWorkflowNotFound
+		}
+		return err
+	}
+	return nil
 }
 
 // TriggerWebhook finds a webhook workflow by token and enqueues it with payload.
