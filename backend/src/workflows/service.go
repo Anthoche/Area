@@ -7,10 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 var ErrTriggerUnavailable = errors.New("workflow triggerer not configured")
 var ErrWorkflowNotFound = errors.New("workflow not found")
+var ErrWorkflowDisabled = errors.New("workflow disabled")
 
 // Service orchestrates workflow CRUD and triggering.
 type Service struct {
@@ -31,8 +33,12 @@ func (s *Service) Trigger(ctx context.Context, workflowID int64, payload map[str
 	if s.Triggerer == nil {
 		return nil, ErrTriggerUnavailable
 	}
-	if _, err := s.Store.GetWorkflow(ctx, workflowID); err != nil {
+	wf, err := s.Store.GetWorkflow(ctx, workflowID)
+	if err != nil {
 		return nil, ErrWorkflowNotFound
+	}
+	if !wf.Enabled && wf.TriggerType != "manual" {
+		return nil, ErrWorkflowDisabled
 	}
 	return s.Triggerer.EnqueueRun(ctx, workflowID, payload)
 }
@@ -87,11 +93,25 @@ func (s *Service) DeleteWorkflow(ctx context.Context, id int64) error {
 	return nil
 }
 
+// SetEnabled toggles a workflow (non-manual can be paused); interval workflows are rescheduled on enable.
+func (s *Service) SetEnabled(ctx context.Context, id int64, enabled bool, now time.Time) error {
+	if err := s.Store.SetEnabled(ctx, id, enabled, now); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrWorkflowNotFound
+		}
+		return err
+	}
+	return nil
+}
+
 // TriggerWebhook finds a webhook workflow by token and enqueues it with payload.
 func (s *Service) TriggerWebhook(ctx context.Context, token string, payload map[string]any) (*Run, error) {
 	wf, err := s.Store.FindWorkflowByToken(ctx, token)
 	if err != nil {
 		return nil, ErrWorkflowNotFound
+	}
+	if !wf.Enabled {
+		return nil, ErrWorkflowDisabled
 	}
 	return s.Trigger(ctx, wf.ID, payload)
 }

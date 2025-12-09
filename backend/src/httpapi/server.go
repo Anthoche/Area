@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"area/src/auth"
 	goog "area/src/integrations/google"
@@ -280,6 +281,38 @@ func (h *handler) workflowResource() http.Handler {
 		if err != nil {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid workflow id"})
 			return
+		}
+
+		// POST /workflows/{id}/enabled?action=enable|disable
+		if len(parts) == 3 && parts[2] == "enabled" && r.Method == http.MethodPost {
+			action := r.URL.Query().Get("action")
+			switch action {
+			case "enable":
+				if err := h.workflows.SetEnabled(r.Context(), workflowID, true, time.Now()); err != nil {
+					if errors.Is(err, workflows.ErrWorkflowNotFound) {
+						writeJSON(w, http.StatusNotFound, errorResponse{Error: "workflow not found"})
+						return
+					}
+					writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not enable workflow"})
+					return
+				}
+				writeJSON(w, http.StatusOK, map[string]string{"status": "enabled"})
+				return
+			case "disable":
+				if err := h.workflows.SetEnabled(r.Context(), workflowID, false, time.Now()); err != nil {
+					if errors.Is(err, workflows.ErrWorkflowNotFound) {
+						writeJSON(w, http.StatusNotFound, errorResponse{Error: "workflow not found"})
+						return
+					}
+					writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not disable workflow"})
+					return
+				}
+				writeJSON(w, http.StatusOK, map[string]string{"status": "disabled"})
+				return
+			default:
+				writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid action"})
+				return
+			}
 		}
 
 		// DELETE /workflows/{id}

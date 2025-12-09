@@ -19,9 +19,14 @@ CREATE TABLE IF NOT EXISTS workflows (
     trigger_type     VARCHAR(64) NOT NULL,
     trigger_config   JSONB NOT NULL DEFAULT '{}'::jsonb,
     action_url       TEXT NOT NULL,
+    enabled          BOOLEAN NOT NULL DEFAULT TRUE,
     next_run_at      TIMESTAMPTZ,
     created_at       TIMESTAMPTZ DEFAULT NOW()
 );
+
+UPDATE workflows
+SET enabled = FALSE
+WHERE trigger_type <> 'manual' AND enabled = TRUE;
 
 ---------------------------
 -- WORKFLOW RUNS

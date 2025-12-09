@@ -18,6 +18,7 @@ export default function Homepage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [creating, setCreating] = useState(false);
   const [triggering, setTriggering] = useState(false);
+  const [togglingTimer, setTogglingTimer] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -84,10 +85,13 @@ export default function Homepage() {
       const res = await fetch(`${API_BASE}/workflows`);
       if (!res.ok) throw new Error("failed to load workflows");
       const data = await res.json();
-      setWorkflows(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setWorkflows(list);
+      return list;
     } catch (err) {
       console.error(err);
       alert("Impossible de charger les konects");
+      return [];
     } finally {
       setLoading(false);
     }
@@ -253,6 +257,30 @@ export default function Homepage() {
       alert("Suppression impossible: " + err.message);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleToggleTimer = async () => {
+    if (!selectedWorkflow) return;
+    const action = selectedWorkflow.enabled ? "disable" : "enable";
+    setTogglingTimer(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/workflows/${selectedWorkflow.id}/enabled?action=${action}`,
+        { method: "POST" }
+      );
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+      const list = await fetchWorkflows();
+      const refreshed = list.find((w) => w.id === selectedWorkflow.id) || null;
+      setSelectedWorkflow(refreshed);
+    } catch (err) {
+      console.error(err);
+      alert("Action timer impossible: " + err.message);
+    } finally {
+      setTogglingTimer(false);
     }
   };
 
@@ -545,13 +573,27 @@ export default function Homepage() {
                     rows={8}
                   />
                 </label>
-                <button
-                  className="primary-btn"
-                  onClick={handleTrigger}
-                  disabled={triggering}
-                >
-                  {triggering ? "Triggering…" : "Trigger now"}
-                </button>
+                {selectedWorkflow?.trigger_type !== "manual" ? (
+                  <button
+                    className="primary-btn"
+                    onClick={handleToggleTimer}
+                    disabled={togglingTimer}
+                  >
+                    {togglingTimer
+                      ? "Applying…"
+                      : selectedWorkflow?.enabled
+                      ? "Stop Konect"
+                      : "Start Konect"}
+                  </button>
+                ) : (
+                  <button
+                    className="primary-btn"
+                    onClick={handleTrigger}
+                    disabled={triggering}
+                  >
+                    {triggering ? "Triggering…" : "Trigger now"}
+                  </button>
+                )}
                 <button
                   className="danger-btn"
                   onClick={handleDelete}
