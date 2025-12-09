@@ -28,6 +28,7 @@ export default function Homepage() {
     intervalMinutes: 5,
     reaction: "discord",
     discordUrl: "",
+    discordContent: "Hello from Area",
     emailTo: "",
     emailSubject: "Hello",
     emailBody: "Envoyé depuis Area",
@@ -136,6 +137,9 @@ export default function Homepage() {
           : [],
       };
     }
+    if (url.includes("discord")) {
+      return { content: form.discordContent || "Hello from Area" };
+    }
     return { content: "Hello from Area" };
   };
 
@@ -170,7 +174,13 @@ export default function Homepage() {
         action_url: actionUrl,
         trigger_config:
           form.triggerType === "interval"
-            ? { interval_minutes: Number(form.intervalMinutes) || 1 }
+            ? {
+                interval_minutes: Number(form.intervalMinutes) || 1,
+                payload:
+                  form.reaction === "discord"
+                    ? { content: form.discordContent || "Hello from Area" }
+                    : {},
+              }
             : {},
       };
       const res = await fetch(`${API_BASE}/workflows`, {
@@ -416,6 +426,18 @@ export default function Homepage() {
                         setForm({ ...form, discordUrl: e.target.value })
                       }
                       placeholder="https://discord.com/api/webhooks/..."
+                    />
+                  </label>
+                )}
+                {form.reaction === "discord" && (
+                  <label className="field">
+                    <span>Message</span>
+                    <textarea
+                      value={form.discordContent}
+                      onChange={(e) =>
+                        setForm({ ...form, discordContent: e.target.value })
+                      }
+                      placeholder="Message à envoyer"
                     />
                   </label>
                 )}
