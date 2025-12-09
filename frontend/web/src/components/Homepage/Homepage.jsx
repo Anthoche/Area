@@ -21,7 +21,7 @@ export default function Homepage() {
   const [showProfile, setShowProfile] = useState(false);
   const userEmail = localStorage.getItem("user_email") || "user@example.com";
   const [form, setForm] = useState({
-    name: "Mon Konnect",
+    name: "Mon Konect",
     triggerType: "manual",
     intervalMinutes: 5,
     reaction: "discord",
@@ -37,6 +37,19 @@ export default function Homepage() {
   const [activeFilters, setActiveFilters] = useState([]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenId = params.get("token_id");
+    const googleEmail = params.get("google_email");
+    if (tokenId) {
+      localStorage.setItem("google_token_id", tokenId);
+    }
+    if (googleEmail) {
+      localStorage.setItem("google_email", googleEmail);
+      localStorage.setItem("user_email", googleEmail);
+    }
+    if (tokenId || googleEmail) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
     fetchWorkflows();
   }, []);
 
@@ -71,7 +84,7 @@ export default function Homepage() {
       setWorkflows(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
-      alert("Impossible de charger les konnects");
+      alert("Impossible de charger les konects");
     } finally {
       setLoading(false);
     }
@@ -181,7 +194,7 @@ export default function Homepage() {
 
   const handleTrigger = async () => {
     if (!selectedWorkflow) {
-      alert("Sélectionne un konnect");
+      alert("Sélectionne un konect");
       return;
     }
     setTriggering(true);
@@ -221,7 +234,7 @@ export default function Homepage() {
               setSelectedWorkflow(null);
             }}
           >
-            Create Konnect
+            Create Konect
           </button>
           <button className="ghost" onClick={fetchWorkflows} disabled={loading}>
             {loading ? "…" : "Refresh"}
@@ -270,7 +283,7 @@ export default function Homepage() {
           <h2 className="section-header">My Konects</h2>
           <div className="services-grid">
             <ServiceCard
-              title="Create Konnect"
+              title="Create Konect"
               color="rgba(0,0,0,0.05)"
               icons={["＋"]}
               ghost
@@ -293,7 +306,7 @@ export default function Homepage() {
               />
             ))}
             {!workflows.length && (
-              <div className="muted">No Konnect yet. Create the first one!</div>
+              <div className="muted">No Konect yet. Create the first one!</div>
             )}
           </div>
         </main>
@@ -311,7 +324,7 @@ export default function Homepage() {
                 >
                   ✖
                 </button>
-                <h2>Create Konnect</h2>
+                <h2>Create Konect</h2>
                 <label className="field">
                   <span>Name</span>
                   <input
@@ -480,7 +493,7 @@ export default function Homepage() {
                 </button>
               </>
             ) : (
-              <div className="muted">Sélectionnez un konnect ou créez-en un.</div>
+              <div className="muted">Sélectionnez un konect ou créez-en un.</div>
             )}
           </aside>
         )}

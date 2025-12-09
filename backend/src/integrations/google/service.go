@@ -45,15 +45,43 @@ func (c *Client) AuthURL(state, redirectURI string) string {
 	return cfg.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
 }
 
-// Exchange saves the token and returns its id.
-func (c *Client) ExchangeAndStore(ctx context.Context, code string, redirectURI string, userID *int64) (int64, error) {
+// Exchange saves the token and returns its id and the user email if available.
+func (c *Client) ExchangeAndStore(ctx context.Context, code string, redirectURI string, userID *int64) (int64, string, error) {
 	cfg := *c.oauthConfig
 	cfg.RedirectURL = redirectURI
 	token, err := cfg.Exchange(ctx, code)
 	if err != nil {
-		return -1, fmt.Errorf("exchange code: %w", err)
+		return -1, "", fmt.Errorf("exchange code: %w", err)
 	}
-	return database.InsertGoogleToken(ctx, userID, token.AccessToken, token.RefreshToken, token.Expiry)
+	email, _ := c.fetchEmail(ctx, token.AccessToken)
+	id, err := database.InsertGoogleToken(ctx, userID, token.AccessToken, token.RefreshToken, token.Expiry)
+	if err != nil {
+		return -1, "", err
+	}
+	return id, email, nil
+}
+
+func (c *Client) fetchEmail(ctx context.Context, accessToken string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://www.googleapis.com/oauth2/v3/userinfo", nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		return "", fmt.Errorf("userinfo status %d", resp.StatusCode)
+	}
+	var data struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return "", err
+	}
+	return data.Email, nil
 }
 
 // SendEmail sends a simple text email via Gmail API.

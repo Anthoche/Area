@@ -488,7 +488,7 @@ func (h *handler) googleCallback() http.Handler {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "redirect_uri is required"})
 			return
 		}
-		tokenID, err := h.google.ExchangeAndStore(r.Context(), code, redirectURI, userID)
+		tokenID, email, err := h.google.ExchangeAndStore(r.Context(), code, redirectURI, userID)
 		if err != nil {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: err.Error()})
 			return
@@ -498,13 +498,20 @@ func (h *handler) googleCallback() http.Handler {
 				if redir, err := url.Parse(dest); err == nil && (redir.Scheme == "http" || redir.Scheme == "https") {
 					q := redir.Query()
 					q.Set("token_id", strconv.FormatInt(tokenID, 10))
+					if email != "" {
+						q.Set("google_email", email)
+					}
 					redir.RawQuery = q.Encode()
 					http.Redirect(w, r, redir.String(), http.StatusFound)
 					return
 				}
 			}
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"token_id": tokenID})
+		resp := map[string]any{"token_id": tokenID}
+		if email != "" {
+			resp["email"] = email
+		}
+		writeJSON(w, http.StatusOK, resp)
 	})
 }
 
