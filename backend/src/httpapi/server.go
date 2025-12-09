@@ -3,13 +3,10 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
-	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"area/src/auth"
 	goog "area/src/integrations/google"
@@ -199,34 +196,6 @@ func ensureNoTrailingData(decoder *json.Decoder) error {
 		return err
 	}
 	return nil
-}
-
-func randomState() string {
-	rand.Seed(time.Now().UnixNano())
-	return fmt.Sprintf("%d", rand.Int63())
-}
-
-func currentUserID(r *http.Request) (int64, error) {
-	user := r.Header.Get("X-User-ID")
-	if user == "" {
-		user = r.URL.Query().Get("user_id")
-	}
-	if user == "" {
-		return 0, fmt.Errorf("missing user identifier")
-	}
-	id, err := strconv.ParseInt(user, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("invalid user identifier")
-	}
-	return id, nil
-}
-
-func optionalUserID(r *http.Request) *int64 {
-	id, err := currentUserID(r)
-	if err != nil || id <= 0 {
-		return nil
-	}
-	return &id
 }
 
 // workflowsHandler routes workflow listing and creation requests.
