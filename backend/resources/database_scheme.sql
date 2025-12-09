@@ -61,3 +61,15 @@ CREATE TABLE IF NOT EXISTS jobs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_jobs_status_created_at ON jobs (status, created_at);
+
+---------------------------
+-- GOOGLE TOKENS
+---------------------------
+CREATE TABLE IF NOT EXISTS google_tokens (
+    id             SERIAL PRIMARY KEY,
+    user_id        INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    access_token   TEXT NOT NULL,
+    refresh_token  TEXT NOT NULL,
+    expiry         TIMESTAMPTZ NOT NULL,
+    created_at     TIMESTAMPTZ DEFAULT NOW()
+);

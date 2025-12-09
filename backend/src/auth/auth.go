@@ -31,7 +31,11 @@ var (
 var googleOauthConfig = &oauth2.Config{
 	ClientID:     os.Getenv("GOOGLE_OAUTH_CLIENT_ID"),
 	ClientSecret: os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
-	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
+	Scopes: []string{
+		"https://www.googleapis.com/auth/userinfo.email",
+		"https://www.googleapis.com/auth/gmail.send",
+		"https://www.googleapis.com/auth/calendar.events",
+	},
 	Endpoint:     google.Endpoint,
 }
 
