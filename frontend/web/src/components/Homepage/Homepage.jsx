@@ -15,6 +15,7 @@ export default function Homepage() {
   const [payloadPreview, setPayloadPreview] = useState("{}");
   const [panelOpen, setPanelOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [creating, setCreating] = useState(false);
   const [triggering, setTriggering] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -268,17 +269,24 @@ export default function Homepage() {
               </button>
             </div>
           )}
-          <SearchBar />
-
-          <div className="tags-row">
-            {filters.map((f) => (
-              <FilterTag
-                key={f.value}
-                label={f.label}
-                selected={activeFilters.includes(f.value)}
-                onClick={() => toggleFilter(f.value)}
+          <div className="filters-card">
+            <div className="filters-row">
+              <SearchBar
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Search a Konect"
               />
-            ))}
+            </div>
+            <div className="tags-row">
+              {filters.map((f) => (
+                <FilterTag
+                  key={f.value}
+                  label={f.label}
+                  selected={activeFilters.includes(f.value)}
+                  onClick={() => toggleFilter(f.value)}
+                />
+              ))}
+            </div>
           </div>
           <h2 className="section-header">My Konects</h2>
           <div className="services-grid">
@@ -293,18 +301,25 @@ export default function Homepage() {
                 setSelectedWorkflow(null);
               }}
             />
-            {workflows.filter(matchesFilters).map((wf, idx) => (
-              <ServiceCard
-                key={wf.id}
-                title={wf.name}
-                color={["#00D2FF", "#FF4081", "#00E676", "#D500F9"][idx % 4]}
-                onClick={() => {
-                  setSelectedWorkflow(wf);
-                  setPanelOpen(true);
-                  setShowCreate(false);
-                }}
-              />
-            ))}
+            {workflows
+              .filter(matchesFilters)
+              .filter((wf) =>
+                (wf.name || "")
+                  .toLowerCase()
+                  .includes(searchTerm.trim().toLowerCase())
+              )
+              .map((wf, idx) => (
+                <ServiceCard
+                  key={wf.id}
+                  title={wf.name}
+                  color={["#00D2FF", "#FF4081", "#00E676", "#D500F9"][idx % 4]}
+                  onClick={() => {
+                    setSelectedWorkflow(wf);
+                    setPanelOpen(true);
+                    setShowCreate(false);
+                  }}
+                />
+              ))}
             {!workflows.length && (
               <div className="muted">No Konect yet. Create the first one!</div>
             )}
