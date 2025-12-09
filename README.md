@@ -12,6 +12,20 @@ Backend in Go + PostgreSQL, web in React/Vite, mobile build in Flutter.
 Workflows can be manual, interval, or webhook-triggered; they enqueue jobs executed via HTTP to an `action_url`.
 If you want to extend the platform (new triggers, services, actions, etc.), read the [Contributing Guide](CONTRIBUTING.md).
 
+## 🔎 Functionalities
+
+The application offers the following functionalities (high level user flow):
+
+1. The user registers on the application KiKoNect in order to obtain an account.
+2. The registered user then confirms their enrollment on the application before being able to use it.
+3. The application then asks the authenticated user to subscribe to Services.
+4. Each service offers the following components:
+  - type Action
+  - type REAction
+5. The authenticated user composes a KoNect by interconnecting an Action to a REAction previously configured.
+6. The application triggers KoNect automatically thanks to hooks.
+
+
 ## ✨ Key Features
 
 - 🔐 Auth: register/login with bcrypt.
@@ -30,23 +44,71 @@ If you want to extend the platform (new triggers, services, actions, etc.), read
 
 ```
 Area/
-├── backend/                  # Go backend
-│   ├── src/
-│   │   ├── auth/              # Auth service + store
-│   │   ├── database/          # PostgreSQL access layer
-│   │   ├── httpapi/           # HTTP handlers (login, register, workflows)
-│   │   ├── integrations/      # placeholder integrations
-│   │   ├── workflows/         # Store, triggerer, executor, scheduler
-│   │   └── main.go            # server entrypoint
-│   ├── resources/            # database_scheme.sql
+├── CONTRIBUTING.md
+├── docker-compose.yml
+├── LICENSE
+├── README.md
+├── backend/                    # Go backend
 │   ├── Dockerfile
-│   ├── go.mod / go.sum
+│   ├── go.mod
+│   ├── go.sum
+│   ├── resources/
+│   │   └── database_scheme.sql
+│   └── src/
+│       ├── main.go
+│       ├── auth/               # auth service, oauth helpers, tests
+│       ├── database/           # postgres store + migrations/tests
+│       ├── httpapi/            # HTTP handlers, routes, server setup
+│       ├── workflows/          # store, triggers, executor, scheduler
+│       └── integrations/       # external integrations / adapters
 ├── frontend/
-│   ├── web/                  # React/Vite app
-│   └── mobile/               # Flutter project (APK via Docker)
-├── docker-compose.yml        # Full stack
-└── README.md
+│   ├── web/                    # React + Vite app
+│   │   ├── package.json
+│   │   ├── vite.config.js
+│   │   └── src/
+│   │       ├── App.jsx
+│   │       └── components/
+│   └── mobile/                 # Flutter project (android/ios/lib/...)
+│       ├── pubspec.yaml
+│       └── android/
+├── Reports/
+│   ├── Defense/
+│   └── Meeting/
 ```
+
+## 🏗️ Architecture
+
+Le projet est composé de 4 briques principales déployées par `docker-compose` :
+
+- **API backend (Go)**
+  - Serveur HTTP exposé sur le port `8080` (configurable via `PORT`).
+  - Routes principales : auth (`/login`, `/register`), workflows (`/workflows`, `/hooks/{token}`), endpoints d'OAuth (`/auth/*` et `/oauth/*`).
+  - Gère la logique des workflows : création, planification (interval), files d'exécution et exécution des jobs.
+  - Accède à PostgreSQL pour persistance (schéma : `backend/resources/database_scheme.sql`).
+
+- **PostgreSQL**
+  - Base de données relationnelle contenant utilisateurs, workflows, runs et jobs.
+  - Configurée via les variables d'environnement (`POSTGRES_*`).
+
+- **Frontend web (React + Vite)**
+  - App en développement sur `5173` (Vite) et build servie par le service nginx du compose sur `8081`.
+  - Communique avec l'API backend via l'URL configurée (`VITE_API_URL`).
+  - Gère l'init OAuth côté client (pattern `json-init` utilisé pour stocker le `state` en `localStorage` afin d'éviter les problèmes de cookie cross-port).
+
+- **Mobile (Flutter)**
+  - Projet Flutter construit par le service `client_mobile` qui produit un APK.
+
+Flux importants et remarques opérationnelles
+- OAuth: le backend construit/valide l'URL de callback enregistrée et fait l'échange de code -> token ; le frontend lance l'auth via l'endpoint JSON du backend, stocke `state` en `localStorage`, puis poste le `code` au backend pour échange.
+- CORS: l'API renvoie des en-têtes permissifs pour permettre l'appel depuis le client web (en environnement dev). En production, verrouiller `Access-Control-Allow-Origin`.
+- Variables d'environnement: `docker-compose` lit `.env` via `env_file`, mais il est préférable d'énumérer explicitement les variables critiques dans le bloc `environment:` du service `server` pour assurer leur disponibilité.
+- Exécution & scalabilité: l'executor (composant du backend) draine les jobs et POSTe les payloads vers `action_url`. Pour monter en charge, séparer l'executor en workers horizontaux et utiliser une file de messages durable (ou verrou distribué) pour l'attribution des jobs.
+
+Fichiers importants
+- `backend/src/` : code Go de l'API.
+- `backend/resources/database_scheme.sql` : schéma initial de la base.
+- `docker-compose.yml` : orchestration locale (db, server, client_web, client_mobile).
+
 
 ## 🚀 Quick Start (Docker Compose)
 
@@ -132,12 +194,30 @@ npm run dev          # http://localhost:5173
 - `go fmt ./...` — format Go code.
 - `go clean -testcache` — clear Go test cache.
 
+<br>
+
+## 🤝 Contribution
+
+Contributions are welcome! Please follow these guidelines:
+
+- Read the `CONTRIBUTING.md` file for branch, test and PR rules.
+
+- Create a feature branch from `dev`: `git checkout -b feat/your-feature`.
+
+- Run tests and linters before submitting a PR:
+
+- Write clear PR descriptions and link any related issues.
+
+If you're adding a breaking change, please open an issue first to discuss the design.
+
+## 📜 License
+
+This project is provided under the MIT License — see the `LICENSE` file for details.
+
+
 ## 👥 Team
 
 - [Bastien Leroux](https://github.com/bast0u)
 - [Anthony El-Achkar](https://github.com/Anthoche)
 - [Mariia Semenchenko](https://github.com/mariiasemenchenko)
 - [Corto Morrow](https://github.com/NuggetReckt)
-
-<br>
-*Last update: December 2025*
