@@ -307,38 +307,36 @@ export default function Homepage() {
 
       <div className={`content-container ${panelOpen ? "panel-open" : ""}`}>
         <main className="main-content">
-          <div className="top-row">
-            <h1 className="main-title">My Konect</h1>
-            <button
-              className="profile-btn"
-              onClick={() => setShowProfile((p) => !p)}
-              aria-label="Profile"
-            >
-              👤
-            </button>
-          </div>
-          {showProfile && (
-            <div className="profile-card">
-              <div className="profile-email">{userEmail}</div>
+          <div className="section-card">
+            <div className="top-row">
+              <h1 className="main-title">KiKoNect</h1>
               <button
-                className="ghost"
-                onClick={() => {
-                  localStorage.clear();
-                  window.location.href = "/";
-                }}
+                className="profile-btn"
+                onClick={() => setShowProfile((p) => !p)}
+                aria-label="Profile"
               >
-                Logout
+                👤
               </button>
             </div>
-          )}
-          <div className="filters-card">
-            <div className="filters-row">
-              <SearchBar
-                value={searchTerm}
-                onChange={setSearchTerm}
-                placeholder="Search a Konect"
-              />
-            </div>
+            {showProfile && (
+              <div className="profile-card">
+                <div className="profile-email">{userEmail}</div>
+                <button
+                  className="ghost"
+                  onClick={() => {
+                    localStorage.clear();
+                    window.location.href = "/";
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+            <SearchBar
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search a Konect"
+            />
             <div className="tags-row">
               {filters.map((f) => (
                 <FilterTag
@@ -350,41 +348,46 @@ export default function Homepage() {
               ))}
             </div>
           </div>
-          <h2 className="section-header">My Konects</h2>
-          <div className="services-grid">
-            <ServiceCard
-              title="Create Konect"
-              color="rgba(0,0,0,0.05)"
-              icons={["＋"]}
-              ghost
-              onClick={() => {
-                setShowCreate(true);
-                setPanelOpen(true);
-                setSelectedWorkflow(null);
-              }}
-            />
-            {workflows
-              .filter(matchesFilters)
-              .filter((wf) =>
-                (wf.name || "")
-                  .toLowerCase()
-                  .includes(searchTerm.trim().toLowerCase())
-              )
-              .map((wf, idx) => (
-                <ServiceCard
-                  key={wf.id}
-                  title={wf.name}
-                  color={["#00D2FF", "#FF4081", "#00E676", "#D500F9"][idx % 4]}
-                  onClick={() => {
-                    setSelectedWorkflow(wf);
-                    setPanelOpen(true);
-                    setShowCreate(false);
-                  }}
-                />
-              ))}
-            {!workflows.length && (
-              <div className="muted">No Konect yet. Create the first one!</div>
-            )}
+
+          <div className="section-card">
+            <h2 className="section-header centered">My Konects</h2>
+            <div className="services-grid">
+              <ServiceCard
+                title="Create Konect"
+                color="rgba(0,0,0,0.05)"
+                icons={["＋"]}
+                ghost
+                onClick={() => {
+                  setShowCreate(true);
+                  setPanelOpen(true);
+                  setSelectedWorkflow(null);
+                }}
+              />
+              {workflows
+                .filter(matchesFilters)
+                .filter((wf) =>
+                  (wf.name || "")
+                    .toLowerCase()
+                    .includes(searchTerm.trim().toLowerCase())
+                )
+                .map((wf, idx) => (
+                  <ServiceCard
+                    key={wf.id}
+                    title={wf.name}
+                    color={
+                      ["#00D2FF", "#FF4081", "#00E676", "#D500F9"][idx % 4]
+                    }
+                    onClick={() => {
+                      setSelectedWorkflow(wf);
+                      setPanelOpen(true);
+                      setShowCreate(false);
+                    }}
+                  />
+                ))}
+              {!workflows.length && (
+                <div className="muted">No Konect yet. Create the first one!</div>
+              )}
+            </div>
           </div>
         </main>
 
