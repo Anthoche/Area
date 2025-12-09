@@ -212,13 +212,13 @@
 .right-panel {
   position: absolute;
   top: 0;
-  right: -300px;
-  width: 300px;
+  right: -420px;
+  width: 420px;
   height: 100%;
-  background: white;
-  border-left: 1px solid #ececec;
-  padding: 20px;
-  box-shadow: -3px 0 10px rgba(0,0,0,0.05);
+  background: linear-gradient(180deg, #f9fafb 0%, #f2f4f7 100%);
+  border-left: 1px solid #e6e9f0;
+  padding: 22px;
+  box-shadow: -6px 0 20px rgba(0, 0, 0, 0.08);
   transition: right 0.3s ease;
   z-index: 10;
 }
@@ -228,7 +228,7 @@
 }
 
 .content-container.panel-open .main-content {
-  margin-right: 300px;
+  margin-right: 380px;
 }
 
 .close-btn {
@@ -263,7 +263,7 @@
 }
 
 .primary-btn {
-  background: #2563eb;
+  background: linear-gradient(120deg, #2563eb, #22d3ee);
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -296,4 +296,54 @@
 .fab:active {
   background-color: #4a067f;
   transform: scale(0.95);
+}
+.panel-scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.panel-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px 16px 20px;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
+}
+
+.panel-card:not(:last-child) {
+  margin-bottom: 14px;
+}
+
+.panel-title {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.panel-meta {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+.panel-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.chip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 12px;
+  border: 1px solid #dfe3f0;
+}
+
+.primary-btn.full {
+  width: 100%;
+  text-align: center;
 }
