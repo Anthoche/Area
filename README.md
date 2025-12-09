@@ -1,19 +1,13 @@
 <div align="center">
-    <h1>KiKonect (Area)</h1>
-    <h3>Automation backend with web/mobile clients</h3>
+    <h1>KiKoNect</h1>
+    <h3>Action - REAction</h3>
 </div>
 
 ---
 
 ## 📋 Project Description
 
-KiKonect is an “Area”-style automation platform.  
-Backend in Go + PostgreSQL, web in React/Vite, mobile build in Flutter.  
-Workflows can be manual, interval, or webhook-triggered; they enqueue jobs executed via HTTP to an `action_url`.
-If you want to extend the platform (new triggers, services, actions, etc.), read the [Contributing Guide](CONTRIBUTING.md).
-
-## 🔎 Functionalities
-
+KiKoNect is an “Area”-style automation platform.  
 The application offers the following functionalities (high level user flow):
 
 1. The user registers on the application KiKoNect in order to obtain an account.
@@ -76,16 +70,6 @@ Area/
 │   └── Meeting/
 ```
 
-
-
-
-
-
-
-
-
-
-
 ## 🏗️ Architecture
 
 The project is composed of **four main components** deployed with `docker-compose`:
@@ -113,27 +97,6 @@ The project is composed of **four main components** deployed with `docker-compos
 - **CORS**: backend uses permissive headers for development; in production origin should be restricted.
 - **Environment variables**: although `.env` is loaded automatically, core variables should be explicitly listed in the compose file.
 - **Scalability**: executor sends POST payloads to `action_url`; scaling horizontally requires splitting workers and/or using distributed locking or message queues.
-
-### Key Files
-- `backend/src/` — Go API source code  
-- `backend/resources/database_scheme.sql` — database schema  
-- `docker-compose.yml` — local orchestration  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ## 🚀 Quick Start (Docker Compose)
 
