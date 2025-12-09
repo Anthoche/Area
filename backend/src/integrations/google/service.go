@@ -57,7 +57,7 @@ func (c *Client) AuthURL(state, redirectURI string) string {
 	return "https://accounts.google.com/o/oauth2/auth?" + v.Encode()
 }
 
-// Exchange saves the token and returns its id and the user email if available.
+// ExchangeAndStore exchanges an auth code for a token, saves it, and returns the token id + email.
 func (c *Client) ExchangeAndStore(ctx context.Context, code string, redirectURI string, userID *int64) (int64, string, error) {
 	tokenResp, err := c.exchangeCode(ctx, code, redirectURI)
 	if err != nil {
@@ -71,6 +71,7 @@ func (c *Client) ExchangeAndStore(ctx context.Context, code string, redirectURI 
 	return id, email, nil
 }
 
+// fetchEmail retrieves the user's email address using the OAuth access token.
 func (c *Client) fetchEmail(ctx context.Context, accessToken string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://www.googleapis.com/oauth2/v3/userinfo", nil)
 	if err != nil {
@@ -101,6 +102,7 @@ type tokenResponse struct {
 	TokenType    string `json:"token_type"`
 }
 
+// exchangeCode exchanges an auth code for an OAuth token.
 func (c *Client) exchangeCode(ctx context.Context, code, redirectURI string) (*OAuthToken, error) {
 	values := url.Values{}
 	values.Set("grant_type", "authorization_code")
@@ -131,6 +133,7 @@ func (c *Client) exchangeCode(ctx context.Context, code, redirectURI string) (*O
 	return &OAuthToken{AccessToken: tr.AccessToken, RefreshToken: tr.RefreshToken, Expiry: expiry}, nil
 }
 
+// refresh uses a refresh token to obtain a new access token.
 func (c *Client) refresh(ctx context.Context, refreshToken string) (*OAuthToken, error) {
 	values := url.Values{}
 	values.Set("grant_type", "refresh_token")
@@ -234,10 +237,12 @@ func (c *Client) CreateCalendarEvent(ctx context.Context, userID *int64, tokenID
 	return nil
 }
 
+// buildRawEmail constructs a raw email string.
 func buildRawEmail(to, subject, body string) string {
 	return fmt.Sprintf("To: %s\r\nSubject: %s\r\n\r\n%s", to, subject, body)
 }
 
+// ensureToken retrieves and refreshes the OAuth token as needed.
 func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) (*OAuthToken, error) {
 	var t *database.GoogleToken
 	var err error
@@ -270,6 +275,7 @@ func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) 
 	return newToken, nil
 }
 
+// mustEnv retrieves an environment variable or panics if not set.
 func mustEnv(key string) string {
 	v := os.Getenv(key)
 	if v == "" {

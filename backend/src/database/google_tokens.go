@@ -15,6 +15,7 @@ type GoogleToken struct {
 	CreatedAt    time.Time
 }
 
+// InsertGoogleToken persists a new token and returns its ID.
 func InsertGoogleToken(ctx context.Context, userID *int64, access, refresh string, expiry time.Time) (int64, error) {
 	var id int64
 	err := db.QueryRowContext(ctx, `
@@ -29,6 +30,7 @@ func InsertGoogleToken(ctx context.Context, userID *int64, access, refresh strin
 	return id, nil
 }
 
+// GetGoogleToken fetches a token by its ID.
 func GetGoogleToken(ctx context.Context, id int64) (*GoogleToken, error) {
 	var t GoogleToken
 	var userID *int64
@@ -46,6 +48,7 @@ func GetGoogleToken(ctx context.Context, id int64) (*GoogleToken, error) {
 	return &t, nil
 }
 
+// GetGoogleTokenForUser fetches a token only if it matches the provided user id.
 func GetGoogleTokenForUser(ctx context.Context, id int64, userID int64) (*GoogleToken, error) {
 	var t GoogleToken
 	var uid *int64
@@ -64,6 +67,7 @@ func GetGoogleTokenForUser(ctx context.Context, id int64, userID int64) (*Google
 	return &t, nil
 }
 
+// UpdateGoogleToken stores new access/refresh tokens and expiry for a token row.
 func UpdateGoogleToken(ctx context.Context, id int64, access, refresh string, expiry time.Time) error {
 	_, err := db.ExecContext(ctx, `
 		UPDATE google_tokens

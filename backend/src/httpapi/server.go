@@ -416,6 +416,7 @@ func (h *handler) webhook() http.Handler {
 	})
 }
 
+// exchangeGoogleToken handles POST /oauth/google/exchange to exchange an auth code for user data.
 func (h *handler) exchangeGoogleToken() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
