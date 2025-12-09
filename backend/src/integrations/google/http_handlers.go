@@ -197,6 +197,7 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 	_ = json.NewEncoder(w).Encode(value)
 }
 
+// ensureNoTrailingData checks that there is no extra data in the JSON decoder.
 func ensureNoTrailingData(decoder *json.Decoder) error {
 	if decoder.More() {
 		return errors.New("unexpected extra data")
@@ -207,10 +208,12 @@ func ensureNoTrailingData(decoder *json.Decoder) error {
 	return nil
 }
 
+// randomState generates a random state string for OAuth.
 func randomState() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
 
+// optionalUserID extracts an optional user ID from headers or query parameters.
 func optionalUserID(r *http.Request) *int64 {
 	user := r.Header.Get("X-User-ID")
 	if user == "" {

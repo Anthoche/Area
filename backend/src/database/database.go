@@ -48,7 +48,7 @@ func IsConnected() bool {
 	return err == nil
 }
 
-// DB exposes the shared sql.DB handle for packages that need direct queries.
+// GetDB exposes the shared sql.DB handle for packages that need direct queries.
 func GetDB() *sql.DB {
 	return db
 }

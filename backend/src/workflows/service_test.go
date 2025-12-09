@@ -23,7 +23,7 @@ func TestServiceTrigger_Success(t *testing.T) {
 	defer cleanup()
 
 	now := time.Now()
-	// GetWorkflow query
+	// GetWorkflow query (manual -> enabled ignored)
 	mock.ExpectQuery("SELECT id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at FROM workflows WHERE id = \\$1").
 		WithArgs(int64(2)).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "trigger_type", "trigger_config", "action_url", "enabled", "next_run_at", "created_at"}).

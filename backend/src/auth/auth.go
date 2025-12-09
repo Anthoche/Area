@@ -104,6 +104,7 @@ func (s *Service) Register(ctx context.Context, email, password, firstName, last
 	return user, nil
 }
 
+// GetUserDataFromGoogle exchanges an auth code for user info (email/profile) via Google APIs.
 func GetUserDataFromGoogle(code string) ([]byte, error) {
 	redirectURI := os.Getenv("GOOGLE_OAUTH_REDIRECT_URI")
 	if redirectURI == "" {
@@ -148,6 +149,7 @@ func GetUserDataFromGoogle(code string) ([]byte, error) {
 	return contents, nil
 }
 
+// GetUserDataFromGithub exchanges an auth code for user info via GitHub APIs.
 func GetUserDataFromGithub(code string) ([]byte, error) {
 	values := url.Values{}
 	values.Set("client_id", os.Getenv("GITHUB_OAUTH_CLIENT_ID"))
