@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
-	"io"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -86,14 +86,15 @@ func main() {
 				continue
 			}
 			for _, wf := range due {
+				ctx := workflows.WithUserID(context.Background(), wf.UserID)
 				cfg, err := workflows.IntervalConfigFromJSON(wf.TriggerConfig)
-				payload := map[string]any{"source": "interval"}
+				payload := map[string]any{}
 				if err == nil && len(cfg.Payload) > 0 {
 					for k, v := range cfg.Payload {
 						payload[k] = v
 					}
 				}
-				_, err = wfService.Trigger(context.Background(), wf.ID, payload)
+				_, err = wfService.Trigger(ctx, wf.ID, payload)
 				if err != nil {
 					log.Printf("scheduler trigger wf %d: %v", wf.ID, err)
 				}
