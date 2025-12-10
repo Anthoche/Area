@@ -1,109 +1,97 @@
-
-# 🚀 Roadmap KiKoNect
+# 🚀 KiKoNect Roadmap
 
 ## Sprint 1 — **17.11 → 23.11**
 
-### 🎯 Objectifs
+### 🎯 Objectives
 
-* Mettre en place l’organisation du projet
-* Brainstorming sur les technologies
-* Réaliser les PoCs
-  👉 *Sprint de fondation : on pose les bases !*
+* Set up the project organization
+* Brainstorm technologies
+* Build the PoCs
 
+  👉 *Foundation sprint: we lay the groundwork!*
 
 ## Sprint 2 — **24.11 → 30.11**
 
-### 🎯 Objectifs
+### 🎯 Objectives
 
-* Réaliser le front login (web + mobile)
-* Gérer le login côté backend
-* Mettre en place la dockerisation
-  👉 *Premiers écrans, premiers containers, premières connexions !*
+* Create the login frontend (web + mobile)
+* Handle login on the backend
+* Set up dockerization
 
-
+  👉 *First screens, first containers, first connections!*
 
 ## Sprint 3 — **01.12 → 07.12**
 
-### 🎯 Objectifs
+### 🎯 Objectives
 
-* Définir le schéma de la base
-* Créer la page AREA (web + mobile)
-* Implémenter OAuth2 côté backend
-* Sélectionner les premiers services à intégrer
-  👉 *Le cœur du produit commence à prendre forme.*
+* Define the database schema
+* Create the AREA page (web + mobile)
+* Implement OAuth2 on the backend
+* Select the first services to integrate
 
-
+  👉 *The core of the product begins to take shape.*
 
 ## Sprint 4 — **08.12 → 14.12**
 
-### 🎯 Objectifs
+### 🎯 Objectives
 
-* Relier OAuth2 au backend
-* Intégrer le premier service
-* Configurer les actions/réactions
-* Mettre en place Swagger
-  👉 *On connecte, on automatise, on documente !*
+* Connect OAuth2 to the backend
+* Integrate the first service
+* Configure the actions/reactions
+* Set up Swagger
 
+  👉 *We connect, automate, and document!*
 
-##  Sprint 5 — **15.12 → 21.12**
+## Sprint 5 — **15.12 → 21.12**
 
-### 🎯 Objectifs
+### 🎯 Objectives
 
-* Mettre en place le flow OAuth GitHub
-* Assurer une intégration backend stable
-* Revoir les tests unitaires OAuth
-* Créer l’intégration GitHub complète en tant que service AREA
+* Implement the GitHub OAuth flow
+* Ensure a stable backend integration
+* Review OAuth unit tests
+* Build full GitHub integration as an AREA service
 
-  👉 *GitHub devient un acteur central de la plateforme !*
-
-
+  👉 *GitHub becomes a central actor of the platform!*
 
 ## Sprint 6 — **22.12 → 28.12**
 
-### 🎯 Objectifs
+### 🎯 Objectives
 
-* Revoir et mettre à jour les Konnect
-* Ajouter un nouveau service backend
-* Améliorer l’UX mobile (animations)
+* Review and update all Konnect modules
+* Add a new backend service
+* Improve mobile UX (smooth animations)
 
-  👉 *Plus de services, plus de fluidité, meilleure expérience.*
-
-
+  👉 *More services, more fluidity, better experience.*
 
 ## Sprint 7 — **29.12 → 04.01**
 
-### 🎯 Objectifs
+### 🎯 Objectives
 
-* Intégrer le premier service majeur prévu
-* Ajouter le mode sombre mobile
-* Analyser toutes les AREA existantes
-* Améliorer l’accessibilité (Lighthouse)
+* Integrate the first major service planned
+* Add dark mode to the mobile app
+* Analyze all existing AREAs
+* Improve accessibility (Lighthouse)
 
-  👉 *Accessibilité, modernité, nouvelles intégrations : un sprint très visuel !*
-
+  👉 *Accessibility, modernity, new integrations — a very visual sprint!*
 
 ## Sprint 8 — **05.01 → 11.01**
 
-### 🎯 Objectifs
+### 🎯 Objectives
 
-* Ajouter 1 à 2 services supplémentaires
-* Étendre le nombre d’AREA disponibles
-* Vérifier le front sur les différentes AREA
+* Add 1–2 additional backend services
+* Extend the number of available AREAs
+* Verify the frontend across different AREAs
 
-  👉 *On enrichit l’écosystème et on stabilise l’interface.*
-
-
+  👉 *We enrich the ecosystem and stabilize the interface.*
 
 ## Sprint 9 — **12.01 → 18.01**
 
-### 🎯 Objectifs
+### 🎯 Objectives
 
-* Vérifier le fonctionnement Docker (backend, web, mobile)
-* Relecture complète et mise à jour de la documentation
-* Analyse + exécution des tests unitaires
-* Vérification complète de la CI
-* Revue générale des fonctionnalités mobile et web
-  
-  
-  👉 *Sprint final de qualité : fiabilité, tests, CI/CD, polish.*
+* Ensure the entire system works via Docker (backend, web, mobile)
+* Fully review and update project documentation
+* Run and analyze unit tests across all modules
+* Ensure the CI pipeline works for every component
+* Review all mobile and web features
 
+  👉 *Quality-focused final sprint: reliability, tests, CI/CD, polish.*
