@@ -62,8 +62,16 @@ Area/
 │   │   └── src/
 │   │       ├── App.jsx
 │   │       └── components/
+│   │
 │   └── mobile/                 # Flutter project (android/ios/lib/...)
 │       ├── pubspec.yaml
+│       ├── lib/                # Contain all the app code
+│       │    ├── main.dart      # Entry point of the app
+│       │    ├── app.dart       # App-level configurations (themes, routes, ...)
+│       │    ├── assets/        # Images, fonts, and other static assets
+│       │    ├── screens/       # Different screens of the app
+│       │    └─── widgets/      # Reusable UI components
+│       ├── test/               # Unit tests for the Flutter
 │       └── android/
 ├── Reports/
 │   ├── Defense/
