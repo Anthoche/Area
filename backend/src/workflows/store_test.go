@@ -39,16 +39,16 @@ func TestSetEnabled_EnableIntervalSetsNextRun(t *testing.T) {
 
 	now := time.Now()
 	triggerCfg := []byte(`{"interval_minutes":2}`)
-	mock.ExpectQuery("SELECT id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at FROM workflows WHERE id = \\$1").
-		WithArgs(int64(1)).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "trigger_type", "trigger_config", "action_url", "enabled", "next_run_at", "created_at"}).
-			AddRow(int64(1), "wf", "interval", triggerCfg, "url", false, sql.NullTime{}, now))
+	mock.ExpectQuery("SELECT id, user_id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at FROM workflows WHERE id = \\$1 AND user_id = \\$2").
+		WithArgs(int64(1), int64(99)).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "name", "trigger_type", "trigger_config", "action_url", "enabled", "next_run_at", "created_at"}).
+			AddRow(int64(1), int64(99), "wf", "interval", triggerCfg, "url", false, sql.NullTime{}, now))
 
-	mock.ExpectExec("UPDATE workflows\\s+SET enabled = TRUE, next_run_at = \\$1\\s+WHERE id = \\$2").
-		WithArgs(sqlmock.AnyArg(), int64(1)).
+	mock.ExpectExec("UPDATE workflows\\s+SET enabled = TRUE, next_run_at = \\$1\\s+WHERE id = \\$2 AND user_id = \\$3").
+		WithArgs(sqlmock.AnyArg(), int64(1), int64(99)).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	if err := store.SetEnabled(context.Background(), 1, true, now); err != nil {
+	if err := store.SetEnabledForUser(context.Background(), 1, 99, true, now); err != nil {
 		t.Fatalf("SetEnabled enable interval: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -61,11 +61,11 @@ func TestSetEnabled_Disable(t *testing.T) {
 	defer mockDB.Close()
 	store := &Store{db: mockDB}
 
-	mock.ExpectExec("UPDATE workflows\\s+SET enabled = FALSE, next_run_at = NULL\\s+WHERE id = \\$1").
-		WithArgs(int64(2)).
+	mock.ExpectExec("UPDATE workflows\\s+SET enabled = FALSE, next_run_at = NULL\\s+WHERE id = \\$1 AND user_id = \\$2").
+		WithArgs(int64(2), int64(99)).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	if err := store.SetEnabled(context.Background(), 2, false, time.Now()); err != nil {
+	if err := store.SetEnabledForUser(context.Background(), 2, 99, false, time.Now()); err != nil {
 		t.Fatalf("SetEnabled disable: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -78,11 +78,11 @@ func TestSetEnabled_NotFound(t *testing.T) {
 	defer mockDB.Close()
 	store := &Store{db: mockDB}
 
-	mock.ExpectExec("UPDATE workflows\\s+SET enabled = FALSE, next_run_at = NULL\\s+WHERE id = \\$1").
-		WithArgs(int64(42)).
+	mock.ExpectExec("UPDATE workflows\\s+SET enabled = FALSE, next_run_at = NULL\\s+WHERE id = \\$1 AND user_id = \\$2").
+		WithArgs(int64(42), int64(99)).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
-	if err := store.SetEnabled(context.Background(), 42, false, time.Now()); !errors.Is(err, sql.ErrNoRows) {
+	if err := store.SetEnabledForUser(context.Background(), 42, 99, false, time.Now()); !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("expected sql.ErrNoRows, got %v", err)
 	}
 }
@@ -93,10 +93,10 @@ func TestGetWorkflow_DisablesNonManualWithoutNextRun(t *testing.T) {
 	store := &Store{db: mockDB}
 
 	now := time.Now()
-	mock.ExpectQuery("SELECT id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at FROM workflows WHERE id = \\$1").
+	mock.ExpectQuery("SELECT id, user_id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at FROM workflows WHERE id = \\$1").
 		WithArgs(int64(3)).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "trigger_type", "trigger_config", "action_url", "enabled", "next_run_at", "created_at"}).
-			AddRow(int64(3), "wf", "interval", []byte(`{"interval_minutes":5}`), "url", true, sql.NullTime{}, now))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "user_id", "name", "trigger_type", "trigger_config", "action_url", "enabled", "next_run_at", "created_at"}).
+			AddRow(int64(3), int64(99), "wf", "interval", []byte(`{"interval_minutes":5}`), "url", true, sql.NullTime{}, now))
 
 	wf, err := store.GetWorkflow(context.Background(), 3)
 	if err != nil {

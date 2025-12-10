@@ -22,6 +22,7 @@ export default function Homepage() {
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const getUserId = () => Number(localStorage.getItem("user_id") || "");
   const userEmail = localStorage.getItem("user_email") || "user@example.com";
   const [form, setForm] = useState({
     name: "Mon Konect",
@@ -44,12 +45,16 @@ export default function Homepage() {
     const params = new URLSearchParams(window.location.search);
     const tokenId = params.get("token_id");
     const googleEmail = params.get("google_email");
+    const userIdFromQuery = params.get("user_id");
     if (tokenId) {
       localStorage.setItem("google_token_id", tokenId);
     }
     if (googleEmail) {
       localStorage.setItem("google_email", googleEmail);
       localStorage.setItem("user_email", googleEmail);
+    }
+    if (userIdFromQuery) {
+      localStorage.setItem("user_id", userIdFromQuery);
     }
     if (tokenId || googleEmail) {
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -82,7 +87,13 @@ export default function Homepage() {
   const fetchWorkflows = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/workflows`);
+      const userId = getUserId();
+      if (!userId) {
+        throw new Error("missing user id, please login again");
+      }
+      const res = await fetch(`${API_BASE}/workflows`, {
+        headers: { "X-User-ID": String(userId) },
+      });
       if (!res.ok) throw new Error("failed to load workflows");
       const data = await res.json();
       const list = Array.isArray(data) ? data : [];
@@ -165,6 +176,11 @@ export default function Homepage() {
       alert("Nom requis");
       return;
     }
+    const userId = getUserId();
+    if (!userId) {
+      alert("Merci de vous reconnecter (user id manquant)");
+      return;
+    }
     if (form.reaction === "discord" && !form.discordUrl) {
       alert("URL webhook Discord requise");
       return;
@@ -189,7 +205,10 @@ export default function Homepage() {
       };
       const res = await fetch(`${API_BASE}/workflows`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-ID": String(userId),
+        },
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -213,6 +232,11 @@ export default function Homepage() {
       alert("Sélectionne un konect");
       return;
     }
+    const userId = getUserId();
+    if (!userId) {
+      alert("Merci de vous reconnecter (user id manquant)");
+      return;
+    }
     setTriggering(true);
     try {
       const payload = buildPayloadForWorkflow(selectedWorkflow);
@@ -220,7 +244,10 @@ export default function Homepage() {
         `${API_BASE}/workflows/${selectedWorkflow.id}/trigger`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-User-ID": String(userId),
+          },
           body: JSON.stringify(payload),
         }
       );
@@ -240,10 +267,16 @@ export default function Homepage() {
   const handleDelete = async () => {
     if (!selectedWorkflow) return;
     if (!window.confirm("Supprimer ce Konnect ?")) return;
+    const userId = getUserId();
+    if (!userId) {
+      alert("Merci de vous reconnecter (user id manquant)");
+      return;
+    }
     setDeleting(true);
     try {
       const res = await fetch(`${API_BASE}/workflows/${selectedWorkflow.id}`, {
         method: "DELETE",
+        headers: { "X-User-ID": String(userId) },
       });
       if (!res.ok) {
         const text = await res.text();
@@ -263,11 +296,16 @@ export default function Homepage() {
   const handleToggleTimer = async () => {
     if (!selectedWorkflow) return;
     const action = selectedWorkflow.enabled ? "disable" : "enable";
+    const userId = getUserId();
+    if (!userId) {
+      alert("Merci de vous reconnecter (user id manquant)");
+      return;
+    }
     setTogglingTimer(true);
     try {
       const res = await fetch(
         `${API_BASE}/workflows/${selectedWorkflow.id}/enabled?action=${action}`,
-        { method: "POST" }
+        { method: "POST", headers: { "X-User-ID": String(userId) } }
       );
       if (!res.ok) {
         const text = await res.text();

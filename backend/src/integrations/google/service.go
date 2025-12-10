@@ -57,18 +57,32 @@ func (c *Client) AuthURL(state, redirectURI string) string {
 	return "https://accounts.google.com/o/oauth2/auth?" + v.Encode()
 }
 
-// ExchangeAndStore exchanges an auth code for a token, saves it, and returns the token id + email.
-func (c *Client) ExchangeAndStore(ctx context.Context, code string, redirectURI string, userID *int64) (int64, string, error) {
+// ExchangeAndStore exchanges an auth code for a token, saves it, and returns the token id, user id, and email.
+func (c *Client) ExchangeAndStore(ctx context.Context, code string, redirectURI string, userID *int64) (int64, int64, string, error) {
 	tokenResp, err := c.exchangeCode(ctx, code, redirectURI)
 	if err != nil {
-		return -1, "", err
+		return -1, 0, "", err
 	}
 	email, _ := c.fetchEmail(ctx, tokenResp.AccessToken)
+	if userID == nil && email != "" {
+		if u, err := database.GetUserByEmail(ctx, email); err == nil {
+			userID = &u.Id
+		} else {
+			uid, createErr := database.CreateUser(ctx, "Google", "User", email, "google-oauth")
+			if createErr == nil {
+				userID = &uid
+			}
+		}
+	}
 	id, err := database.InsertGoogleToken(ctx, userID, tokenResp.AccessToken, tokenResp.RefreshToken, tokenResp.Expiry)
 	if err != nil {
-		return -1, "", err
+		return -1, 0, "", err
 	}
-	return id, email, nil
+	var resolvedUserID int64
+	if userID != nil {
+		resolvedUserID = *userID
+	}
+	return id, resolvedUserID, email, nil
 }
 
 // fetchEmail retrieves the user's email address using the OAuth access token.

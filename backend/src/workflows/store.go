@@ -25,6 +25,7 @@ const (
 
 type Workflow struct {
 	ID            int64           `json:"id"`
+	UserID        int64           `json:"user_id"`
 	Name          string          `json:"name"`
 	TriggerType   string          `json:"trigger_type"`
 	TriggerConfig json.RawMessage `json:"trigger_config"`
@@ -77,15 +78,15 @@ func NewDefaultStore() *Store {
 }
 
 // CreateWorkflow persists a new workflow with its trigger configuration.
-func (s *Store) CreateWorkflow(ctx context.Context, name, triggerType, actionURL string, triggerConfig json.RawMessage) (*Workflow, error) {
+func (s *Store) CreateWorkflow(ctx context.Context, userID int64, name, triggerType, actionURL string, triggerConfig json.RawMessage) (*Workflow, error) {
 	var id int64
 	var nextRun sql.NullTime
 	initialEnabled := triggerType == "manual"
 	err := s.db.QueryRowContext(ctx, `
-		INSERT INTO workflows (name, trigger_type, trigger_config, action_url, enabled, next_run_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO workflows (user_id, name, trigger_type, trigger_config, action_url, enabled, next_run_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id`,
-		name, triggerType, triggerConfig, actionURL, initialEnabled, nextRun,
+		userID, name, triggerType, triggerConfig, actionURL, initialEnabled, nextRun,
 	).Scan(&id)
 	if err != nil {
 		return nil, fmt.Errorf("create workflow: %w", err)
@@ -93,12 +94,13 @@ func (s *Store) CreateWorkflow(ctx context.Context, name, triggerType, actionURL
 	return s.GetWorkflow(ctx, id)
 }
 
-// ListWorkflows returns all workflows ordered by creation date.
-func (s *Store) ListWorkflows(ctx context.Context) ([]Workflow, error) {
+// ListWorkflows returns all workflows for a user ordered by creation date.
+func (s *Store) ListWorkflows(ctx context.Context, userID int64) ([]Workflow, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at
+		SELECT id, user_id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at
 		FROM workflows
-		ORDER BY created_at DESC`)
+		WHERE user_id = $1
+		ORDER BY created_at DESC`, userID)
 	if err != nil {
 		return nil, fmt.Errorf("list workflows: %w", err)
 	}
@@ -108,7 +110,7 @@ func (s *Store) ListWorkflows(ctx context.Context) ([]Workflow, error) {
 	for rows.Next() {
 		var wf Workflow
 		var nextRun sql.NullTime
-		if err := rows.Scan(&wf.ID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &wf.Enabled, &nextRun, &wf.CreatedAt); err != nil {
+		if err := rows.Scan(&wf.ID, &wf.UserID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &wf.Enabled, &nextRun, &wf.CreatedAt); err != nil {
 			return nil, fmt.Errorf("list workflows: %w", err)
 		}
 		if nextRun.Valid {
@@ -125,17 +127,17 @@ func (s *Store) ListWorkflows(ctx context.Context) ([]Workflow, error) {
 	return out, nil
 }
 
-// GetWorkflow fetches a workflow by ID.
+// GetWorkflow fetches a workflow by ID (no user check).
 func (s *Store) GetWorkflow(ctx context.Context, id int64) (*Workflow, error) {
 	var wf Workflow
 	row := s.db.QueryRowContext(ctx, `
-		SELECT id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at
+		SELECT id, user_id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at
 		FROM workflows
 		WHERE id = $1`,
 		id,
 	)
 	var nextRun sql.NullTime
-	if err := row.Scan(&wf.ID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &wf.Enabled, &nextRun, &wf.CreatedAt); err != nil {
+	if err := row.Scan(&wf.ID, &wf.UserID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &wf.Enabled, &nextRun, &wf.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, sql.ErrNoRows
 		}
@@ -163,10 +165,48 @@ func (s *Store) DeleteWorkflow(ctx context.Context, id int64) error {
 	return nil
 }
 
-// SetEnabled toggles the enabled flag; for interval, optionally adjusts next_run_at.
-func (s *Store) SetEnabled(ctx context.Context, id int64, enabled bool, now time.Time) error {
+// GetWorkflowForUser fetches a workflow by ID constrained to the owner.
+func (s *Store) GetWorkflowForUser(ctx context.Context, id int64, userID int64) (*Workflow, error) {
+	var wf Workflow
+	row := s.db.QueryRowContext(ctx, `
+		SELECT id, user_id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at
+		FROM workflows
+		WHERE id = $1 AND user_id = $2`,
+		id, userID,
+	)
+	var nextRun sql.NullTime
+	if err := row.Scan(&wf.ID, &wf.UserID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &wf.Enabled, &nextRun, &wf.CreatedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, sql.ErrNoRows
+		}
+		return nil, fmt.Errorf("get workflow: %w", err)
+	}
+	if nextRun.Valid {
+		wf.NextRunAt = &nextRun.Time
+	}
+	if wf.TriggerType != "manual" && wf.Enabled && wf.NextRunAt == nil {
+		wf.Enabled = false
+	}
+	return &wf, nil
+}
+
+// DeleteWorkflowForUser deletes a workflow if it belongs to the user.
+func (s *Store) DeleteWorkflowForUser(ctx context.Context, id int64, userID int64) error {
+	res, err := s.db.ExecContext(ctx, `DELETE FROM workflows WHERE id = $1 AND user_id = $2`, id, userID)
+	if err != nil {
+		return fmt.Errorf("delete workflow: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+// SetEnabledForUser toggles the enabled flag for a user's workflow; interval gets next_run_at.
+func (s *Store) SetEnabledForUser(ctx context.Context, id int64, userID int64, enabled bool, now time.Time) error {
 	if enabled {
-		wf, err := s.GetWorkflow(ctx, id)
+		wf, err := s.GetWorkflowForUser(ctx, id, userID)
 		if err != nil {
 			return err
 		}
@@ -181,8 +221,8 @@ func (s *Store) SetEnabled(ctx context.Context, id int64, enabled bool, now time
 		res, err := s.db.ExecContext(ctx, `
 			UPDATE workflows
 			SET enabled = TRUE, next_run_at = $1
-			WHERE id = $2`,
-			next, id,
+			WHERE id = $2 AND user_id = $3`,
+			next, id, userID,
 		)
 		if err != nil {
 			return fmt.Errorf("enable workflow: %w", err)
@@ -195,8 +235,8 @@ func (s *Store) SetEnabled(ctx context.Context, id int64, enabled bool, now time
 	res, err := s.db.ExecContext(ctx, `
 		UPDATE workflows
 		SET enabled = FALSE, next_run_at = NULL
-		WHERE id = $1`,
-		id,
+		WHERE id = $1 AND user_id = $2`,
+		id, userID,
 	)
 	if err != nil {
 		return fmt.Errorf("disable workflow: %w", err)
@@ -370,7 +410,7 @@ func (s *Store) ClaimDueIntervalWorkflows(ctx context.Context, now time.Time) ([
 	defer tx.Rollback()
 
 	rows, err := tx.QueryContext(ctx, `
-		SELECT id, name, trigger_type, trigger_config, action_url, next_run_at, created_at
+		SELECT id, user_id, name, trigger_type, trigger_config, action_url, next_run_at, created_at
 		FROM workflows
 		WHERE trigger_type = 'interval'
 		  AND enabled = TRUE
@@ -388,7 +428,7 @@ func (s *Store) ClaimDueIntervalWorkflows(ctx context.Context, now time.Time) ([
 	for rows.Next() {
 		var wf Workflow
 		var nextRun sql.NullTime
-		if err := rows.Scan(&wf.ID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &nextRun, &wf.CreatedAt); err != nil {
+		if err := rows.Scan(&wf.ID, &wf.UserID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &nextRun, &wf.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan interval wf: %w", err)
 		}
 		if nextRun.Valid {
@@ -423,12 +463,12 @@ func (s *Store) FindWorkflowByToken(ctx context.Context, token string) (*Workflo
 	var wf Workflow
 	var nextRun sql.NullTime
 	err := s.db.QueryRowContext(ctx, `
-		SELECT id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at
+		SELECT id, user_id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at
 		FROM workflows
 		WHERE trigger_type = 'webhook' AND enabled = TRUE AND trigger_config->>'token' = $1
 		LIMIT 1`,
 		token,
-	).Scan(&wf.ID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &wf.Enabled, &nextRun, &wf.CreatedAt)
+	).Scan(&wf.ID, &wf.UserID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &wf.Enabled, &nextRun, &wf.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, sql.ErrNoRows
