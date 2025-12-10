@@ -158,6 +158,34 @@ export default function Homepage() {
     return { content: "Hello from Area" };
   };
 
+  const buildIntervalPayload = () => {
+    switch (form.reaction) {
+      case "discord":
+        return { content: form.discordContent || "Hello from Area" };
+      case "gmail":
+        return {
+          token_id: Number(localStorage.getItem("google_token_id")) || 1,
+          to: form.emailTo || "dest@example.com",
+          subject: form.emailSubject || "Hello",
+          body: form.emailBody || "From Area",
+        };
+      case "calendar":
+        return {
+          token_id: Number(localStorage.getItem("google_token_id")) || 1,
+          summary: form.calSummary || "Area Event",
+          start: form.calStart || new Date().toISOString(),
+          end:
+            form.calEnd ||
+            new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+          attendees: form.calAttendees
+            ? form.calAttendees.split(",").map((v) => v.trim())
+            : [],
+        };
+      default:
+        return { content: "Hello from Area" };
+    }
+  };
+
   const buildActionUrl = () => {
     switch (form.reaction) {
       case "discord":
@@ -196,10 +224,7 @@ export default function Homepage() {
           form.triggerType === "interval"
             ? {
                 interval_minutes: Number(form.intervalMinutes) || 1,
-                payload:
-                  form.reaction === "discord"
-                    ? { content: form.discordContent || "Hello from Area" }
-                    : {},
+                payload: buildIntervalPayload(),
               }
             : {},
       };
