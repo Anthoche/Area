@@ -1,8 +1,10 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -73,6 +75,22 @@ type workflowRequest struct {
 
 type OAuthAccessResponse struct {
 	AccessToken string `json:"access_token"`
+}
+
+// userContext extracts the user id from headers/query and enriches the context.
+func userContext(r *http.Request) (context.Context, error) {
+	user := r.Header.Get("X-User-ID")
+	if user == "" {
+		user = r.URL.Query().Get("user_id")
+	}
+	if user == "" {
+		return r.Context(), fmt.Errorf("missing user id")
+	}
+	id, err := strconv.ParseInt(user, 10, 64)
+	if err != nil || id <= 0 {
+		return r.Context(), fmt.Errorf("invalid user id")
+	}
+	return workflows.WithUserID(r.Context(), id), nil
 }
 
 // login handles POST /login authentication requests.
@@ -185,7 +203,7 @@ func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,OPTIONS,DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization,X-User-ID")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
@@ -227,6 +245,11 @@ func (h *handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "workflows not configured"})
 		return
 	}
+	ctx, err := userContext(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, errorResponse{Error: err.Error()})
+		return
+	}
 
 	var payload workflowRequest
 	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
@@ -244,7 +267,7 @@ func (h *handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	if len(cfg) == 0 && payload.IntervalMinutes != nil && payload.TriggerType == "interval" {
 		cfg, _ = json.Marshal(map[string]int{"interval_minutes": *payload.IntervalMinutes})
 	}
-	wf, err := h.workflows.CreateWorkflow(r.Context(), payload.Name, payload.TriggerType, payload.ActionURL, cfg)
+	wf, err := h.workflows.CreateWorkflow(ctx, payload.Name, payload.TriggerType, payload.ActionURL, cfg)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{Error: err.Error()})
 		return
@@ -258,7 +281,12 @@ func (h *handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "workflows not configured"})
 		return
 	}
-	items, err := h.workflows.ListWorkflows(r.Context())
+	ctx, err := userContext(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, errorResponse{Error: err.Error()})
+		return
+	}
+	items, err := h.workflows.ListWorkflows(ctx)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not list workflows"})
 		return
@@ -273,6 +301,11 @@ func (h *handler) workflowResource() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if h.workflows == nil {
 			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "workflows not configured"})
+			return
+		}
+		ctx, err := userContext(r)
+		if err != nil {
+			writeJSON(w, http.StatusUnauthorized, errorResponse{Error: err.Error()})
 			return
 		}
 		if !strings.HasPrefix(r.URL.Path, "/workflows/") {
@@ -296,7 +329,7 @@ func (h *handler) workflowResource() http.Handler {
 			action := r.URL.Query().Get("action")
 			switch action {
 			case "enable":
-				if err := h.workflows.SetEnabled(r.Context(), workflowID, true, time.Now()); err != nil {
+				if err := h.workflows.SetEnabled(ctx, workflowID, true, time.Now()); err != nil {
 					if errors.Is(err, workflows.ErrWorkflowNotFound) {
 						writeJSON(w, http.StatusNotFound, errorResponse{Error: "workflow not found"})
 						return
@@ -307,7 +340,7 @@ func (h *handler) workflowResource() http.Handler {
 				writeJSON(w, http.StatusOK, map[string]string{"status": "enabled"})
 				return
 			case "disable":
-				if err := h.workflows.SetEnabled(r.Context(), workflowID, false, time.Now()); err != nil {
+				if err := h.workflows.SetEnabled(ctx, workflowID, false, time.Now()); err != nil {
 					if errors.Is(err, workflows.ErrWorkflowNotFound) {
 						writeJSON(w, http.StatusNotFound, errorResponse{Error: "workflow not found"})
 						return
@@ -325,7 +358,7 @@ func (h *handler) workflowResource() http.Handler {
 
 		// DELETE /workflows/{id}
 		if len(parts) == 2 && r.Method == http.MethodDelete {
-			if err := h.workflows.DeleteWorkflow(r.Context(), workflowID); err != nil {
+			if err := h.workflows.DeleteWorkflow(ctx, workflowID); err != nil {
 				if errors.Is(err, workflows.ErrWorkflowNotFound) {
 					writeJSON(w, http.StatusNotFound, errorResponse{Error: "workflow not found"})
 					return
@@ -355,11 +388,13 @@ func (h *handler) workflowResource() http.Handler {
 			return
 		}
 
-		run, err := h.workflows.Trigger(r.Context(), workflowID, payload)
+		run, err := h.workflows.Trigger(ctx, workflowID, payload)
 		if err != nil {
 			switch {
 			case errors.Is(err, workflows.ErrWorkflowNotFound):
 				writeJSON(w, http.StatusNotFound, errorResponse{Error: "workflow not found"})
+			case errors.Is(err, workflows.ErrWorkflowDisabled):
+				writeJSON(w, http.StatusBadRequest, errorResponse{Error: "workflow disabled"})
 			default:
 				writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not trigger workflow"})
 			}

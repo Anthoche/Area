@@ -78,7 +78,7 @@ func (h *HTTPHandlers) Callback() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "redirect_uri is required"})
 			return
 		}
-		tokenID, email, err := h.client.ExchangeAndStore(r.Context(), code, redirectURI, userID)
+		tokenID, resolvedUserID, email, err := h.client.ExchangeAndStore(r.Context(), code, redirectURI, userID)
 		if err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 			return
@@ -88,6 +88,9 @@ func (h *HTTPHandlers) Callback() http.Handler {
 				if redir, err := url.Parse(dest); err == nil && (redir.Scheme == "http" || redir.Scheme == "https") {
 					q := redir.Query()
 					q.Set("token_id", strconv.FormatInt(tokenID, 10))
+					if resolvedUserID > 0 {
+						q.Set("user_id", strconv.FormatInt(resolvedUserID, 10))
+					}
 					if email != "" {
 						q.Set("google_email", email)
 					}
@@ -98,6 +101,9 @@ func (h *HTTPHandlers) Callback() http.Handler {
 			}
 		}
 		resp := map[string]any{"token_id": tokenID}
+		if resolvedUserID > 0 {
+			resp["user_id"] = resolvedUserID
+		}
 		if email != "" {
 			resp["email"] = email
 		}

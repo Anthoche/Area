@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
 ---------------------------
 CREATE TABLE IF NOT EXISTS workflows (
     id               SERIAL PRIMARY KEY,
+    user_id          INTEGER REFERENCES users(id) ON DELETE CASCADE,
     name             VARCHAR(255) NOT NULL,
     trigger_type     VARCHAR(64) NOT NULL,
     trigger_config   JSONB NOT NULL DEFAULT '{}'::jsonb,
