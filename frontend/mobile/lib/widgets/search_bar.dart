@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Lightweight search field used in the home screen header.
 class Search_bar extends StatelessWidget {
   const Search_bar({super.key});
 

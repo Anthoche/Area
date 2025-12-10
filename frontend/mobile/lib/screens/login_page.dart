@@ -9,29 +9,31 @@ import 'home_page.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 
+/// Authentication screen that collects user credentials and triggers the sign-in flow.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // Controllers
+  // Controllers backing the credential fields.
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  // isValidEmail is a function that will check if the email is valid
+  /// Checks whether the email string matches a simple pattern.
   bool isValidEmail(String email) {
     final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
     return emailRegex.hasMatch(email);
   }
 
-  // Validate empty fields
+  /// Returns true when either field is empty.
   bool isFieldsEmpty() {
     return emailController.text.isEmpty || passwordController.text.isEmpty;
   }
 
-  // Popup error
+  /// Shows a one-off error dialog with the provided message.
   void showErrorPopup(String message) {
     showDialog(
       context: context,
@@ -56,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Login request
+  /// Calls the backend login endpoint and routes to the home page when successful.
   Future<void> loginUser() async {
     final apiUrl = dotenv.env['API_URL'];
     final url = Uri.parse("$apiUrl/login");
@@ -75,13 +77,11 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       if (response.statusCode == 200) {
-        // logged
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const Homepage()),
         );
       } else {
-        // error
         try {
           final responseData = jsonDecode(response.body);
           showErrorPopup(responseData['message'] ?? "Login failed");
@@ -105,20 +105,19 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Logo
+              // Brand logo.
               Image.asset(
                 'lib/assets/Kikonect_logo.png',
                 height: 250,
                 width: 250,
                 alignment: Alignment.center,
               ),
-              // EMAIL FIELD
               AppTextField(label: "Email", controller: emailController),
               const SizedBox(height: 25),
-              // PASSWORD FIELD
-              AppTextField(label: "Password", obscure: true, controller: passwordController),
+              AppTextField(label: "Password",
+                  obscure: true,
+                  controller: passwordController),
               const SizedBox(height: 30),
-              // LOGIN BUTTON
               PrimaryButton(
                 text: "Login",
                 onPressed: () async {
@@ -134,24 +133,23 @@ class _LoginPageState extends State<LoginPage> {
                 },
               ),
               const SizedBox(height: 10),
-              // Separation text
-              const Text("──────────  or  ──────────"),
+              // Simple separator for the alternative sign-in methods.
+              const Text("-----------  or  -----------"),
               const SizedBox(height: 10),
-              // LOGIN google BUTTON
               PrimaryButton(
-                text: "Login with Google", //temporaire histoire de test la page
+                text: "Login with Google",
                 onPressed: () {
                   Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const Homepage()),
-                );},
+                    context,
+                    MaterialPageRoute(builder: (_) => const Homepage()),
+                  );
+                },
                 icon: Image.asset(
                   'lib/assets/G_logo.png',
                   height: 20,
                 ),
               ),
               const SizedBox(height: 10),
-              // LOGIN github BUTTON
               PrimaryButton(
                 text: "Login with Github",
                 onPressed: () {},
@@ -161,7 +159,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Register link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
@@ -171,10 +168,13 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const RegisterMiddlePage()),
+                        MaterialPageRoute(
+                            builder: (_) => const RegisterMiddlePage()),
                       );
                     },
-                    child: const Text("Sign up", style: TextStyle(decoration: TextDecoration.underline),
+                    child: const Text(
+                      "Sign up",
+                      style: TextStyle(decoration: TextDecoration.underline),
                     ),
                   ),
                 ],

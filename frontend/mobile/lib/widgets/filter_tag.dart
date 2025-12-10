@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Capsule-styled button used to filter service lists.
 class FilterTag extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -28,7 +29,7 @@ class FilterTag extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          minimumSize: Size.zero, // Permet au bouton de s'adapter au contenu
+          minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           elevation: 0,
         ),

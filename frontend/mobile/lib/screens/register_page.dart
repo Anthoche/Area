@@ -7,16 +7,18 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 
+/// Collects full account details and posts a registration request.
 class RegisterPage extends StatefulWidget {
   final String? email;
 
   const RegisterPage({super.key, this.email});
+
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // Controller
+  // Form controllers used across validation and submission.
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
   final emailController = TextEditingController();
@@ -31,7 +33,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  //register user is the function that will send data to the backend
+  /// Sends the collected profile data to the backend registration endpoint.
   Future<void> registerUser() async {
     final apiUrl = dotenv.env['API_URL'];
     final url = Uri.parse("$apiUrl/register");
@@ -49,18 +51,18 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // passwordMatch is a function that will check if the password and confirm password are the same
+  /// Returns true when both password fields match.
   bool passwordMatch() {
     return passwordController.text == confirmPasswordController.text;
   }
 
-  // isValidEmail is a function that will check if the email is valid
+  /// Checks whether the email string matches a simple pattern.
   bool isValidEmail(String email) {
     final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
     return emailRegex.hasMatch(email);
   }
 
-  // isFieldsEmpty is a function that will check if the fields are empty
+  /// Returns true if any required field is empty.
   bool isFieldsEmpty() {
     return firstNameController.text.isEmpty ||
         lastNameController.text.isEmpty ||
@@ -69,7 +71,7 @@ class _RegisterPageState extends State<RegisterPage> {
         confirmPasswordController.text.isEmpty;
   }
 
-  // showErrorPopup is a function that will show an error popup
+  /// Shows a one-off error dialog with the provided message.
   void showErrorPopup(String message) {
     showDialog(
       context: context,
@@ -107,14 +109,13 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Logo
+                // Brand logo.
                 Image.asset(
                   'lib/assets/Kikonect_logo.png',
                   height: 250,
                   width: 250,
                   alignment: Alignment.center,
                 ),
-                // Register text
                 const Text(
                   "Create an account",
                   style: TextStyle(
@@ -124,20 +125,25 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                // TEXT FIELDS
                 const SizedBox(height: 30),
-                AppTextField(label: "First Name", controller: firstNameController),
+                AppTextField(
+                    label: "First Name", controller: firstNameController),
                 const SizedBox(height: 30),
-                AppTextField(label: "Last Name", controller: lastNameController),
+                AppTextField(
+                    label: "Last Name", controller: lastNameController),
                 const SizedBox(height: 30),
                 AppTextField(label: "Email", controller: emailController),
                 const SizedBox(height: 30),
-                AppTextField(label: "Password", obscure: true, controller: passwordController),
+                AppTextField(label: "Password",
+                    obscure: true,
+                    controller: passwordController),
                 const SizedBox(height: 30),
-                AppTextField(label: "Confirm Password", obscure: true, controller: confirmPasswordController),
+                AppTextField(label: "Confirm Password",
+                    obscure: true,
+                    controller: confirmPasswordController),
                 const SizedBox(height: 30),
-                // REGISTER BUTTON
-                PrimaryButton(text: "Register",
+                PrimaryButton(
+                  text: "Register",
                   onPressed: () async {
                     if (isFieldsEmpty()) {
                       showErrorPopup("Please fill in all fields.");

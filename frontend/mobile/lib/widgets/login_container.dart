@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+/// Card-like container used to wrap authentication content.
 class LoginContainer extends StatelessWidget {
   final Widget child;
+
   const LoginContainer({super.key, required this.child});
 
   @override

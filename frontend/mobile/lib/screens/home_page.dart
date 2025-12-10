@@ -3,6 +3,7 @@ import '../widgets/filter_tag.dart';
 import '../widgets/service_card.dart';
 import '../widgets/search_bar.dart';
 
+/// Home screen showing saved Konects and quick actions.
 class Homepage extends StatelessWidget {
   const Homepage({super.key});
 
@@ -133,8 +134,12 @@ class Homepage extends StatelessWidget {
     );
   }
 
+  /// Opens a contextual menu anchored to the floating action button.
   void _showAddOptions(BuildContext context) {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RenderBox overlay = Overlay
+        .of(context)
+        .context
+        .findRenderObject() as RenderBox;
 
     showMenu(
       context: context,
@@ -161,6 +166,7 @@ class Homepage extends StatelessWidget {
     });
   }
 
+  /// Rotates through a small palette to colorize service cards.
   Color _getColor(int index) {
     final colors = [
       const Color(0xFF00D2FF),
