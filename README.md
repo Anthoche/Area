@@ -1,16 +1,24 @@
 <div align="center">
-    <h1>KiKonect (Area)</h1>
-    <h3>Automation backend with web/mobile clients</h3>
+    <h1>KiKoNect</h1>
+    <h3>Action - REAction</h3>
 </div>
 
 ---
 
 ## 📋 Project Description
 
-KiKonect is an “Area”-style automation platform.  
-Backend in Go + PostgreSQL, web in React/Vite, mobile build in Flutter.  
-Workflows can be manual, interval, or webhook-triggered; they enqueue jobs executed via HTTP to an `action_url`.
-If you want to extend the platform (new triggers, services, actions, etc.), read the [Contributing Guide](CONTRIBUTING.md).
+KiKoNect is an “Area”-style automation platform.  
+The application offers the following functionalities (high level user flow):
+
+1. The user registers on the application KiKoNect in order to obtain an account.
+2. The registered user then confirms their enrollment on the application before being able to use it.
+3. The application then asks the authenticated user to subscribe to Services.
+4. Each service offers the following components:
+  - type Action
+  - type REAction
+5. The authenticated user composes a *Konect* by interconnecting an Action to a REAction previously configured.
+6. The application triggers *Konects* automatically thanks to hooks.
+
 
 ## ✨ Key Features
 
@@ -30,23 +38,65 @@ If you want to extend the platform (new triggers, services, actions, etc.), read
 
 ```
 Area/
-├── backend/                  # Go backend
-│   ├── src/
-│   │   ├── auth/              # Auth service + store
-│   │   ├── database/          # PostgreSQL access layer
-│   │   ├── httpapi/           # HTTP handlers (login, register, workflows)
-│   │   ├── integrations/      # placeholder integrations
-│   │   ├── workflows/         # Store, triggerer, executor, scheduler
-│   │   └── main.go            # server entrypoint
-│   ├── resources/            # database_scheme.sql
+├── CONTRIBUTING.md
+├── docker-compose.yml
+├── LICENSE
+├── README.md
+├── backend/                    # Go backend
 │   ├── Dockerfile
-│   ├── go.mod / go.sum
+│   ├── go.mod
+│   ├── go.sum
+│   ├── resources/
+│   │   └── database_scheme.sql
+│   └── src/
+│       ├── main.go
+│       ├── auth/               # auth service, oauth helpers, tests
+│       ├── database/           # postgres store + migrations/tests
+│       ├── httpapi/            # HTTP handlers, routes, server setup
+│       ├── workflows/          # store, triggers, executor, scheduler
+│       └── integrations/       # external integrations / adapters
 ├── frontend/
-│   ├── web/                  # React/Vite app
-│   └── mobile/               # Flutter project (APK via Docker)
-├── docker-compose.yml        # Full stack
-└── README.md
+│   ├── web/                    # React + Vite app
+│   │   ├── package.json
+│   │   ├── vite.config.js
+│   │   └── src/
+│   │       ├── App.jsx
+│   │       └── components/
+│   └── mobile/                 # Flutter project (android/ios/lib/...)
+│       ├── pubspec.yaml
+│       └── android/
+├── Reports/
+│   ├── Defense/
+│   └── Meeting/
 ```
+
+## 🏗️ Architecture
+
+The project is composed of **four main components** deployed with `docker-compose`:
+
+### **API Backend (Go)**
+- HTTP server exposed on port `8080` (configurable using `PORT`).
+- Main routes: auth (`/login`, `/register`), workflows (`/workflows`, `/hooks/{token}`), OAuth endpoints (`/auth/*`, `/oauth/*`).
+- Manages workflow logic: creation, interval scheduling, job queueing, and execution.
+- Uses PostgreSQL for persistence (schema: `backend/resources/database_scheme.sql`).
+
+### **PostgreSQL**
+- Relational database storing users, workflows, runs, and jobs.
+- Configured via environment variables (`POSTGRES_*`).
+
+### **Web Frontend (React + Vite)**
+- Development server on `5173` (Vite), production build served via nginx on `8081`.
+- Communicates with API through `VITE_API_URL`.
+- Handles OAuth initialization on the client (using a `json-init` flow that stores `state` in `localStorage` to avoid cross-port cookie issues).
+
+### **Mobile (Flutter)**
+- Built by the `client_mobile` service in Docker Compose, generating an APK.
+
+### Important Execution Notes
+- **OAuth**: backend validates callback URL and exchanges code→token; frontend stores OAuth `state` in `localStorage` and posts the `code` back to backend.
+- **CORS**: backend uses permissive headers for development; in production origin should be restricted.
+- **Environment variables**: although `.env` is loaded automatically, core variables should be explicitly listed in the compose file.
+- **Scalability**: executor sends POST payloads to `action_url`; scaling horizontally requires splitting workers and/or using distributed locking or message queues.
 
 ## 🚀 Quick Start (Docker Compose)
 
@@ -132,12 +182,30 @@ npm run dev          # http://localhost:5173
 - `go fmt ./...` — format Go code.
 - `go clean -testcache` — clear Go test cache.
 
+<br>
+
+## 🤝 Contribution
+
+Contributions are welcome! Please follow these guidelines:
+
+- Read the `CONTRIBUTING.md` file for branch, test and PR rules.
+
+- Create a feature branch from `dev`: `git checkout -b feat/your-feature`.
+
+- Run tests and linters before submitting a PR:
+
+- Write clear PR descriptions and link any related issues.
+
+If you're adding a breaking change, please open an issue first to discuss the design.
+
+## 📜 License
+
+This project is provided under the MIT License — see the `LICENSE` file for details.
+
+
 ## 👥 Team
 
 - [Bastien Leroux](https://github.com/bast0u)
 - [Anthony El-Achkar](https://github.com/Anthoche)
 - [Mariia Semenchenko](https://github.com/mariiasemenchenko)
 - [Corto Morrow](https://github.com/NuggetReckt)
-
-<br>
-*Last update: December 2025*
