@@ -10,6 +10,11 @@ RUN go build -o /myapp ./src
 
 FROM debian:bookworm-slim as run
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
+    update-ca-certificates
+
 COPY --from=build /myapp /myapp
 
 WORKDIR /app

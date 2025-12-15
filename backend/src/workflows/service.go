@@ -1,0 +1,122 @@
+package workflows
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+)
+
+var ErrTriggerUnavailable = errors.New("workflow triggerer not configured")
+var ErrWorkflowNotFound = errors.New("workflow not found")
+var ErrWorkflowDisabled = errors.New("workflow disabled")
+
+// Service orchestrates workflow CRUD and triggering.
+type Service struct {
+	Store     *Store
+	Triggerer *Triggerer
+}
+
+// NewService constructs a workflow service with its store and triggerer.
+func NewService(store *Store, triggerer *Triggerer) *Service {
+	return &Service{
+		Store:     store,
+		Triggerer: triggerer,
+	}
+}
+
+// Trigger enqueues a workflow run with the provided payload.
+func (s *Service) Trigger(ctx context.Context, workflowID int64, payload map[string]any) (*Run, error) {
+	if s.Triggerer == nil {
+		return nil, ErrTriggerUnavailable
+	}
+	wf, err := s.Store.GetWorkflow(ctx, workflowID)
+	if err != nil {
+		return nil, ErrWorkflowNotFound
+	}
+	if !wf.Enabled && wf.TriggerType != "manual" {
+		return nil, ErrWorkflowDisabled
+	}
+	return s.Triggerer.EnqueueRun(ctx, workflowID, payload)
+}
+
+// CreateWorkflow validates input and stores a new workflow.
+func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionURL string, triggerConfig json.RawMessage) (*Workflow, error) {
+	name = strings.TrimSpace(name)
+	triggerType = strings.TrimSpace(triggerType)
+	actionURL = strings.TrimSpace(actionURL)
+	if name == "" || triggerType == "" || actionURL == "" {
+		return nil, errors.New("name, triggerType and actionURL are required")
+	}
+	switch triggerType {
+	case "interval":
+		cfg, err := intervalConfigFromJSON(triggerConfig)
+		if err != nil || cfg.IntervalMinutes <= 0 {
+			return nil, errors.New("interval_minutes must be > 0 for interval trigger")
+		}
+	case "webhook", "manual":
+		// no-op, but ensure valid JSON
+		if len(triggerConfig) == 0 {
+			triggerConfig = []byte(`{}`)
+		}
+	default:
+		return nil, fmt.Errorf("unsupported trigger_type %s", triggerType)
+	}
+	return s.Store.CreateWorkflow(ctx, name, triggerType, actionURL, triggerConfig)
+}
+
+// ListWorkflows returns all persisted workflows.
+func (s *Service) ListWorkflows(ctx context.Context) ([]Workflow, error) {
+	return s.Store.ListWorkflows(ctx)
+}
+
+// GetWorkflow fetches a workflow by ID or returns ErrWorkflowNotFound.
+func (s *Service) GetWorkflow(ctx context.Context, id int64) (*Workflow, error) {
+	wf, err := s.Store.GetWorkflow(ctx, id)
+	if err != nil {
+		return nil, ErrWorkflowNotFound
+	}
+	return wf, nil
+}
+
+// DeleteWorkflow removes a workflow and its related runs/jobs.
+func (s *Service) DeleteWorkflow(ctx context.Context, id int64) error {
+	if err := s.Store.DeleteWorkflow(ctx, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrWorkflowNotFound
+		}
+		return err
+	}
+	return nil
+}
+
+// SetEnabled toggles a workflow (non-manual can be paused); interval workflows are rescheduled on enable.
+func (s *Service) SetEnabled(ctx context.Context, id int64, enabled bool, now time.Time) error {
+	if err := s.Store.SetEnabled(ctx, id, enabled, now); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrWorkflowNotFound
+		}
+		return err
+	}
+	return nil
+}
+
+// TriggerWebhook finds a webhook workflow by token and enqueues it with payload.
+func (s *Service) TriggerWebhook(ctx context.Context, token string, payload map[string]any) (*Run, error) {
+	wf, err := s.Store.FindWorkflowByToken(ctx, token)
+	if err != nil {
+		return nil, ErrWorkflowNotFound
+	}
+	if !wf.Enabled {
+		return nil, ErrWorkflowDisabled
+	}
+	return s.Trigger(ctx, wf.ID, payload)
+}
+
+// IntervalConfigFromJSON exposes interval config parsing to callers (e.g., scheduler).
+func IntervalConfigFromJSON(raw json.RawMessage) (IntervalConfig, error) {
+	return intervalConfigFromJSON(raw)
+}

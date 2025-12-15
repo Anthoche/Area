@@ -2,7 +2,16 @@ package auth
 
 import (
 	"area/src/database"
+	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"os"
+	"strconv"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -19,7 +28,20 @@ var (
 	ErrUserExists         = errors.New("user already exists")
 )
 
-const bcryptCost = 12
+const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
+
+var bcryptCost int
+
+// init configures the bcrypt cost from environment variables.
+func init() {
+	costStr := os.Getenv("BCRYPT_COST")
+	cost, err := strconv.Atoi(costStr)
+	if err != nil {
+		bcryptCost = bcrypt.DefaultCost
+	} else {
+		bcryptCost = cost
+	}
+}
 
 // HashPassword hashes a plaintext password with bcrypt.
 func HashPassword(password string) (string, error) {
@@ -87,4 +109,102 @@ func (s *Service) Register(email, password, firstName, lastName string) (*User, 
 		return nil, err
 	}
 	return user, nil
+}
+
+// GetUserDataFromGoogle exchanges an auth code for user info (email/profile) via Google APIs.
+func GetUserDataFromGoogle(code string) ([]byte, error) {
+	redirectURI := os.Getenv("GOOGLE_OAUTH_REDIRECT_URI")
+	if redirectURI == "" {
+		return nil, fmt.Errorf("missing GOOGLE_OAUTH_REDIRECT_URI")
+	}
+	values := url.Values{}
+	values.Set("grant_type", "authorization_code")
+	values.Set("code", code)
+	values.Set("redirect_uri", redirectURI)
+	values.Set("client_id", os.Getenv("GOOGLE_OAUTH_CLIENT_ID"))
+	values.Set("client_secret", os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"))
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "https://oauth2.googleapis.com/token", strings.NewReader(values.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("code exchange wrong: %s", string(body))
+	}
+	var token struct {
+		AccessToken string `json:"access_token"`
+	}
+	if err := json.Unmarshal(body, &token); err != nil {
+		return nil, err
+	}
+	response, err := http.Get(oauthGoogleUrlAPI + token.AccessToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting user info: %s", err.Error())
+	}
+	defer response.Body.Close()
+	contents, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed read response: %s", err.Error())
+	}
+	return contents, nil
+}
+
+// GetUserDataFromGithub exchanges an auth code for user info via GitHub APIs.
+func GetUserDataFromGithub(code string) ([]byte, error) {
+	values := url.Values{}
+	values.Set("client_id", os.Getenv("GITHUB_OAUTH_CLIENT_ID"))
+	values.Set("client_secret", os.Getenv("GITHUB_OAUTH_CLIENT_SECRET"))
+	values.Set("code", code)
+	if redirect := os.Getenv("GITHUB_OAUTH_REDIRECT_URI"); redirect != "" {
+		values.Set("redirect_uri", redirect)
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "https://github.com/login/oauth/access_token", strings.NewReader(values.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("code exchange wrong: %s", string(body))
+	}
+	var tok struct {
+		AccessToken string `json:"access_token"`
+	}
+	if err := json.Unmarshal(body, &tok); err != nil {
+		return nil, err
+	}
+	if tok.AccessToken == "" {
+		return nil, fmt.Errorf("no access_token returned from github")
+	}
+
+	userReq, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "https://api.github.com/user", nil)
+	if err != nil {
+		return nil, err
+	}
+	userReq.Header.Set("Authorization", "Bearer "+tok.AccessToken)
+	userReq.Header.Set("Accept", "application/json")
+	userResp, err := http.DefaultClient.Do(userReq)
+	if err != nil {
+		return nil, err
+	}
+	defer userResp.Body.Close()
+	userBody, _ := ioutil.ReadAll(userResp.Body)
+	if userResp.StatusCode >= 300 {
+		return nil, fmt.Errorf("failed read response: %s", string(userBody))
+	}
+	return userBody, nil
 }

@@ -15,6 +15,7 @@ func NewDBStore() *DBStore {
 	return &DBStore{}
 }
 
+// Create inserts a new user row and updates the passed user with its ID.
 func (DBStore) Create(user *User, passwordHash string) error {
 	id, err := database.CreateUser(user.FirstName, user.LastName, user.Email, passwordHash)
 	if err != nil {
@@ -27,6 +28,7 @@ func (DBStore) Create(user *User, passwordHash string) error {
 	return nil
 }
 
+// GetByEmail returns a user and their hashed password for the given email.
 func (DBStore) GetByEmail(email string) (*User, string, error) {
 	dbUser, err := database.GetUserByEmail(email)
 	if err != nil {
