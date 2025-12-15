@@ -260,10 +260,15 @@ func buildRawEmail(to, subject, body string) string {
 func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) (*OAuthToken, error) {
 	var t *database.GoogleToken
 	var err error
-	if userID != nil && *userID > 0 {
-		t, err = database.GetGoogleTokenForUser(ctx, tokenID, *userID)
+	// If no tokenID provided but user is known, pick the latest token for that user.
+	if tokenID == 0 && userID != nil && *userID > 0 {
+		t, err = database.GetLatestGoogleTokenForUser(ctx, *userID)
 	} else {
-		t, err = database.GetGoogleToken(ctx, tokenID)
+		if userID != nil && *userID > 0 {
+			t, err = database.GetGoogleTokenForUser(ctx, tokenID, *userID)
+		} else {
+			t, err = database.GetGoogleToken(ctx, tokenID)
+		}
 	}
 	if err != nil {
 		return nil, err
@@ -283,7 +288,7 @@ func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) 
 	if err != nil {
 		return nil, err
 	}
-	if err := database.UpdateGoogleToken(ctx, tokenID, newToken.AccessToken, newToken.RefreshToken, newToken.Expiry); err != nil {
+	if err := database.UpdateGoogleToken(ctx, t.Id, newToken.AccessToken, newToken.RefreshToken, newToken.Expiry); err != nil {
 		return nil, err
 	}
 	return newToken, nil
