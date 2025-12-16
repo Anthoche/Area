@@ -1,13 +1,14 @@
 package httpapi
 
 import (
+	"area/src/httpapi"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
 func TestWithCORS_SetsHeaders(t *testing.T) {
-	handler := withCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := httpapi.WithCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -25,7 +26,7 @@ func TestWithCORS_SetsHeaders(t *testing.T) {
 }
 
 func TestWithCORS_OptionsShortCircuit(t *testing.T) {
-	handler := withCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := httpapi.WithCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Fatalf("handler should not be called for OPTIONS")
 	}))
 

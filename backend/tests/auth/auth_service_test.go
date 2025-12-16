@@ -1,18 +1,21 @@
 package auth
 
-import "testing"
+import (
+	"area/src/auth"
+	"testing"
+)
 
 type fakeUserStore struct {
-	getRespUser *User
+	getRespUser *auth.User
 	getRespHash string
 	getErr      error
 	createErr   error
 
-	createdUser *User
+	createdUser *auth.User
 	createdHash string
 }
 
-func (f *fakeUserStore) Create(user *User, passwordHash string) error {
+func (f *fakeUserStore) Create(user *auth.User, passwordHash string) error {
 	f.createdUser = user
 	f.createdHash = passwordHash
 	if f.createErr != nil {
@@ -22,7 +25,7 @@ func (f *fakeUserStore) Create(user *User, passwordHash string) error {
 	return nil
 }
 
-func (f *fakeUserStore) GetByEmail(email string) (*User, string, error) {
+func (f *fakeUserStore) GetByEmail(email string) (*auth.User, string, error) {
 	if f.getErr != nil {
 		return nil, "", f.getErr
 	}
@@ -30,12 +33,12 @@ func (f *fakeUserStore) GetByEmail(email string) (*User, string, error) {
 }
 
 func TestServiceAuthenticate_Success(t *testing.T) {
-	hash, _ := HashPassword("password")
+	hash, _ := auth.HashPassword("password")
 	store := &fakeUserStore{
-		getRespUser: &User{Email: "user@example.com"},
+		getRespUser: &auth.User{Email: "user@example.com"},
 		getRespHash: hash,
 	}
-	svc := NewService(store)
+	svc := auth.NewService(store)
 
 	user, err := svc.Authenticate("user@example.com", "password")
 	if err != nil {
@@ -47,17 +50,17 @@ func TestServiceAuthenticate_Success(t *testing.T) {
 }
 
 func TestServiceAuthenticate_Invalid(t *testing.T) {
-	store := &fakeUserStore{getErr: ErrInvalidCredentials}
-	svc := NewService(store)
+	store := &fakeUserStore{getErr: auth.ErrInvalidCredentials}
+	svc := auth.NewService(store)
 
-	if _, err := svc.Authenticate("user@example.com", "password"); err != ErrInvalidCredentials {
+	if _, err := svc.Authenticate("user@example.com", "password"); err != auth.ErrInvalidCredentials {
 		t.Fatalf("expected ErrInvalidCredentials, got %v", err)
 	}
 }
 
 func TestServiceRegister_Success(t *testing.T) {
 	store := &fakeUserStore{}
-	svc := NewService(store)
+	svc := auth.NewService(store)
 
 	user, err := svc.Register("user@example.com", "password", "Ada", "Lovelace")
 	if err != nil {
@@ -72,10 +75,10 @@ func TestServiceRegister_Success(t *testing.T) {
 }
 
 func TestServiceRegister_UserExists(t *testing.T) {
-	store := &fakeUserStore{createErr: ErrUserExists}
-	svc := NewService(store)
+	store := &fakeUserStore{createErr: auth.ErrUserExists}
+	svc := auth.NewService(store)
 
-	if _, err := svc.Register("user@example.com", "password", "Ada", "Lovelace"); err != ErrUserExists {
+	if _, err := svc.Register("user@example.com", "password", "Ada", "Lovelace"); err != auth.ErrUserExists {
 		t.Fatalf("expected ErrUserExists, got %v", err)
 	}
 }

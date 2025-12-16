@@ -12,7 +12,7 @@ import (
 )
 
 var sqlDB *sql.DB
-var db *gorm.DB
+var Db *gorm.DB
 var dbContext context.Context
 
 // Connect initializes the shared PostgreSQL connection using environment variables.
@@ -22,29 +22,29 @@ func Connect() {
 	user := mustEnv("POSTGRES_USER")
 	password := mustEnv("POSTGRES_PASSWORD")
 	dbname := mustEnv("POSTGRES_DB")
-	sslmode := firstNonEmpty(os.Getenv("POSTGRES_SSLMODE"), "disable")
+	sslmode := FirstNonEmpty(os.Getenv("POSTGRES_SSLMODE"), "disable")
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=%s",
 		host, port, user, password, dbname, sslmode)
 	var err error
 
-	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	Db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	sqlDB, err = db.DB()
+	sqlDB, err = Db.DB()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	dbContext = context.Background()
-	db.AutoMigrate(&User{})
-	db.AutoMigrate(&GoogleToken{})
-	db.AutoMigrate(&Job{})
-	db.AutoMigrate(&Run{})
-	db.AutoMigrate(&Workflow{})
+	Db.AutoMigrate(&User{})
+	Db.AutoMigrate(&GoogleToken{})
+	Db.AutoMigrate(&Job{})
+	Db.AutoMigrate(&Run{})
+	Db.AutoMigrate(&Workflow{})
 }
 
 // Disconnect closes the database connection if it is open.
@@ -62,13 +62,13 @@ func IsConnected() bool {
 
 // GetDB exposes the shared sql.DB handle for packages that need direct queries.
 func GetDB() *gorm.DB {
-	return db
+	return Db
 }
 
 // SetDBForTesting allows tests to inject a mock database instance.
 // This should only be used in test code.
 func SetDBForTesting(testDB *gorm.DB) {
-	db = testDB
+	Db = testDB
 }
 
 // GetDBContext TODO: doc
@@ -85,8 +85,8 @@ func mustEnv(key string) string {
 	return val
 }
 
-// firstNonEmpty returns the first non-empty string in the provided list.
-func firstNonEmpty(values ...string) string {
+// FirstNonEmpty returns the first non-empty string in the provided list.
+func FirstNonEmpty(values ...string) string {
 	for _, v := range values {
 		if v != "" {
 			return v

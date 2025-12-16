@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"area/src/auth"
+	"area/src/httpapi"
 	"bytes"
 	"encoding/json"
 	"net/http"
@@ -17,7 +18,7 @@ func TestEnsureNoTrailingData_OK(t *testing.T) {
 	if err := dec.Decode(&payload); err != nil {
 		t.Fatalf("decode first object: %v", err)
 	}
-	if err := ensureNoTrailingData(dec); err != nil {
+	if err := httpapi.EnsureNoTrailingData(dec); err != nil {
 		t.Fatalf("ensureNoTrailingData returned error: %v", err)
 	}
 }
@@ -30,7 +31,7 @@ func TestEnsureNoTrailingData_ExtraObject(t *testing.T) {
 	if err := dec.Decode(&payload); err != nil {
 		t.Fatalf("decode first object: %v", err)
 	}
-	if err := ensureNoTrailingData(dec); err == nil {
+	if err := httpapi.EnsureNoTrailingData(dec); err == nil {
 		t.Fatalf("expected error for trailing object, got nil")
 	}
 }
@@ -49,10 +50,10 @@ func (s *stubStore) GetByEmail(email string) (*auth.User, string, error) {
 }
 
 func TestHealth(t *testing.T) {
-	h := &handler{}
+	h := &httpapi.Handler{}
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
-	h.health().ServeHTTP(rr, req)
+	h.Health().ServeHTTP(rr, req)
 	if rr.Code != http.StatusOK {
 		t.Fatalf("status %d, want 200", rr.Code)
 	}
@@ -64,11 +65,11 @@ func TestLogin_Success(t *testing.T) {
 		user: &auth.User{ID: 1, Email: "a@b.com"},
 		hash: hash,
 	})
-	h := &handler{auth: svc}
+	h := &httpapi.Handler{Auth: svc}
 	body := bytes.NewBufferString(`{"email":"a@b.com","password":"pw"}`)
 	req := httptest.NewRequest(http.MethodPost, "/login", body)
 	rr := httptest.NewRecorder()
-	h.login().ServeHTTP(rr, req)
+	h.Login().ServeHTTP(rr, req)
 	if rr.Code != http.StatusOK {
 		t.Fatalf("status %d, want 200", rr.Code)
 	}
@@ -76,11 +77,11 @@ func TestLogin_Success(t *testing.T) {
 
 func TestRegister_MissingFields(t *testing.T) {
 	svc := auth.NewService(&stubStore{})
-	h := &handler{auth: svc}
+	h := &httpapi.Handler{Auth: svc}
 	body := bytes.NewBufferString(`{"email":"","password":""}`)
 	req := httptest.NewRequest(http.MethodPost, "/register", body)
 	rr := httptest.NewRecorder()
-	h.register().ServeHTTP(rr, req)
+	h.Register().ServeHTTP(rr, req)
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("status %d, want 400", rr.Code)
 	}

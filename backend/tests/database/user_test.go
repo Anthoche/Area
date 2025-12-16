@@ -1,6 +1,7 @@
 package database
 
 import (
+	"area/src/database"
 	"testing"
 	"time"
 
@@ -24,11 +25,11 @@ func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
 	}
 
 	// Replace global db for testing
-	originalDB := db
-	db = gormDB
+	originalDB := database.Db
+	database.Db = gormDB
 
 	cleanup := func() {
-		db = originalDB
+		database.Db = originalDB
 		mockDB.Close()
 	}
 
@@ -47,7 +48,7 @@ func TestGetUsers(t *testing.T) {
 	mock.ExpectQuery(`^SELECT \* FROM "users" WHERE "users"\."deleted_at" IS NULL$`).
 		WillReturnRows(rows)
 
-	users, err := GetUsers()
+	users, err := database.GetUsers()
 	if err != nil {
 		t.Fatalf("GetUsers error: %v", err)
 	}
@@ -73,7 +74,7 @@ func TestGetUserByID(t *testing.T) {
 		WithArgs(userID, sqlmock.AnyArg()).
 		WillReturnRows(rows)
 
-	user, err := GetUserByID(userID)
+	user, err := database.GetUserByID(userID)
 	if err != nil {
 		t.Fatalf("GetUserByID error: %v", err)
 	}
@@ -94,7 +95,7 @@ func TestGetUserByID_NotFound(t *testing.T) {
 		WithArgs(int64(99), sqlmock.AnyArg()).
 		WillReturnError(gorm.ErrRecordNotFound)
 
-	_, err := GetUserByID(99)
+	_, err := database.GetUserByID(99)
 	if err == nil {
 		t.Fatalf("expected error for non-existent user")
 	}
@@ -116,7 +117,7 @@ func TestGetUserByEmail(t *testing.T) {
 		WithArgs(email, sqlmock.AnyArg()).
 		WillReturnRows(rows)
 
-	user, err := GetUserByEmail(email)
+	user, err := database.GetUserByEmail(email)
 	if err != nil {
 		t.Fatalf("GetUserByEmail error: %v", err)
 	}
@@ -139,7 +140,7 @@ func TestCreateUser(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(10))
 	mock.ExpectCommit()
 
-	id, err := CreateUser("Ada", "Lovelace", "ada@example.com", "hash")
+	id, err := database.CreateUser("Ada", "Lovelace", "ada@example.com", "hash")
 	if err != nil {
 		t.Fatalf("CreateUser error: %v", err)
 	}
@@ -163,7 +164,7 @@ func TestDeleteUser(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
-	if err := DeleteUser(userID); err != nil {
+	if err := database.DeleteUser(userID); err != nil {
 		t.Fatalf("DeleteUser error: %v", err)
 	}
 
@@ -183,7 +184,7 @@ func TestUpdateUser(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
-	if err := UpdateUser(userID, "Grace", "Hopper", "grace@example.com", "hash"); err != nil {
+	if err := database.UpdateUser(userID, "Grace", "Hopper", "grace@example.com", "hash"); err != nil {
 		t.Fatalf("UpdateUser error: %v", err)
 	}
 
@@ -201,7 +202,7 @@ func TestUserExists(t *testing.T) {
 		WithArgs(email).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
-	exists := UserExists(email)
+	exists := database.UserExists(email)
 	if !exists {
 		t.Fatalf("expected user to exist")
 	}

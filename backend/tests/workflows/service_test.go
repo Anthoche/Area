@@ -1,6 +1,7 @@
 package workflows
 
 import (
+	"area/src/workflows"
 	"context"
 	"time"
 
@@ -36,7 +37,7 @@ func TestServiceTrigger_Success(t *testing.T) {
 	gormDB, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
-	store := NewStore(gormDB)
+	store := workflows.NewStore(gormDB)
 
 	// Store.GetWorkflow -> gorm First()
 	rowsWF := sqlmock.NewRows([]string{
@@ -56,19 +57,19 @@ func TestServiceTrigger_Success(t *testing.T) {
 	// Triggerer.EnqueueRun -> Store.CreateRun (gorm Create => begin/insert/commit)
 	mock.ExpectBegin()
 	mock.ExpectQuery(`^INSERT INTO "runs" \("created_at","updated_at","deleted_at","workflow_id","status","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\) RETURNING "id"$`).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(2), RunStatusPending, nil, nil, "").
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(2), workflows.RunStatusPending, nil, nil, "").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(7))
 	mock.ExpectCommit()
 
 	// Triggerer.EnqueueRun -> Store.CreateJob (gorm Create => begin/insert/commit)
 	mock.ExpectBegin()
 	mock.ExpectQuery(`^INSERT INTO "jobs" \("created_at","updated_at","deleted_at","workflow_id","run_id","payload","status","error","started_at","ended_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9,\$10\) RETURNING "id"$`).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(2), uint(7), []byte(`{"k":"v"}`), JobStatusPending, "", nil, nil).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(2), uint(7), []byte(`{"k":"v"}`), workflows.JobStatusPending, "", nil, nil).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(9))
 	mock.ExpectCommit()
 
-	triggerer := NewTriggerer(store)
-	svc := NewService(store, triggerer)
+	triggerer := workflows.NewTriggerer(store)
+	svc := workflows.NewService(store, triggerer)
 
 	if _, err := svc.Trigger(context.Background(), 2, map[string]any{"k": "v"}); err != nil {
 		t.Fatalf("Trigger error: %v", err)
@@ -82,14 +83,14 @@ func TestServiceTrigger_NotFound(t *testing.T) {
 	gormDB, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
-	store := NewStore(gormDB)
+	store := workflows.NewStore(gormDB)
 
 	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."id" = \$1 AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT \$[0-9]+$`).
 		WithArgs(uint(99), sqlmock.AnyArg()).
 		WillReturnError(gorm.ErrRecordNotFound)
 
-	svc := NewService(store, NewTriggerer(store))
-	if _, err := svc.Trigger(context.Background(), 99, nil); err != ErrWorkflowNotFound {
+	svc := workflows.NewService(store, workflows.NewTriggerer(store))
+	if _, err := svc.Trigger(context.Background(), 99, nil); err != workflows.ErrWorkflowNotFound {
 		t.Fatalf("expected ErrWorkflowNotFound, got %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -101,7 +102,7 @@ func TestServiceCreateWorkflow_ManualDefaultsConfig(t *testing.T) {
 	gormDB, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
-	store := NewStore(gormDB)
+	store := workflows.NewStore(gormDB)
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`^INSERT INTO "workflows" \("created_at","updated_at","deleted_at","name","trigger_type","trigger_config","action_url","enabled","next_run_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9\) RETURNING "id"$`).
@@ -109,7 +110,7 @@ func TestServiceCreateWorkflow_ManualDefaultsConfig(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit()
 
-	svc := NewService(store, NewTriggerer(store))
+	svc := workflows.NewService(store, workflows.NewTriggerer(store))
 	wf, err := svc.CreateWorkflow(context.Background(), "name", "manual", "https://example.com", nil)
 	if err != nil {
 		t.Fatalf("CreateWorkflow error: %v", err)
@@ -123,14 +124,14 @@ func TestServiceCreateWorkflow_ManualDefaultsConfig(t *testing.T) {
 }
 
 func TestServiceCreateWorkflow_InvalidInterval(t *testing.T) {
-	svc := NewService(&Store{}, nil)
+	svc := workflows.NewService(&workflows.Store{}, nil)
 	if _, err := svc.CreateWorkflow(context.Background(), "name", "interval", "https://example.com", []byte(`{"interval_minutes":0}`)); err == nil {
 		t.Fatalf("expected error for invalid interval config")
 	}
 }
 
 func TestServiceCreateWorkflow_Unsupported(t *testing.T) {
-	svc := NewService(&Store{}, nil)
+	svc := workflows.NewService(&workflows.Store{}, nil)
 	if _, err := svc.CreateWorkflow(context.Background(), "name", "unknown", "url", []byte(`{}`)); err == nil {
 		t.Fatalf("expected error for unsupported trigger type")
 	}
@@ -140,7 +141,7 @@ func TestServiceListWorkflows(t *testing.T) {
 	gormDB, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
-	store := NewStore(gormDB)
+	store := workflows.NewStore(gormDB)
 
 	rows := sqlmock.NewRows([]string{
 		"id", "created_at", "updated_at", "deleted_at",
@@ -153,7 +154,7 @@ func TestServiceListWorkflows(t *testing.T) {
 	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."deleted_at" IS NULL ORDER BY created_at DESC$`).
 		WillReturnRows(rows)
 
-	svc := NewService(store, NewTriggerer(store))
+	svc := workflows.NewService(store, workflows.NewTriggerer(store))
 	items, err := svc.ListWorkflows(context.Background())
 	if err != nil {
 		t.Fatalf("ListWorkflows error: %v", err)
@@ -170,14 +171,14 @@ func TestServiceGetWorkflow_ErrorMapping(t *testing.T) {
 	gormDB, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
-	store := NewStore(gormDB)
+	store := workflows.NewStore(gormDB)
 
 	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."id" = \$1 AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT \$[0-9]+$`).
 		WithArgs(uint(1), sqlmock.AnyArg()).
 		WillReturnError(gorm.ErrRecordNotFound)
 
-	svc := NewService(store, NewTriggerer(store))
-	if _, err := svc.GetWorkflow(context.Background(), 1); err != ErrWorkflowNotFound {
+	svc := workflows.NewService(store, workflows.NewTriggerer(store))
+	if _, err := svc.GetWorkflow(context.Background(), 1); err != workflows.ErrWorkflowNotFound {
 		t.Fatalf("expected ErrWorkflowNotFound mapping, got %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -189,14 +190,14 @@ func TestServiceTriggerWebhook_NotFound(t *testing.T) {
 	gormDB, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
-	store := NewStore(gormDB)
+	store := workflows.NewStore(gormDB)
 
 	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE \(trigger_type = \$1 AND enabled = \$2 AND trigger_config->>'token' = \$3\) AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT \$[0-9]+$`).
 		WithArgs("webhook", true, "abc", sqlmock.AnyArg()).
 		WillReturnError(gorm.ErrRecordNotFound)
 
-	svc := NewService(store, NewTriggerer(store))
-	if _, err := svc.TriggerWebhook(context.Background(), "abc", nil); err != ErrWorkflowNotFound {
+	svc := workflows.NewService(store, workflows.NewTriggerer(store))
+	if _, err := svc.TriggerWebhook(context.Background(), "abc", nil); err != workflows.ErrWorkflowNotFound {
 		t.Fatalf("expected ErrWorkflowNotFound for missing token, got %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {

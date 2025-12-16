@@ -10,7 +10,7 @@ import (
 func GetUsers() ([]User, error) {
 	var users []User
 
-	users, err := gorm.G[User](db).Find(GetDBContext())
+	users, err := gorm.G[User](Db).Find(GetDBContext())
 	if err != nil {
 		return nil, fmt.Errorf("getUsers: %w", err)
 	}
@@ -21,7 +21,7 @@ func GetUsers() ([]User, error) {
 func GetUserByID(id int64) (User, error) {
 	var user User
 
-	user, err := gorm.G[User](db).Where("id = ?", id).First(GetDBContext())
+	user, err := gorm.G[User](Db).Where("id = ?", id).First(GetDBContext())
 	if err != nil {
 		return user, fmt.Errorf("getUserById %d: %w", id, err)
 	}
@@ -32,7 +32,7 @@ func GetUserByID(id int64) (User, error) {
 func GetUserByEmail(email string) (User, error) {
 	var user User
 
-	user, err := gorm.G[User](db).Where("email = ?", email).First(GetDBContext())
+	user, err := gorm.G[User](Db).Where("email = ?", email).First(GetDBContext())
 	if err != nil {
 		return user, fmt.Errorf("getUserByEmail %s: %w", email, err)
 	}
@@ -48,7 +48,7 @@ func CreateUser(firstName string, lastName string, email string, passwordHash st
 		PasswordHash: passwordHash,
 	}
 
-	if err := gorm.G[User](db).Create(GetDBContext(), user); err != nil {
+	if err := gorm.G[User](Db).Create(GetDBContext(), user); err != nil {
 		return -1, fmt.Errorf("createUser: %w", err)
 	}
 	return int64(user.ID), nil
@@ -56,7 +56,7 @@ func CreateUser(firstName string, lastName string, email string, passwordHash st
 
 // DeleteUser removes the user with the given ID.
 func DeleteUser(id int64) error {
-	_, err := gorm.G[User](db).Where("id = ?", id).Delete(GetDBContext())
+	_, err := gorm.G[User](Db).Where("id = ?", id).Delete(GetDBContext())
 
 	if err != nil {
 		return fmt.Errorf("deleteUser %d: %w", id, err)
@@ -66,7 +66,7 @@ func DeleteUser(id int64) error {
 
 // UpdateUser updates user attributes and password hash.
 func UpdateUser(id int64, firstName string, lastName string, email string, passwordHash string) error {
-	_, err := gorm.G[User](db).Where("id = ?", id).Updates(GetDBContext(), User{Firstname: firstName, Lastname: lastName, Email: email, PasswordHash: passwordHash})
+	_, err := gorm.G[User](Db).Where("id = ?", id).Updates(GetDBContext(), User{Firstname: firstName, Lastname: lastName, Email: email, PasswordHash: passwordHash})
 
 	if err != nil {
 		return fmt.Errorf("updateUser %d: %w", id, err)
@@ -77,9 +77,9 @@ func UpdateUser(id int64, firstName string, lastName string, email string, passw
 func UserExists(email string) bool {
 	var count int64
 
-	if db == nil {
+	if Db == nil {
 		return false
 	}
-	db.Model(&User{}).Where("email = ?", email).Count(&count)
+	Db.Model(&User{}).Where("email = ?", email).Count(&count)
 	return count > 0
 }

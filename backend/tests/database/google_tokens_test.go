@@ -1,6 +1,7 @@
 package database
 
 import (
+	"area/src/database"
 	"testing"
 	"time"
 
@@ -24,11 +25,11 @@ func setupGoogleTokenMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
 	}
 
 	// Replace global db for testing
-	originalDB := db
-	db = gormDB
+	originalDB := database.Db
+	database.Db = gormDB
 
 	cleanup := func() {
-		db = originalDB
+		database.Db = originalDB
 		mockDB.Close()
 	}
 
@@ -48,7 +49,7 @@ func TestInsertGoogleToken(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(5))
 	mock.ExpectCommit()
 
-	id, err := InsertGoogleToken(&userID, "acc", "ref", now)
+	id, err := database.InsertGoogleToken(&userID, "acc", "ref", now)
 	if err != nil {
 		t.Fatalf("InsertGoogleToken error: %v", err)
 	}
@@ -73,7 +74,7 @@ func TestInsertGoogleToken_NilUserID(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(10))
 	mock.ExpectCommit()
 
-	id, err := InsertGoogleToken(nil, "acc", "ref", now)
+	id, err := database.InsertGoogleToken(nil, "acc", "ref", now)
 	if err != nil {
 		t.Fatalf("InsertGoogleToken error: %v", err)
 	}
@@ -101,7 +102,7 @@ func TestGetGoogleToken(t *testing.T) {
 		WithArgs(tokenID, sqlmock.AnyArg()).
 		WillReturnRows(rows)
 
-	token, err := GetGoogleToken(tokenID)
+	token, err := database.GetGoogleToken(tokenID)
 	if err != nil {
 		t.Fatalf("GetGoogleToken error: %v", err)
 	}
@@ -127,7 +128,7 @@ func TestGetGoogleToken_NotFound(t *testing.T) {
 		WithArgs(tokenID, sqlmock.AnyArg()).
 		WillReturnError(gorm.ErrRecordNotFound)
 
-	_, err := GetGoogleToken(tokenID)
+	_, err := database.GetGoogleToken(tokenID)
 	if err == nil {
 		t.Fatalf("expected error for missing token")
 	}
@@ -152,7 +153,7 @@ func TestGetGoogleTokenForUser(t *testing.T) {
 		WithArgs(tokenID, userID, sqlmock.AnyArg()).
 		WillReturnRows(rows)
 
-	token, err := GetGoogleTokenForUser(tokenID, userID)
+	token, err := database.GetGoogleTokenForUser(tokenID, userID)
 	if err != nil {
 		t.Fatalf("GetGoogleTokenForUser error: %v", err)
 	}
@@ -178,7 +179,7 @@ func TestUpdateGoogleToken(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
-	if err := UpdateGoogleToken(tokenID, "new_access", "new_refresh", now); err != nil {
+	if err := database.UpdateGoogleToken(tokenID, "new_access", "new_refresh", now); err != nil {
 		t.Fatalf("UpdateGoogleToken error: %v", err)
 	}
 

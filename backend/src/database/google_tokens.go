@@ -16,7 +16,7 @@ func InsertGoogleToken(userID *int64, access, refresh string, expiry time.Time) 
 		Expiry:       expiry,
 	}
 
-	err := gorm.G[GoogleToken](db).Create(GetDBContext(), token)
+	err := gorm.G[GoogleToken](Db).Create(GetDBContext(), token)
 	if err != nil {
 		return -1, fmt.Errorf("insert google token: %w", err)
 	}
@@ -27,7 +27,7 @@ func InsertGoogleToken(userID *int64, access, refresh string, expiry time.Time) 
 func GetGoogleToken(id int64) (*GoogleToken, error) {
 	var t GoogleToken
 
-	t, err := gorm.G[GoogleToken](db).Where("id = ?", id).First(GetDBContext())
+	t, err := gorm.G[GoogleToken](Db).Where("id = ?", id).First(GetDBContext())
 	if err != nil {
 		return nil, fmt.Errorf("get google token: %w", err)
 	}
@@ -38,7 +38,7 @@ func GetGoogleToken(id int64) (*GoogleToken, error) {
 func GetGoogleTokenForUser(id int64, userID int64) (*GoogleToken, error) {
 	var t GoogleToken
 
-	t, err := gorm.G[GoogleToken](db).Where("id = ? AND user_id = ?", id, userID).First(GetDBContext())
+	t, err := gorm.G[GoogleToken](Db).Where("id = ? AND user_id = ?", id, userID).First(GetDBContext())
 	if err != nil {
 		return nil, fmt.Errorf("get google token for user: %w", err)
 	}
@@ -53,7 +53,7 @@ func UpdateGoogleToken(id int64, access, refresh string, expiry time.Time) error
 		Expiry:       expiry,
 	}
 
-	_, err := gorm.G[GoogleToken](db).Where("id = ?", id).Updates(GetDBContext(), *token)
+	_, err := gorm.G[GoogleToken](Db).Where("id = ?", id).Updates(GetDBContext(), *token)
 	if err != nil {
 		return fmt.Errorf("update google token: %w", err)
 	}
