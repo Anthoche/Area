@@ -13,6 +13,7 @@ import (
 
 	"github.com/swaggest/swgui/v5emb"
 
+	"area/src/areas"
 	"area/src/auth"
 	goog "area/src/integrations/google"
 	"area/src/workflows"
@@ -39,6 +40,7 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/oauth/google/callback", googleHTTP.Callback())
 	mux.Handle("/actions/google/email", googleHTTP.SendEmail())
 	mux.Handle("/actions/google/calendar", googleHTTP.CreateEvent())
+	mux.Handle("/areas", server.listAreas())
 	mux.Handle("/resources/openapi.json", server.openAPISpec())
 	mux.Handle("/docs/", v5emb.New(
 		"KiKonect API Reference",
@@ -183,6 +185,18 @@ func (h *handler) health() http.Handler {
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	})
+}
+
+// listAreas exposes the catalog of available services/triggers/reactions for the clients.
+func (h *handler) listAreas() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		services := areas.List()
+		writeJSON(w, http.StatusOK, map[string]any{"services": services})
 	})
 }
 

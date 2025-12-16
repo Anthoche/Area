@@ -61,7 +61,7 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 		if err != nil || cfg.IntervalMinutes <= 0 {
 			return nil, errors.New("interval_minutes must be > 0 for interval trigger")
 		}
-	case "webhook", "manual":
+	case "webhook", "manual", "gmail_inbound":
 		// no-op, but ensure valid JSON
 		if len(triggerConfig) == 0 {
 			triggerConfig = []byte(`{}`)

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./homepage.css";
 import SearchBar from "./SearchBar";
 import FilterTag from "./FilterTag";
@@ -11,6 +11,10 @@ const API_BASE =
 
 export default function Homepage() {
   const [workflows, setWorkflows] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [triggers, setTriggers] = useState([]);
+  const [reactions, setReactions] = useState([]);
+  const [selectedReaction, setSelectedReaction] = useState("");
   const [selectedWorkflow, setSelectedWorkflow] = useState(null);
   const [payloadPreview, setPayloadPreview] = useState("{}");
   const [panelOpen, setPanelOpen] = useState(false);
@@ -26,20 +30,42 @@ export default function Homepage() {
   const userEmail = localStorage.getItem("user_email") || "user@example.com";
   const [form, setForm] = useState({
     name: "Mon Konect",
-    triggerType: "manual",
-    intervalMinutes: 5,
-    reaction: "discord",
-    discordUrl: "",
-    discordContent: "Hello from Area",
-    emailTo: "",
-    emailSubject: "Hello",
-    emailBody: "Envoyé depuis Area",
-    calSummary: "Nouvel événement",
-    calStart: "",
-    calEnd: "",
-    calAttendees: "",
+    triggerType: "",
+    triggerValues: {},
+    values: {},
   });
   const [activeFilters, setActiveFilters] = useState([]);
+
+  const selectedReactionDef = useMemo(
+    () => reactions.find((r) => r.id === selectedReaction),
+    [reactions, selectedReaction]
+  );
+
+  const triggerFields = useMemo(() => {
+    const trig = triggers.find((t) => t.id === form.triggerType);
+    return trig?.fields || [];
+  }, [triggers, form.triggerType]);
+
+  const reactionFields = selectedReactionDef?.fields || [];
+
+  const defaultValuesFromFields = (fields) => {
+    const tokenId = localStorage.getItem("google_token_id");
+    return (
+      fields?.reduce((acc, f) => {
+        if (f.key === "token_id" && tokenId) {
+          acc[f.key] = Number(tokenId);
+        } else if (f.type === "number") {
+          acc[f.key] =
+            f.example !== undefined && f.example !== null
+              ? Number(f.example)
+              : 0;
+        } else {
+          acc[f.key] = f.example || "";
+        }
+        return acc;
+      }, {}) || {}
+    );
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -59,7 +85,7 @@ export default function Homepage() {
     if (tokenId || googleEmail) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-    fetchWorkflows();
+    fetchAreas().then(() => fetchWorkflows());
   }, []);
 
   useEffect(() => {
@@ -68,15 +94,25 @@ export default function Homepage() {
         JSON.stringify(buildPayloadForWorkflow(selectedWorkflow), null, 2)
       );
     }
-  }, [selectedWorkflow, form]);
+  }, [selectedWorkflow, form, selectedReaction]);
 
-  const filters = [
-    { value: "manual", label: "Manual" },
-    { value: "interval", label: "Timer" },
-    { value: "google", label: "Google" },
-    { value: "discord", label: "Discord" },
-    { value: "webhook", label: "Webhook" },
-  ];
+  useEffect(() => {
+    if (!form.triggerType && triggers.length) {
+      const first = triggers[0];
+      const defaults = defaultValuesFromFields(first.fields || []);
+      setForm((prev) => ({
+        ...prev,
+        triggerType: first.id,
+        triggerValues: defaults,
+      }));
+    }
+  }, [triggers, form.triggerType]);
+
+  const triggerFilterOptions = useMemo(
+    () => triggers.map((t) => ({ value: t.id, label: t.name })),
+    [triggers]
+  );
+  const filters = triggerFilterOptions;
 
   const toggleFilter = (value) => {
     setActiveFilters((prev) =>
@@ -108,95 +144,82 @@ export default function Homepage() {
     }
   };
 
+  const fetchAreas = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/areas`);
+      if (!res.ok) throw new Error("failed to load areas");
+      const data = await res.json();
+      const services = Array.isArray(data.services) ? data.services : [];
+      setAreas(services);
+      const triggerCaps =
+        services
+          .find((s) => s.id === "core")
+          ?.triggers?.map((t) => ({
+            id: t.id,
+            name: t.name,
+            description: t.description,
+            fields: t.fields || [],
+          })) || [];
+      setTriggers(triggerCaps);
+      const reactionCaps = services
+        .filter((s) => s.enabled !== false)
+        .flatMap((s) =>
+          (s.reactions || []).map((r) => ({
+            id: r.id,
+            name: r.name,
+            description: r.description,
+            action_url: r.action_url,
+            default_payload: r.default_payload,
+            service: s.name || s.id,
+            fields: r.fields || [],
+          }))
+        );
+      setReactions(reactionCaps);
+      if (reactionCaps.length > 0) {
+        setSelectedReaction(reactionCaps[0].id);
+        const defaults = defaultValuesFromFields(reactionCaps[0].fields || []);
+        setForm((prev) => ({ ...prev, values: defaults }));
+      }
+      if (triggerCaps.length && !form.triggerType) {
+        const defaults = defaultValuesFromFields(triggerCaps[0].fields || []);
+        setForm((prev) => ({
+          ...prev,
+          triggerType: triggerCaps[0].id,
+          triggerValues: defaults,
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+      setAreas([]);
+      setTriggers([]);
+      setReactions([]);
+    }
+  };
+
   const matchesFilters = (wf) => {
     if (!activeFilters.length) return true;
-    return activeFilters.some((f) => {
-      const url = (wf.action_url || "").toLowerCase();
-      switch (f) {
-        case "manual":
-          return wf.trigger_type === "manual";
-        case "interval":
-          return wf.trigger_type === "interval";
-        case "google":
-          return url.includes("google");
-        case "discord":
-          return url.includes("discord");
-        case "webhook":
-          return url.startsWith("http") && !url.includes("google");
-        default:
-          return true;
-      }
-    });
+    return activeFilters.some((f) => wf.trigger_type === f);
   };
 
   const buildPayloadForWorkflow = (wf) => {
     if (!wf) return {};
-    const url = wf.action_url || "";
-    if (url.includes("google/email")) {
-      return {
-        token_id: Number(localStorage.getItem("google_token_id")) || 1,
-        to: form.emailTo || "dest@example.com",
-        subject: form.emailSubject || "Hello",
-        body: form.emailBody || "From Area",
-      };
-    }
-    if (url.includes("google/calendar")) {
-      return {
-        token_id: Number(localStorage.getItem("google_token_id")) || 1,
-        summary: form.calSummary || "Area Event",
-        start: form.calStart || new Date().toISOString(),
-        end:
-          form.calEnd || new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-        attendees: form.calAttendees
-          ? form.calAttendees.split(",").map((v) => v.trim())
-          : [],
-      };
-    }
-    if (url.includes("discord")) {
-      return { content: form.discordContent || "Hello from Area" };
-    }
-    return { content: "Hello from Area" };
+    const payload = { ...(form.values || {}) };
+    return payload;
   };
 
   const buildIntervalPayload = () => {
-    switch (form.reaction) {
-      case "discord":
-        return { content: form.discordContent || "Hello from Area" };
-      case "gmail":
-        return {
-          token_id: Number(localStorage.getItem("google_token_id")) || 1,
-          to: form.emailTo || "dest@example.com",
-          subject: form.emailSubject || "Hello",
-          body: form.emailBody || "From Area",
-        };
-      case "calendar":
-        return {
-          token_id: Number(localStorage.getItem("google_token_id")) || 1,
-          summary: form.calSummary || "Area Event",
-          start: form.calStart || new Date().toISOString(),
-          end:
-            form.calEnd ||
-            new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-          attendees: form.calAttendees
-            ? form.calAttendees.split(",").map((v) => v.trim())
-            : [],
-        };
-      default:
-        return { content: "Hello from Area" };
-    }
+    return form.values || {};
   };
 
   const buildActionUrl = () => {
-    switch (form.reaction) {
-      case "discord":
-        return form.discordUrl || "https://discord.com/api/webhooks/...";
-      case "gmail":
-        return `${API_BASE}/actions/google/email`;
-      case "calendar":
-        return `${API_BASE}/actions/google/calendar`;
-      default:
-        return "";
+    const actionUrl = selectedReactionDef?.action_url || "";
+    if (actionUrl.startsWith("http")) return actionUrl;
+    if (actionUrl.startsWith("/")) return `${API_BASE}${actionUrl}`;
+    // Fallback for webhook: use provided URL field
+    if ((selectedReaction || "").includes("webhook") && form.values?.webhook_url) {
+      return form.values.webhook_url;
     }
+    return actionUrl;
   };
 
   const handleCreate = async () => {
@@ -209,24 +232,28 @@ export default function Homepage() {
       alert("Merci de vous reconnecter (user id manquant)");
       return;
     }
-    if (form.reaction === "discord" && !form.discordUrl) {
-      alert("URL webhook Discord requise");
-      return;
+    const requiredFields = reactionFields.filter((f) => f.required);
+    for (const f of requiredFields) {
+      if (!form.values || form.values[f.key] === undefined || form.values[f.key] === "") {
+        alert(`Champ requis: ${f.key}`);
+        return;
+      }
     }
     setCreating(true);
     try {
       const actionUrl = buildActionUrl();
+      const triggerType =
+        form.triggerType || (triggers.length ? triggers[0].id : "");
+      const triggerConfig = {
+        ...form.triggerValues,
+        payload: buildIntervalPayload(),
+        payload_template: form.values || {},
+      };
       const body = {
         name: form.name,
-        trigger_type: form.triggerType,
+        trigger_type: triggerType,
         action_url: actionUrl,
-        trigger_config:
-          form.triggerType === "interval"
-            ? {
-                interval_minutes: Number(form.intervalMinutes) || 1,
-                payload: buildIntervalPayload(),
-              }
-            : {},
+        trigger_config: triggerConfig,
       };
       const res = await fetch(`${API_BASE}/workflows`, {
         method: "POST",
@@ -480,136 +507,123 @@ export default function Homepage() {
                   <select
                     value={form.triggerType}
                     onChange={(e) =>
-                      setForm({ ...form, triggerType: e.target.value })
+                      setForm((prev) => {
+                        const trig = triggers.find((t) => t.id === e.target.value);
+                        const defaults =
+                          trig?.fields?.reduce((acc, f) => {
+                            acc[f.key] = f.example || "";
+                            return acc;
+                          }, {}) || {};
+                        return {
+                          ...prev,
+                          triggerType: e.target.value,
+                          triggerValues: defaults,
+                        };
+                      })
                     }
                   >
-                    <option value="manual">Manual</option>
-                    <option value="interval">Timer (minutes)</option>
+                    {triggers.length ? (
+                      triggers.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">Loading triggers…</option>
+                    )}
                   </select>
+                  <div className="muted">
+                    {triggers.find((t) => t.id === form.triggerType)?.description}
+                  </div>
                 </label>
-                {form.triggerType === "interval" && (
-                  <label className="field">
-                    <span>Every (min)</span>
-                    <input
-                      type="number"
-                      min={1}
-                      value={form.intervalMinutes}
-                      onChange={(e) =>
-                        setForm({ ...form, intervalMinutes: e.target.value })
-                      }
-                    />
-                  </label>
-                )}
+                {triggerFields
+                  .filter((f) => f.key !== "token_id")
+                  .map((field) => (
+                    <label className="field" key={field.key}>
+                      <span>
+                        {field.key} {field.required ? "*" : ""}
+                      </span>
+                      <input
+                        type={field.type === "number" ? "number" : "text"}
+                        value={form.triggerValues?.[field.key] ?? ""}
+                        placeholder={
+                          field.example
+                            ? String(field.example)
+                            : field.description || ""
+                        }
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            triggerValues: {
+                              ...prev.triggerValues,
+                              [field.key]:
+                                field.type === "number"
+                                  ? Number(e.target.value)
+                                  : e.target.value,
+                            },
+                          }))
+                        }
+                      />
+                      <div className="muted">{field.description}</div>
+                    </label>
+                  ))}
                 <label className="field">
                   <span>Reaction</span>
                   <select
-                    value={form.reaction}
-                    onChange={(e) => setForm({ ...form, reaction: e.target.value })}
+                    value={selectedReaction || form.reaction}
+                    onChange={(e) => {
+                      const nextId = e.target.value;
+                      setSelectedReaction(nextId);
+                      const next = reactions.find((r) => r.id === nextId);
+                      const defaults = defaultValuesFromFields(next?.fields || []);
+                      setForm((prev) => ({ ...prev, values: defaults }));
+                    }}
                   >
-                    <option value="discord">Discord Webhook</option>
-                    <option value="gmail">Google Email</option>
-                    <option value="calendar">Google Calendar</option>
+                    {reactions.length ? (
+                      reactions.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.service} - {r.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">Loading reactions…</option>
+                    )}
                   </select>
+                  <div className="muted">
+                    {reactions.find((r) => r.id === selectedReaction)?.description}
+                  </div>
                 </label>
-                {form.reaction === "discord" && (
-                  <label className="field">
-                    <span>Discord webhook URL</span>
+                {reactionFields
+                  .filter((f) => f.key !== "token_id")
+                  .map((field) => (
+                  <label className="field" key={field.key}>
+                    <span>
+                      {field.key} {field.required ? "*" : ""}
+                    </span>
                     <input
-                      value={form.discordUrl}
-                      onChange={(e) =>
-                        setForm({ ...form, discordUrl: e.target.value })
+                      type={field.type === "number" ? "number" : "text"}
+                      value={form.values?.[field.key] ?? ""}
+                      placeholder={
+                        field.example
+                          ? String(field.example)
+                          : field.description || ""
                       }
-                      placeholder="https://discord.com/api/webhooks/..."
-                    />
-                  </label>
-                )}
-                {form.reaction === "discord" && (
-                  <label className="field">
-                    <span>Message</span>
-                    <textarea
-                      value={form.discordContent}
                       onChange={(e) =>
-                        setForm({ ...form, discordContent: e.target.value })
+                        setForm((prev) => ({
+                          ...prev,
+                          values: {
+                            ...prev.values,
+                            [field.key]:
+                              field.type === "number"
+                                ? Number(e.target.value)
+                                : e.target.value,
+                          },
+                        }))
                       }
-                      placeholder="Message à envoyer"
                     />
+                    <div className="muted">{field.description}</div>
                   </label>
-                )}
-                {form.reaction === "gmail" && (
-                  <>
-                    <label className="field">
-                      <span>To</span>
-                      <input
-                        value={form.emailTo}
-                        onChange={(e) =>
-                          setForm({ ...form, emailTo: e.target.value })
-                        }
-                        placeholder="dest@example.com"
-                      />
-                    </label>
-                    <label className="field">
-                      <span>Subject</span>
-                      <input
-                        value={form.emailSubject}
-                        onChange={(e) =>
-                          setForm({ ...form, emailSubject: e.target.value })
-                        }
-                      />
-                    </label>
-                    <label className="field">
-                      <span>Body</span>
-                      <textarea
-                        value={form.emailBody}
-                        onChange={(e) =>
-                          setForm({ ...form, emailBody: e.target.value })
-                        }
-                      />
-                    </label>
-                  </>
-                )}
-                {form.reaction === "calendar" && (
-                  <>
-                    <label className="field">
-                      <span>Summary</span>
-                      <input
-                        value={form.calSummary}
-                        onChange={(e) =>
-                          setForm({ ...form, calSummary: e.target.value })
-                        }
-                      />
-                    </label>
-                    <label className="field">
-                      <span>Start (ISO)</span>
-                      <input
-                        value={form.calStart}
-                        onChange={(e) =>
-                          setForm({ ...form, calStart: e.target.value })
-                        }
-                        placeholder="2025-12-09T14:00:00Z"
-                      />
-                    </label>
-                    <label className="field">
-                      <span>End (ISO)</span>
-                      <input
-                        value={form.calEnd}
-                        onChange={(e) =>
-                          setForm({ ...form, calEnd: e.target.value })
-                        }
-                        placeholder="2025-12-09T15:00:00Z"
-                      />
-                    </label>
-                    <label className="field">
-                      <span>Attendees (comma-separated)</span>
-                      <input
-                        value={form.calAttendees}
-                        onChange={(e) =>
-                          setForm({ ...form, calAttendees: e.target.value })
-                        }
-                        placeholder="person@example.com, other@example.com"
-                      />
-                    </label>
-                  </>
-                )}
+                ))}
                 <button
                   className="primary-btn"
                   onClick={handleCreate}

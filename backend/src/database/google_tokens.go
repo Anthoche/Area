@@ -79,3 +79,24 @@ func UpdateGoogleToken(ctx context.Context, id int64, access, refresh string, ex
 	}
 	return nil
 }
+
+// GetLatestGoogleTokenForUser returns the most recently created token for a user.
+func GetLatestGoogleTokenForUser(ctx context.Context, userID int64) (*GoogleToken, error) {
+	var t GoogleToken
+	var uid *int64
+	err := db.QueryRowContext(ctx, `
+		SELECT id, user_id, access_token, refresh_token, expiry, created_at
+		FROM google_tokens
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+		LIMIT 1`,
+		userID,
+	).Scan(&t.Id, &uid, &t.AccessToken, &t.RefreshToken, &t.Expiry, &t.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("get latest google token: %w", err)
+	}
+	if uid != nil {
+		t.UserID = uid
+	}
+	return &t, nil
+}

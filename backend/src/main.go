@@ -15,6 +15,7 @@ import (
 	"area/src/auth"
 	"area/src/database"
 	"area/src/httpapi"
+	"area/src/integrations/google"
 	"area/src/workflows"
 
 	"github.com/joho/godotenv"
@@ -68,6 +69,7 @@ func main() {
 	wfStore := workflows.NewDefaultStore()
 	triggerer := workflows.NewTriggerer(wfStore)
 	wfService := workflows.NewService(wfStore, triggerer)
+	googleClient := google.NewClient()
 
 	// Start a simple executor loop in background for outgoing webhooks.
 	sender := newHTTPSender()
@@ -101,6 +103,9 @@ func main() {
 			}
 		}
 	}()
+
+	// Gmail inbound poller (simple polling of new messages).
+	google.StartGmailPoller(context.Background(), wfStore, wfService, googleClient)
 
 	server := &http.Server{
 		Addr:              ":" + port,
