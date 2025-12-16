@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -58,4 +59,15 @@ func UpdateGoogleToken(id int64, access, refresh string, expiry time.Time) error
 		return fmt.Errorf("update google token: %w", err)
 	}
 	return nil
+}
+
+// GetLatestGoogleTokenForUser returns the most recently created token for a user.
+func GetLatestGoogleTokenForUser(ctx context.Context, userID int64) (*GoogleToken, error) {
+	var t GoogleToken
+
+	t, err := gorm.G[GoogleToken](Db).Where("user_id = ?", userID).Order("created_at DESC").First(GetDBContext())
+	if err != nil {
+		return nil, fmt.Errorf("get latest google token for user: %w", err)
+	}
+	return &t, nil
 }

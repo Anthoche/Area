@@ -5,6 +5,7 @@ import 'register_page.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 
+/// Pre-registration screen that collects an email before showing the full form.
 class RegisterMiddlePage extends StatefulWidget {
   const RegisterMiddlePage({super.key});
 
@@ -25,14 +26,13 @@ class _RegisterMiddlePageState extends State<RegisterMiddlePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Logo
+                // Brand logo.
                 Image.asset(
                   'lib/assets/Kikonect_logo.png',
                   height: 250,
                   width: 250,
                   alignment: Alignment.center,
                 ),
-                // Register text
                 const Text(
                   "Create an account",
                   style: TextStyle(
@@ -52,32 +52,29 @@ class _RegisterMiddlePageState extends State<RegisterMiddlePage> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 30),
-                // EMAIL FIELD
                 AppTextField(
                   label: "Email",
                   controller: emailController,
                 ),
                 const SizedBox(height: 25),
-                // CONTINUE BUTTON
                 PrimaryButton(
                   text: "Continue",
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => RegisterPage(email: emailController.text),
+                        builder: (_) =>
+                            RegisterPage(email: emailController.text),
                       ),
                     );
                   },
                 ),
                 const SizedBox(height: 10),
-                // Separation text
                 const Text(
-                  "──────────  or  ──────────",
+                  "-----------  or  -----------",
                   style: TextStyle(color: Colors.black),
                 ),
                 const SizedBox(height: 10),
-                // LOGIN google BUTTON
                 PrimaryButton(
                   text: "Sign in with Google",
                   onPressed: () {},
@@ -87,7 +84,6 @@ class _RegisterMiddlePageState extends State<RegisterMiddlePage> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                // LOGIN github BUTTON
                 PrimaryButton(
                   text: "Sign in with Github",
                   onPressed: () {},

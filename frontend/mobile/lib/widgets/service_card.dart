@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Tile representing a single Konect/service in the dashboard grid.
 class ServiceCard extends StatelessWidget {
   final String title;
   final Color color;

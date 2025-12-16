@@ -2,6 +2,7 @@ package workflows
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,9 +26,10 @@ const (
 	RunStatusFailed    = "failed"
 )
 
-// API Response Types (keep existing for API compatibility)
+// Workflow API Response Types (keep existing for API compatibility)
 type Workflow struct {
 	ID            int64           `json:"id"`
+	UserID        int64           `json:"user_id"`
 	Name          string          `json:"name"`
 	TriggerType   string          `json:"trigger_type"`
 	TriggerConfig json.RawMessage `json:"trigger_config"`
@@ -121,7 +123,7 @@ func jobModelToAPI(model database.Job) Job {
 }
 
 // CreateWorkflow persists a new workflow with its trigger configuration.
-func (s *Store) CreateWorkflow(ctx context.Context, name, triggerType, actionURL string, triggerConfig json.RawMessage) (*Workflow, error) {
+func (s *Store) CreateWorkflow(ctx context.Context, userID int64, name, triggerType, actionURL string, triggerConfig json.RawMessage) (*Workflow, error) {
 	initialEnabled := triggerType == "manual"
 
 	model := database.Workflow{
@@ -140,10 +142,10 @@ func (s *Store) CreateWorkflow(ctx context.Context, name, triggerType, actionURL
 	return &workflow, nil
 }
 
-// ListWorkflows returns all workflows ordered by creation date.
-func (s *Store) ListWorkflows(ctx context.Context) ([]Workflow, error) {
+// ListWorkflows returns all workflows for a user ordered by creation date.
+func (s *Store) ListWorkflows(ctx context.Context, userID int64) ([]Workflow, error) {
 	var models []database.Workflow
-	if err := s.db.WithContext(ctx).Order("created_at DESC").Find(&models).Error; err != nil {
+	if err := s.db.WithContext(ctx).Where("user_id = ?", userID).Order("created_at DESC").Find(&models).Error; err != nil {
 		return nil, fmt.Errorf("list workflows: %w", err)
 	}
 
@@ -159,7 +161,32 @@ func (s *Store) ListWorkflows(ctx context.Context) ([]Workflow, error) {
 	return workflows, nil
 }
 
-// GetWorkflow fetches a workflow by ID.
+// ListWorkflowsByTrigger returns workflows filtered by trigger type (all users).
+func (s *Store) ListWorkflowsByTrigger(ctx context.Context, triggerType string) ([]Workflow, error) {
+	var models []database.Workflow
+
+	if err := s.db.WithContext(ctx).
+		Where("trigger_type = ?", triggerType).
+		Order("created_at DESC").
+		Find(&models).Error; err != nil {
+		return nil, fmt.Errorf("list workflows by trigger: %w", err)
+	}
+
+	workflows := make([]Workflow, len(models))
+	for i, model := range models {
+		workflows[i] = workflowModelToAPI(model)
+
+		// Apply business logic: disable invalid interval workflows
+		if workflows[i].TriggerType == "interval" &&
+			workflows[i].Enabled &&
+			workflows[i].NextRunAt == nil {
+			workflows[i].Enabled = false
+		}
+	}
+	return workflows, nil
+}
+
+// GetWorkflow fetches a workflow by ID (no user check).
 func (s *Store) GetWorkflow(ctx context.Context, id int64) (*Workflow, error) {
 	var model database.Workflow
 	if err := s.db.WithContext(ctx).First(&model, uint(id)).Error; err != nil {
@@ -170,11 +197,10 @@ func (s *Store) GetWorkflow(ctx context.Context, id int64) (*Workflow, error) {
 	}
 
 	workflow := workflowModelToAPI(model)
-	// Apply business logic
-	if workflow.TriggerType != "manual" && workflow.Enabled && workflow.NextRunAt == nil {
+
+	if workflow.TriggerType == "interval" && workflow.Enabled && workflow.NextRunAt == nil {
 		workflow.Enabled = false
 	}
-
 	return &workflow, nil
 }
 
@@ -190,10 +216,48 @@ func (s *Store) DeleteWorkflow(ctx context.Context, id int64) error {
 	return nil
 }
 
-// SetEnabled toggles the enabled flag; for interval, optionally adjusts next_run_at.
-func (s *Store) SetEnabled(ctx context.Context, id int64, enabled bool, now time.Time) error {
+// GetWorkflowForUser fetches a workflow by ID constrained to the owner.
+func (s *Store) GetWorkflowForUser(ctx context.Context, id int64, userID int64) (*Workflow, error) {
+	var model database.Workflow
+
+	if err := s.db.WithContext(ctx).
+		Where("id = ? AND user_id = ?", id, userID).
+		First(&model).Error; err != nil {
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, sql.ErrNoRows
+		}
+		return nil, fmt.Errorf("get workflow: %w", err)
+	}
+
+	workflow := workflowModelToAPI(model)
+
+	// Apply business logic
+	if workflow.TriggerType == "interval" &&
+		workflow.Enabled &&
+		workflow.NextRunAt == nil {
+		workflow.Enabled = false
+	}
+	return &workflow, nil
+}
+
+// DeleteWorkflowForUser deletes a workflow if it belongs to the user.
+func (s *Store) DeleteWorkflowForUser(ctx context.Context, id int64, userID int64) error {
+	res := s.db.WithContext(ctx).Model(database.Workflow{}).Where("id = ? AND user_id = ?", id, userID).Delete(ctx)
+
+	if res.Error != nil {
+		return fmt.Errorf("delete workflow: %w", res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+// SetEnabledForUser toggles the enabled flag for a user's workflow; interval gets next_run_at.
+func (s *Store) SetEnabledForUser(ctx context.Context, id int64, userID int64, enabled bool, now time.Time) error {
 	if enabled {
-		wf, err := s.GetWorkflow(ctx, id)
+		wf, err := s.GetWorkflowForUser(ctx, id, userID)
 		if err != nil {
 			return err
 		}
@@ -211,7 +275,7 @@ func (s *Store) SetEnabled(ctx context.Context, id int64, enabled bool, now time
 			updates["next_run_at"] = nextRun
 		}
 
-		result := s.db.WithContext(ctx).Model(&database.Workflow{}).Where("id = ?", uint(id)).Updates(updates)
+		result := s.db.WithContext(ctx).Model(&database.Workflow{}).Where("id = ? AND user_id = ?", uint(id), userID).Updates(updates)
 		if result.Error != nil {
 			return fmt.Errorf("enable workflow: %w", result.Error)
 		}
@@ -222,7 +286,7 @@ func (s *Store) SetEnabled(ctx context.Context, id int64, enabled bool, now time
 	}
 
 	// Disable workflow
-	result := s.db.WithContext(ctx).Model(&database.Workflow{}).Where("id = ?", uint(id)).Updates(map[string]interface{}{
+	result := s.db.WithContext(ctx).Model(&database.Workflow{}).Where("id = ? AND user_id = ?", uint(id), userID).Updates(map[string]interface{}{
 		"enabled":     false,
 		"next_run_at": nil,
 	})

@@ -78,7 +78,7 @@ func (h *HTTPHandlers) Callback() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "redirect_uri is required"})
 			return
 		}
-		tokenID, email, err := h.client.ExchangeAndStore(r.Context(), code, redirectURI, userID)
+		tokenID, resolvedUserID, email, err := h.client.ExchangeAndStore(r.Context(), code, redirectURI, userID)
 		if err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 			return
@@ -88,6 +88,9 @@ func (h *HTTPHandlers) Callback() http.Handler {
 				if redir, err := url.Parse(dest); err == nil && (redir.Scheme == "http" || redir.Scheme == "https") {
 					q := redir.Query()
 					q.Set("token_id", strconv.FormatInt(tokenID, 10))
+					if resolvedUserID > 0 {
+						q.Set("user_id", strconv.FormatInt(resolvedUserID, 10))
+					}
 					if email != "" {
 						q.Set("google_email", email)
 					}
@@ -98,6 +101,9 @@ func (h *HTTPHandlers) Callback() http.Handler {
 			}
 		}
 		resp := map[string]any{"token_id": tokenID}
+		if resolvedUserID > 0 {
+			resp["user_id"] = resolvedUserID
+		}
 		if email != "" {
 			resp["email"] = email
 		}
@@ -121,7 +127,6 @@ func (h *HTTPHandlers) SendEmail() http.Handler {
 		userID := optionalUserID(r)
 		var p payload
 		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
-		decoder.DisallowUnknownFields()
 		if err := decoder.Decode(&p); err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON payload"})
 			return
@@ -130,8 +135,8 @@ func (h *HTTPHandlers) SendEmail() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unexpected data in payload"})
 			return
 		}
-		if p.TokenID == 0 || p.To == "" || p.Subject == "" {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "token_id, to and subject are required"})
+		if p.To == "" || p.Subject == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "to and subject are required"})
 			return
 		}
 		if err := h.client.SendEmail(r.Context(), userID, p.TokenID, p.To, p.Subject, p.Body); err != nil {
@@ -159,7 +164,6 @@ func (h *HTTPHandlers) CreateEvent() http.Handler {
 		userID := optionalUserID(r)
 		var p payload
 		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
-		decoder.DisallowUnknownFields()
 		if err := decoder.Decode(&p); err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON payload"})
 			return
@@ -168,8 +172,8 @@ func (h *HTTPHandlers) CreateEvent() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unexpected data in payload"})
 			return
 		}
-		if p.TokenID == 0 || p.Summary == "" || p.Start == "" || p.End == "" {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "token_id, summary, start, end are required"})
+		if p.Summary == "" || p.Start == "" || p.End == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "summary, start, end are required"})
 			return
 		}
 		start, err := time.Parse(time.RFC3339, p.Start)

@@ -16,6 +16,7 @@ RUN apt-get update && \
     update-ca-certificates
 
 COPY --from=build /myapp /myapp
+COPY --from=build /app/resources /app/resources
 
 WORKDIR /app
 

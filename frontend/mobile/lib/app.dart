@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'screens/login_page.dart';
 
+/// Root widget that wires global theming and routes into the app.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -15,7 +17,8 @@ class MyApp extends StatelessWidget {
           tertiary: const Color(0xFFF72585),
           brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF8F9FA), // Fond gris très clair neutre
+        // Neutral light background to keep auth screens readable.
+        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF3A0CA3),

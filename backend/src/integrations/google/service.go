@@ -37,6 +37,7 @@ func NewClient() *Client {
 		clientSecret: mustEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
 		scopes: []string{
 			"https://www.googleapis.com/auth/gmail.send",
+			"https://www.googleapis.com/auth/gmail.readonly",
 			"https://www.googleapis.com/auth/calendar.events",
 			"https://www.googleapis.com/auth/userinfo.email",
 		},
@@ -57,18 +58,33 @@ func (c *Client) AuthURL(state, redirectURI string) string {
 	return "https://accounts.google.com/o/oauth2/auth?" + v.Encode()
 }
 
-// ExchangeAndStore exchanges an auth code for a token, saves it, and returns the token id + email.
-func (c *Client) ExchangeAndStore(ctx context.Context, code string, redirectURI string, userID *int64) (int64, string, error) {
+// ExchangeAndStore exchanges an auth code for a token, saves it, and returns the token id, user id, and email.
+func (c *Client) ExchangeAndStore(ctx context.Context, code string, redirectURI string, userID *int64) (int64, int64, string, error) {
 	tokenResp, err := c.exchangeCode(ctx, code, redirectURI)
 	if err != nil {
-		return -1, "", err
+		return -1, 0, "", err
 	}
 	email, _ := c.fetchEmail(ctx, tokenResp.AccessToken)
+	if userID == nil && email != "" {
+		if u, err := database.GetUserByEmail(email); err == nil {
+			id := int64(u.ID)
+			userID = &id
+		} else {
+			uid, createErr := database.CreateUser("Google", "User", email, "google-oauth")
+			if createErr == nil {
+				userID = &uid
+			}
+		}
+	}
 	id, err := database.InsertGoogleToken(userID, tokenResp.AccessToken, tokenResp.RefreshToken, tokenResp.Expiry)
 	if err != nil {
-		return -1, "", err
+		return -1, 0, "", err
 	}
-	return id, email, nil
+	var resolvedUserID int64
+	if userID != nil {
+		resolvedUserID = *userID
+	}
+	return id, resolvedUserID, email, nil
 }
 
 // fetchEmail retrieves the user's email address using the OAuth access token.
@@ -246,10 +262,15 @@ func buildRawEmail(to, subject, body string) string {
 func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) (*OAuthToken, error) {
 	var t *database.GoogleToken
 	var err error
-	if userID != nil && *userID > 0 {
-		t, err = database.GetGoogleTokenForUser(tokenID, *userID)
+	// If no tokenID provided but user is known, pick the latest token for that user.
+	if tokenID == 0 && userID != nil && *userID > 0 {
+		t, err = database.GetLatestGoogleTokenForUser(ctx, *userID)
 	} else {
-		t, err = database.GetGoogleToken(tokenID)
+		if userID != nil && *userID > 0 {
+			t, err = database.GetGoogleTokenForUser(tokenID, *userID)
+		} else {
+			t, err = database.GetGoogleToken(tokenID)
+		}
 	}
 	if err != nil {
 		return nil, err
@@ -269,10 +290,106 @@ func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) 
 	if err != nil {
 		return nil, err
 	}
-	if err := database.UpdateGoogleToken(tokenID, newToken.AccessToken, newToken.RefreshToken, newToken.Expiry); err != nil {
+	if err := database.UpdateGoogleToken(int64(t.ID), newToken.AccessToken, newToken.RefreshToken, newToken.Expiry); err != nil {
 		return nil, err
 	}
 	return newToken, nil
+}
+
+type GmailMessage struct {
+	ID      string
+	From    string
+	Subject string
+	Snippet string
+	Date    string
+}
+
+// ListRecentMessages fetches recent messages from Gmail, newest first. If sinceID is provided, stops when that ID is encountered.
+func (c *Client) ListRecentMessages(ctx context.Context, userID *int64, tokenID int64, max int, sinceID string) ([]GmailMessage, error) {
+	token, err := c.ensureToken(ctx, userID, tokenID)
+	if err != nil {
+		return nil, err
+	}
+	listURL := "https://www.googleapis.com/gmail/v1/users/me/messages?labelIds=INBOX&maxResults=%d"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(listURL, max), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("list messages status %d: %s", resp.StatusCode, string(body))
+	}
+	var list struct {
+		Messages []struct {
+			ID string `json:"id"`
+		} `json:"messages"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+		return nil, err
+	}
+	var out []GmailMessage
+	for _, m := range list.Messages {
+		if sinceID != "" && m.ID == sinceID {
+			break
+		}
+		msg, err := c.fetchMessage(ctx, token.AccessToken, m.ID)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, msg)
+	}
+	return out, nil
+}
+
+func (c *Client) fetchMessage(ctx context.Context, accessToken, msgID string) (GmailMessage, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://www.googleapis.com/gmail/v1/users/me/messages/"+msgID+"?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date", nil)
+	if err != nil {
+		return GmailMessage{}, err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return GmailMessage{}, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return GmailMessage{}, fmt.Errorf("get message status %d: %s", resp.StatusCode, string(body))
+	}
+	var data struct {
+		ID      string `json:"id"`
+		Snippet string `json:"snippet"`
+		Payload struct {
+			Headers []struct {
+				Name  string `json:"name"`
+				Value string `json:"value"`
+			} `json:"headers"`
+		} `json:"payload"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return GmailMessage{}, err
+	}
+	msg := GmailMessage{
+		ID:      data.ID,
+		Snippet: data.Snippet,
+	}
+	for _, h := range data.Payload.Headers {
+		switch strings.ToLower(h.Name) {
+		case "from":
+			msg.From = h.Value
+		case "subject":
+			msg.Subject = h.Value
+		case "date":
+			msg.Date = h.Value
+		}
+	}
+	return msg, nil
 }
 
 // mustEnv retrieves an environment variable or panics if not set.

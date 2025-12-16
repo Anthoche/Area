@@ -75,8 +75,8 @@ func TestSetEnabled_EnableIntervalSetsNextRun(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
-	if err := store.SetEnabled(context.Background(), 1, true, now); err != nil {
-		t.Fatalf("SetEnabled enable interval: %v", err)
+	if err := store.SetEnabledForUser(context.Background(), 1, 99, true, now); err != nil {
+		t.Fatalf("SetEnabledForUser() enable interval: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet expectations: %v", err)
@@ -93,8 +93,8 @@ func TestSetEnabled_Disable(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
-	if err := store.SetEnabled(context.Background(), 2, false, time.Now()); err != nil {
-		t.Fatalf("SetEnabled disable: %v", err)
+	if err := store.SetEnabledForUser(context.Background(), 2, 99, false, time.Now()); err != nil {
+		t.Fatalf("SetEnabledForUser() disable: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet expectations: %v", err)
@@ -111,7 +111,7 @@ func TestSetEnabled_NotFound(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectCommit()
 
-	err := store.SetEnabled(context.Background(), 42, false, time.Now())
+	err := store.SetEnabledForUser(context.Background(), 42, 99, false, time.Now())
 	if err != gorm.ErrRecordNotFound {
 		t.Fatalf("expected gorm.ErrRecordNotFound, got %v", err)
 	}
@@ -148,7 +148,7 @@ func TestCreateWorkflow(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(1)))
 	mock.ExpectCommit()
 
-	wf, err := store.CreateWorkflow(context.Background(), "test-workflow", "interval", "http://example.com/action", triggerCfg)
+	wf, err := store.CreateWorkflow(context.Background(), 99, "test-workflow", "interval", "http://example.com/action", triggerCfg)
 	if err != nil {
 		t.Fatalf("CreateWorkflow: %v", err)
 	}
@@ -174,7 +174,7 @@ func TestListWorkflows(t *testing.T) {
 			AddRow(uint(1), "wf1", "manual", []byte(`{}`), "url1", true, nil, now).
 			AddRow(uint(2), "wf2", "interval", []byte(`{"interval_minutes":5}`), "url2", true, nil, now))
 
-	workflows, err := store.ListWorkflows(context.Background())
+	workflows, err := store.ListWorkflows(context.Background(), 99)
 	if err != nil {
 		t.Fatalf("ListWorkflows: %v", err)
 	}

@@ -24,7 +24,8 @@ void main() {
   });
 
   group('Shared Widgets Tests', () {
-    testWidgets('AppTextField renders label and respects obscureText', (WidgetTester tester) async {
+    testWidgets('AppTextField renders label and respects obscureText', (
+        WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -38,7 +39,8 @@ void main() {
       expect(textField.obscureText, isTrue);
     });
 
-    testWidgets('PrimaryButton renders text and triggers callback', (WidgetTester tester) async {
+    testWidgets('PrimaryButton renders text and triggers callback', (
+        WidgetTester tester) async {
       bool pressed = false;
       await tester.pumpWidget(
         MaterialApp(
@@ -60,14 +62,14 @@ void main() {
   group('Homepage Tests', () {
     testWidgets('renders correctly', (WidgetTester tester) async {
       await tester.pumpWidget(const MaterialApp(home: Homepage()));
-      
+
       expect(find.text('My Konect'), findsOneWidget);
       expect(find.byType(Search_bar), findsOneWidget);
       expect(find.text('My Konects'), findsOneWidget);
-      
+
       // Check for FilterTags (by text, assuming 'test 1' is hardcoded in homepage)
       expect(find.text('test 1'), findsOneWidget);
-      
+
       // Check for ServiceCards
       expect(find.text('Push To Ping'), findsOneWidget);
       expect(find.byType(ServiceCard), findsAtLeastNWidgets(1));
@@ -75,20 +77,20 @@ void main() {
 
     testWidgets('opens drawer', (WidgetTester tester) async {
       await tester.pumpWidget(const MaterialApp(home: Homepage()));
-      
+
       await tester.tap(find.byTooltip('Open navigation menu'));
       await tester.pumpAndSettle();
-      
+
       expect(find.text('Menu'), findsOneWidget);
       expect(find.text('test'), findsOneWidget);
     });
 
     testWidgets('FAB shows popup menu', (WidgetTester tester) async {
       await tester.pumpWidget(const MaterialApp(home: Homepage()));
-      
+
       await tester.tap(find.byIcon(Icons.add));
       await tester.pumpAndSettle();
-      
+
       expect(find.text('Option 1'), findsOneWidget);
     });
   });
