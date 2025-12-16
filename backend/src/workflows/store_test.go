@@ -62,15 +62,15 @@ func TestSetEnabled_EnableIntervalSetsNextRun(t *testing.T) {
 	triggerCfg := []byte(`{"interval_minutes":2}`)
 
 	// Mock GetWorkflow call
-	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."id" = \$1 ORDER BY "workflows"\."id" LIMIT \$2$`).
-		WithArgs(uint(1), 1).
+	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."id" = \$1 AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT \$[0-9]+$`).
+		WithArgs(uint(1), sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "trigger_type", "trigger_config", "action_url", "enabled", "next_run_at", "created_at"}).
 			AddRow(uint(1), "wf", "interval", triggerCfg, "url", false, nil, now))
 
 	// Mock Updates call
 	mock.ExpectBegin()
-	mock.ExpectExec(`^UPDATE "workflows" SET "enabled"=\$1,"next_run_at"=\$2 WHERE id = \$3$`).
-		WithArgs(true, sqlmock.AnyArg(), uint(1)).
+	mock.ExpectExec(`^UPDATE "workflows" SET "enabled"=\$1,"next_run_at"=\$2,"updated_at"=\$3 WHERE id = \$4 AND "workflows"\."deleted_at" IS NULL$`).
+		WithArgs(true, sqlmock.AnyArg(), sqlmock.AnyArg(), uint(1)).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
@@ -87,8 +87,8 @@ func TestSetEnabled_Disable(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`^UPDATE "workflows" SET "enabled"=\$1,"next_run_at"=\$2 WHERE id = \$3$`).
-		WithArgs(false, nil, uint(2)).
+	mock.ExpectExec(`^UPDATE "workflows" SET "enabled"=\$1,"next_run_at"=\$2,"updated_at"=\$3 WHERE id = \$4 AND "workflows"\."deleted_at" IS NULL$`).
+		WithArgs(false, nil, sqlmock.AnyArg(), uint(2)).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
@@ -105,8 +105,8 @@ func TestSetEnabled_NotFound(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`^UPDATE "workflows" SET "enabled"=\$1,"next_run_at"=\$2 WHERE id = \$3$`).
-		WithArgs(false, nil, uint(42)).
+	mock.ExpectExec(`^UPDATE "workflows" SET "enabled"=\$1,"next_run_at"=\$2,"updated_at"=\$3 WHERE id = \$4 AND "workflows"\."deleted_at" IS NULL$`).
+		WithArgs(false, nil, sqlmock.AnyArg(), uint(42)).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectCommit()
 
@@ -121,8 +121,8 @@ func TestGetWorkflow_DisablesNonManualWithoutNextRun(t *testing.T) {
 	defer cleanup()
 
 	now := time.Now()
-	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."id" = \$1 ORDER BY "workflows"\."id" LIMIT \$2$`).
-		WithArgs(uint(3), 1).
+	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."id" = \$1 AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT \$[0-9]+$`).
+		WithArgs(uint(3), sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "trigger_type", "trigger_config", "action_url", "enabled", "next_run_at", "created_at"}).
 			AddRow(uint(3), "wf", "interval", []byte(`{"interval_minutes":5}`), "url", true, nil, now))
 
@@ -142,8 +142,8 @@ func TestCreateWorkflow(t *testing.T) {
 	triggerCfg := []byte(`{"interval_minutes":10}`)
 
 	mock.ExpectBegin()
-	mock.ExpectQuery(`^INSERT INTO "workflows" \("name","trigger_type","trigger_config","action_url","enabled","next_run_at","created_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"$`).
-		WithArgs("test-workflow", "interval", triggerCfg, "http://example.com/action", false, nil, sqlmock.AnyArg()).
+	mock.ExpectQuery(`^INSERT INTO "workflows" \("created_at","updated_at","deleted_at","name","trigger_type","trigger_config","action_url","enabled","next_run_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9\) RETURNING "id"$`).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, "test-workflow", "interval", triggerCfg, "http://example.com/action", false, nil).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(1)))
 	mock.ExpectCommit()
 
@@ -168,7 +168,7 @@ func TestListWorkflows(t *testing.T) {
 	defer cleanup()
 
 	now := time.Now()
-	mock.ExpectQuery(`^SELECT \* FROM "workflows" ORDER BY created_at DESC$`).
+	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."deleted_at" IS NULL ORDER BY created_at DESC$`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "trigger_type", "trigger_config", "action_url", "enabled", "next_run_at", "created_at"}).
 			AddRow(uint(1), "wf1", "manual", []byte(`{}`), "url1", true, nil, now).
 			AddRow(uint(2), "wf2", "interval", []byte(`{"interval_minutes":5}`), "url2", true, nil, now))
@@ -201,8 +201,8 @@ func TestDeleteWorkflow(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`^DELETE FROM "workflows" WHERE "workflows"\."id" = \$1$`).
-		WithArgs(uint(5)).
+	mock.ExpectExec(`^UPDATE "workflows" SET "deleted_at"=\$1 WHERE "workflows"\."id" = \$2 AND "workflows"\."deleted_at" IS NULL$`).
+		WithArgs(sqlmock.AnyArg(), uint(5)).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
@@ -220,8 +220,8 @@ func TestCreateRun(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectBegin()
-	mock.ExpectQuery(`^INSERT INTO "runs" \("workflow_id","status","created_at","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6\) RETURNING "id"$`).
-		WithArgs(uint(1), RunStatusPending, sqlmock.AnyArg(), nil, nil, "").
+	mock.ExpectQuery(`^INSERT INTO "runs" \("created_at","updated_at","deleted_at","workflow_id","status","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\) RETURNING "id"$`).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(1), RunStatusPending, nil, nil, "").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(100)))
 	mock.ExpectCommit()
 
@@ -248,8 +248,8 @@ func TestCreateJob(t *testing.T) {
 	payload := []byte(`{"key":"value"}`)
 
 	mock.ExpectBegin()
-	mock.ExpectQuery(`^INSERT INTO "jobs" \("workflow_id","run_id","payload","status","error","created_at","updated_at","started_at","ended_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9\) RETURNING "id"$`).
-		WithArgs(uint(1), uint(10), payload, JobStatusPending, "", sqlmock.AnyArg(), sqlmock.AnyArg(), nil, nil).
+	mock.ExpectQuery(`^INSERT INTO "jobs" \("created_at","updated_at","deleted_at","workflow_id","run_id","payload","status","error","started_at","ended_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9,\$10\) RETURNING "id"$`).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(1), uint(10), payload, JobStatusPending, "", nil, nil).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(200)))
 	mock.ExpectCommit()
 
@@ -274,7 +274,7 @@ func TestMarkJobSuccess(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`^UPDATE "jobs" SET "ended_at"=\$1,"error"=\$2,"status"=\$3,"updated_at"=\$4 WHERE id = \$5$`).
+	mock.ExpectExec(`^UPDATE "jobs" SET "ended_at"=\$1,"error"=\$2,"status"=\$3,"updated_at"=\$4 WHERE id = \$5 AND "jobs"\."deleted_at" IS NULL$`).
 		WithArgs(sqlmock.AnyArg(), "", JobStatusSucceeded, sqlmock.AnyArg(), uint(50)).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
@@ -293,7 +293,7 @@ func TestMarkJobFailed(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`^UPDATE "jobs" SET "ended_at"=\$1,"error"=\$2,"status"=\$3,"updated_at"=\$4 WHERE id = \$5$`).
+	mock.ExpectExec(`^UPDATE "jobs" SET "ended_at"=\$1,"error"=\$2,"status"=\$3,"updated_at"=\$4 WHERE id = \$5 AND "jobs"\."deleted_at" IS NULL$`).
 		WithArgs(sqlmock.AnyArg(), "test error", JobStatusFailed, sqlmock.AnyArg(), uint(51)).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
@@ -314,8 +314,8 @@ func TestFindWorkflowByToken(t *testing.T) {
 	now := time.Now()
 	triggerCfg := []byte(`{"token":"secret123"}`)
 
-	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE trigger_type = \$1 AND enabled = \$2 AND trigger_config->>'token' = \$3 ORDER BY "workflows"\."id" LIMIT \$4$`).
-		WithArgs("webhook", true, "secret123", 1).
+	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE \(trigger_type = \$1 AND enabled = \$2 AND trigger_config->>'token' = \$3\) AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT \$[0-9]+$`).
+		WithArgs("webhook", true, "secret123", sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "trigger_type", "trigger_config", "action_url", "enabled", "next_run_at", "created_at"}).
 			AddRow(uint(7), "webhook-wf", "webhook", triggerCfg, "url", true, nil, now))
 

@@ -17,15 +17,15 @@ func TestTriggererEnqueueRun_Success(t *testing.T) {
 
 	// Mock CreateRun
 	mock.ExpectBegin()
-	mock.ExpectQuery(`^INSERT INTO "runs" \("workflow_id","status","created_at","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6\) RETURNING "id"$`).
-		WithArgs(uint(5), RunStatusPending, sqlmock.AnyArg(), nil, nil, "").
+	mock.ExpectQuery(`^INSERT INTO "runs" \("created_at","updated_at","deleted_at","workflow_id","status","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\) RETURNING "id"$`).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(5), RunStatusPending, nil, nil, "").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(10)))
 	mock.ExpectCommit()
 
 	// Mock CreateJob
 	mock.ExpectBegin()
-	mock.ExpectQuery(`^INSERT INTO "jobs" \("workflow_id","run_id","payload","status","error","created_at","updated_at","started_at","ended_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9\) RETURNING "id"$`).
-		WithArgs(uint(5), uint(10), []byte(`{"foo":"bar"}`), JobStatusPending, "", sqlmock.AnyArg(), sqlmock.AnyArg(), nil, nil).
+	mock.ExpectQuery(`^INSERT INTO "jobs" \("created_at","updated_at","deleted_at","workflow_id","run_id","payload","status","error","started_at","ended_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9,\$10\) RETURNING "id"$`).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(5), uint(10), []byte(`{"foo":"bar"}`), JobStatusPending, "", nil, nil).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).AddRow(uint(3), now, now))
 	mock.ExpectCommit()
 
@@ -57,8 +57,8 @@ func TestTriggererEnqueueRun_CreateRunError(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectBegin()
-	mock.ExpectQuery(`^INSERT INTO "runs" \("workflow_id","status","created_at","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6\) RETURNING "id"$`).
-		WithArgs(uint(1), RunStatusPending, sqlmock.AnyArg(), nil, nil, "").
+	mock.ExpectQuery(`^INSERT INTO "runs" \("created_at","updated_at","deleted_at","workflow_id","status","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\) RETURNING "id"$`).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(1), RunStatusPending, nil, nil, "").
 		WillReturnError(errors.New("insert fail"))
 	mock.ExpectRollback()
 
@@ -78,15 +78,15 @@ func TestTriggererEnqueueRun_CreateJobError(t *testing.T) {
 
 	// Mock CreateRun success
 	mock.ExpectBegin()
-	mock.ExpectQuery(`^INSERT INTO "runs" \("workflow_id","status","created_at","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6\) RETURNING "id"$`).
-		WithArgs(uint(1), RunStatusPending, sqlmock.AnyArg(), nil, nil, "").
+	mock.ExpectQuery(`^INSERT INTO "runs" \("created_at","updated_at","deleted_at","workflow_id","status","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\) RETURNING "id"$`).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(1), RunStatusPending, nil, nil, "").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(2)))
 	mock.ExpectCommit()
 
 	// Mock CreateJob failure
 	mock.ExpectBegin()
-	mock.ExpectQuery(`^INSERT INTO "jobs" \("workflow_id","run_id","payload","status","error","created_at","updated_at","started_at","ended_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9\) RETURNING "id"$`).
-		WithArgs(uint(1), uint(2), []byte(`{}`), JobStatusPending, "", sqlmock.AnyArg(), sqlmock.AnyArg(), nil, nil).
+	mock.ExpectQuery(`^INSERT INTO "jobs" \("created_at","updated_at","deleted_at","workflow_id","run_id","payload","status","error","started_at","ended_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9,\$10\) RETURNING "id"$`).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(1), uint(2), []byte(`{}`), JobStatusPending, "", nil, nil).
 		WillReturnError(errors.New("job insert fail"))
 	mock.ExpectRollback()
 

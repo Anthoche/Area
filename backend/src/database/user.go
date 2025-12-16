@@ -21,7 +21,7 @@ func GetUsers() ([]User, error) {
 func GetUserByID(id int64) (User, error) {
 	var user User
 
-	user, err := gorm.G[User](db).Where("id = ?", 1).First(GetDBContext())
+	user, err := gorm.G[User](db).Where("id = ?", id).First(GetDBContext())
 	if err != nil {
 		return user, fmt.Errorf("getUserById %d: %w", id, err)
 	}
@@ -77,6 +77,9 @@ func UpdateUser(id int64, firstName string, lastName string, email string, passw
 func UserExists(email string) bool {
 	var count int64
 
+	if db == nil {
+		return false
+	}
 	db.Model(&User{}).Where("email = ?", email).Count(&count)
 	return count > 0
 }

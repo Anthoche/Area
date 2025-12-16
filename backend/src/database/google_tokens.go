@@ -38,7 +38,7 @@ func GetGoogleToken(id int64) (*GoogleToken, error) {
 func GetGoogleTokenForUser(id int64, userID int64) (*GoogleToken, error) {
 	var t GoogleToken
 
-	t, err := gorm.G[GoogleToken](db).Where("id = ? AND user_id", id, userID).First(GetDBContext())
+	t, err := gorm.G[GoogleToken](db).Where("id = ? AND user_id = ?", id, userID).First(GetDBContext())
 	if err != nil {
 		return nil, fmt.Errorf("get google token for user: %w", err)
 	}

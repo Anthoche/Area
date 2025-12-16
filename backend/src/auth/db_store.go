@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"area/src/database"
+
+	"gorm.io/gorm"
 )
 
 // DBStore implements UserStore backed by PostgreSQL.
@@ -32,7 +34,7 @@ func (DBStore) Create(user *User, passwordHash string) error {
 func (DBStore) GetByEmail(email string) (*User, string, error) {
 	dbUser, err := database.GetUserByEmail(email)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, "", ErrInvalidCredentials
 		}
 		return nil, "", err

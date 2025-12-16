@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"area/src/database"
 	"context"
 	"encoding/json"
 	"errors"
@@ -75,15 +74,14 @@ func NewService(store UserStore) *Service {
 
 // Authenticate verifies email/password against the stored hash.
 func (s *Service) Authenticate(email, password string) (*User, error) {
-	if !database.UserExists(email) {
-		return nil, ErrInvalidCredentials
-	}
 	user, hashed, err := s.store.GetByEmail(email)
 	switch {
 	case errors.Is(err, ErrInvalidCredentials):
 		return nil, ErrInvalidCredentials
 	case err != nil:
 		return nil, err
+	case user == nil:
+		return nil, ErrInvalidCredentials
 	}
 	if err := CheckPassword(hashed, password); err != nil {
 		return nil, ErrInvalidCredentials
@@ -93,9 +91,6 @@ func (s *Service) Authenticate(email, password string) (*User, error) {
 
 // Register creates a new user with a hashed password in the store.
 func (s *Service) Register(email, password, firstName, lastName string) (*User, error) {
-	if database.UserExists(email) {
-		return nil, ErrUserExists
-	}
 	hashed, err := HashPassword(password)
 	if err != nil {
 		return nil, err
@@ -106,6 +101,9 @@ func (s *Service) Register(email, password, firstName, lastName string) (*User, 
 		LastName:  lastName,
 	}
 	if err := s.store.Create(user, hashed); err != nil {
+		if errors.Is(err, ErrUserExists) {
+			return nil, ErrUserExists
+		}
 		return nil, err
 	}
 	return user, nil

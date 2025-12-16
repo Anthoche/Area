@@ -1,38 +1,9 @@
 package auth
 
 import (
-	"area/src/database"
 	"errors"
 	"testing"
-
-	"github.com/DATA-DOG/go-sqlmock"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
-
-func setupMockDBForAuth(t *testing.T) (sqlmock.Sqlmock, func()) {
-	t.Helper()
-	mockDB, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("sqlmock.New: %v", err)
-	}
-
-	gormDB, err := gorm.Open(postgres.New(postgres.Config{
-		Conn: mockDB,
-	}), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("gorm.Open: %v", err)
-	}
-
-	originalDB := database.GetDB()
-	database.SetDBForTesting(gormDB)
-
-	cleanup := func() {
-		database.SetDBForTesting(originalDB)
-		mockDB.Close()
-	}
-	return mock, cleanup
-}
 
 func TestHashAndCheckPassword(t *testing.T) {
 	const password = "supersecret"
@@ -71,14 +42,6 @@ func (s *stubStore) GetByEmail(email string) (*User, string, error) {
 }
 
 func TestAuthenticate_Success(t *testing.T) {
-	mock, cleanup := setupMockDBForAuth(t)
-	defer cleanup()
-
-	// Mock UserExists call
-	mock.ExpectQuery(`^SELECT count\(\*\) FROM "users" WHERE email = \$1 AND "users"\."deleted_at" IS NULL$`).
-		WithArgs("a@b.com").
-		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
-
 	pw := "mypassword"
 	hash, _ := HashPassword(pw)
 	store := &stubStore{
@@ -94,61 +57,25 @@ func TestAuthenticate_Success(t *testing.T) {
 	if user == nil || user.Email != "a@b.com" {
 		t.Fatalf("unexpected user returned")
 	}
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("there were unfulfilled expectations: %s", err)
-	}
 }
 
 func TestAuthenticate_InvalidCredentials(t *testing.T) {
-	mock, cleanup := setupMockDBForAuth(t)
-	defer cleanup()
-
-	// Mock UserExists call returning 0 (user doesn't exist)
-	mock.ExpectQuery(`^SELECT count\(\*\) FROM "users" WHERE email = \$1 AND "users"\."deleted_at" IS NULL$`).
-		WithArgs("a@b.com").
-		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
-
 	store := &stubStore{getErr: ErrInvalidCredentials}
 	svc := NewService(store)
 	if _, err := svc.Authenticate("a@b.com", "pw"); !errors.Is(err, ErrInvalidCredentials) {
 		t.Fatalf("expected ErrInvalidCredentials, got %v", err)
 	}
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("there were unfulfilled expectations: %s", err)
-	}
 }
 
 func TestAuthenticate_StoreError(t *testing.T) {
-	mock, cleanup := setupMockDBForAuth(t)
-	defer cleanup()
-
-	// Mock UserExists call
-	mock.ExpectQuery(`^SELECT count\(\*\) FROM "users" WHERE email = \$1 AND "users"\."deleted_at" IS NULL$`).
-		WithArgs("a@b.com").
-		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
-
 	store := &stubStore{getErr: errors.New("db down")}
 	svc := NewService(store)
 	if _, err := svc.Authenticate("a@b.com", "pw"); err == nil || errors.Is(err, ErrInvalidCredentials) {
 		t.Fatalf("expected store error, got %v", err)
 	}
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("there were unfulfilled expectations: %s", err)
-	}
 }
 
 func TestRegister_Success(t *testing.T) {
-	mock, cleanup := setupMockDBForAuth(t)
-	defer cleanup()
-
-	// Mock UserExists call returning 0 (user doesn't exist)
-	mock.ExpectQuery(`^SELECT count\(\*\) FROM "users" WHERE email = \$1 AND "users"\."deleted_at" IS NULL$`).
-		WithArgs("a@b.com").
-		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
-
 	store := &stubStore{}
 	svc := NewService(store)
 	user, err := svc.Register("a@b.com", "pw", "f", "l")
@@ -161,28 +88,12 @@ func TestRegister_Success(t *testing.T) {
 	if store.lastPassword == "" || store.lastPassword == "pw" {
 		t.Fatalf("password should be hashed")
 	}
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("there were unfulfilled expectations: %s", err)
-	}
 }
 
 func TestRegister_CreateError(t *testing.T) {
-	mock, cleanup := setupMockDBForAuth(t)
-	defer cleanup()
-
-	// Mock UserExists call returning 0 (user doesn't exist)
-	mock.ExpectQuery(`^SELECT count\(\*\) FROM "users" WHERE email = \$1 AND "users"\."deleted_at" IS NULL$`).
-		WithArgs("a@b.com").
-		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
-
 	store := &stubStore{createErr: errors.New("insert fail")}
 	svc := NewService(store)
 	if _, err := svc.Register("a@b.com", "pw", "f", "l"); err == nil {
 		t.Fatalf("expected create error")
-	}
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }

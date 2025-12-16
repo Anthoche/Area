@@ -49,8 +49,8 @@ func TestServiceTrigger_Success(t *testing.T) {
 		true, nil,
 	)
 
-	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."id" = \$1 AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT 1$`).
-		WithArgs(uint(2)).
+	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."id" = \$1 AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT \$[0-9]+$`).
+		WithArgs(uint(2), sqlmock.AnyArg()).
 		WillReturnRows(rowsWF)
 
 	// Triggerer.EnqueueRun -> Store.CreateRun (gorm Create => begin/insert/commit)
@@ -84,8 +84,8 @@ func TestServiceTrigger_NotFound(t *testing.T) {
 
 	store := NewStore(gormDB)
 
-	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."id" = \$1 AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT 1$`).
-		WithArgs(uint(99)).
+	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."id" = \$1 AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT \$[0-9]+$`).
+		WithArgs(uint(99), sqlmock.AnyArg()).
 		WillReturnError(gorm.ErrRecordNotFound)
 
 	svc := NewService(store, NewTriggerer(store))
@@ -172,8 +172,8 @@ func TestServiceGetWorkflow_ErrorMapping(t *testing.T) {
 
 	store := NewStore(gormDB)
 
-	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."id" = \$1 AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT 1$`).
-		WithArgs(uint(1)).
+	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE "workflows"\."id" = \$1 AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT \$[0-9]+$`).
+		WithArgs(uint(1), sqlmock.AnyArg()).
 		WillReturnError(gorm.ErrRecordNotFound)
 
 	svc := NewService(store, NewTriggerer(store))
@@ -191,8 +191,8 @@ func TestServiceTriggerWebhook_NotFound(t *testing.T) {
 
 	store := NewStore(gormDB)
 
-	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE \(trigger_type = \$1 AND enabled = \$2 AND trigger_config->>'token' = \$3\) AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT 1$`).
-		WithArgs("webhook", true, "abc").
+	mock.ExpectQuery(`^SELECT \* FROM "workflows" WHERE \(trigger_type = \$1 AND enabled = \$2 AND trigger_config->>'token' = \$3\) AND "workflows"\."deleted_at" IS NULL ORDER BY "workflows"\."id" LIMIT \$[0-9]+$`).
+		WithArgs("webhook", true, "abc", sqlmock.AnyArg()).
 		WillReturnError(gorm.ErrRecordNotFound)
 
 	svc := NewService(store, NewTriggerer(store))

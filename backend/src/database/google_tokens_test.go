@@ -97,8 +97,8 @@ func TestGetGoogleToken(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "user_id", "access_token", "refresh_token", "expiry"}).
 		AddRow(tokenID, now, now, nil, userID, "access123", "refresh456", now.Add(time.Hour))
 
-	mock.ExpectQuery(`^SELECT \* FROM "google_tokens" WHERE id = \$1 AND "google_tokens"\."deleted_at" IS NULL ORDER BY "google_tokens"\."id" LIMIT 1$`).
-		WithArgs(tokenID).
+	mock.ExpectQuery(`^SELECT \* FROM "google_tokens" WHERE id = \$1 AND "google_tokens"\."deleted_at" IS NULL ORDER BY "google_tokens"\."id" LIMIT \$[0-9]+$`).
+		WithArgs(tokenID, sqlmock.AnyArg()).
 		WillReturnRows(rows)
 
 	token, err := GetGoogleToken(tokenID)
@@ -123,8 +123,8 @@ func TestGetGoogleToken_NotFound(t *testing.T) {
 
 	tokenID := int64(999)
 
-	mock.ExpectQuery(`^SELECT \* FROM "google_tokens" WHERE id = \$1 AND "google_tokens"\."deleted_at" IS NULL ORDER BY "google_tokens"\."id" LIMIT 1$`).
-		WithArgs(tokenID).
+	mock.ExpectQuery(`^SELECT \* FROM "google_tokens" WHERE id = \$1 AND "google_tokens"\."deleted_at" IS NULL ORDER BY "google_tokens"\."id" LIMIT \$[0-9]+$`).
+		WithArgs(tokenID, sqlmock.AnyArg()).
 		WillReturnError(gorm.ErrRecordNotFound)
 
 	_, err := GetGoogleToken(tokenID)
@@ -148,8 +148,8 @@ func TestGetGoogleTokenForUser(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "user_id", "access_token", "refresh_token", "expiry"}).
 		AddRow(tokenID, now, now, nil, userID, "access789", "refresh101", now.Add(time.Hour))
 
-	mock.ExpectQuery(`^SELECT \* FROM "google_tokens" WHERE id = \$1 AND user_id AND "google_tokens"\."deleted_at" IS NULL ORDER BY "google_tokens"\."id" LIMIT 1$`).
-		WithArgs(tokenID, userID).
+	mock.ExpectQuery(`^SELECT \* FROM "google_tokens" WHERE \(id = \$1 AND user_id = \$2\) AND "google_tokens"\."deleted_at" IS NULL ORDER BY "google_tokens"\."id" LIMIT \$[0-9]+$`).
+		WithArgs(tokenID, userID, sqlmock.AnyArg()).
 		WillReturnRows(rows)
 
 	token, err := GetGoogleTokenForUser(tokenID, userID)

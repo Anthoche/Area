@@ -69,8 +69,8 @@ func TestGetUserByID(t *testing.T) {
 		AddRow(1, time.Now(), time.Now(), nil, "Ada", "Lovelace", "ada@example.com", "hash1")
 
 	// Note: The actual implementation has a bug - it uses id = 1 instead of the parameter
-	mock.ExpectQuery(`^SELECT \* FROM "users" WHERE id = \$1 AND "users"\."deleted_at" IS NULL ORDER BY "users"\."id" LIMIT 1$`).
-		WithArgs(1).
+	mock.ExpectQuery(`^SELECT \* FROM "users" WHERE id = \$1 AND "users"\."deleted_at" IS NULL ORDER BY "users"\."id" LIMIT \$[0-9]+$`).
+		WithArgs(userID, sqlmock.AnyArg()).
 		WillReturnRows(rows)
 
 	user, err := GetUserByID(userID)
@@ -90,8 +90,8 @@ func TestGetUserByID_NotFound(t *testing.T) {
 	_, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
-	mock.ExpectQuery(`^SELECT \* FROM "users" WHERE id = \$1 AND "users"\."deleted_at" IS NULL ORDER BY "users"\."id" LIMIT 1$`).
-		WithArgs(1).
+	mock.ExpectQuery(`^SELECT \* FROM "users" WHERE id = \$1 AND "users"\."deleted_at" IS NULL ORDER BY "users"\."id" LIMIT \$[0-9]+$`).
+		WithArgs(int64(99), sqlmock.AnyArg()).
 		WillReturnError(gorm.ErrRecordNotFound)
 
 	_, err := GetUserByID(99)
@@ -112,8 +112,8 @@ func TestGetUserByEmail(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "firstname", "lastname", "email", "password_hash"}).
 		AddRow(1, time.Now(), time.Now(), nil, "Ada", "Lovelace", email, "hash1")
 
-	mock.ExpectQuery(`^SELECT \* FROM "users" WHERE email = \$1 AND "users"\."deleted_at" IS NULL ORDER BY "users"\."id" LIMIT 1$`).
-		WithArgs(email).
+	mock.ExpectQuery(`^SELECT \* FROM "users" WHERE email = \$1 AND "users"\."deleted_at" IS NULL ORDER BY "users"\."id" LIMIT \$[0-9]+$`).
+		WithArgs(email, sqlmock.AnyArg()).
 		WillReturnRows(rows)
 
 	user, err := GetUserByEmail(email)
