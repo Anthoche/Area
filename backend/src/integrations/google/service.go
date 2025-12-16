@@ -37,6 +37,7 @@ func NewClient() *Client {
 		clientSecret: mustEnv("GOOGLE_OAUTH_CLIENT_SECRET"),
 		scopes: []string{
 			"https://www.googleapis.com/auth/gmail.send",
+			"https://www.googleapis.com/auth/gmail.readonly",
 			"https://www.googleapis.com/auth/calendar.events",
 			"https://www.googleapis.com/auth/userinfo.email",
 		},
@@ -292,6 +293,102 @@ func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) 
 		return nil, err
 	}
 	return newToken, nil
+}
+
+type GmailMessage struct {
+	ID      string
+	From    string
+	Subject string
+	Snippet string
+	Date    string
+}
+
+// ListRecentMessages fetches recent messages from Gmail, newest first. If sinceID is provided, stops when that ID is encountered.
+func (c *Client) ListRecentMessages(ctx context.Context, userID *int64, tokenID int64, max int, sinceID string) ([]GmailMessage, error) {
+	token, err := c.ensureToken(ctx, userID, tokenID)
+	if err != nil {
+		return nil, err
+	}
+	listURL := "https://www.googleapis.com/gmail/v1/users/me/messages?labelIds=INBOX&maxResults=%d"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(listURL, max), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("list messages status %d: %s", resp.StatusCode, string(body))
+	}
+	var list struct {
+		Messages []struct {
+			ID string `json:"id"`
+		} `json:"messages"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+		return nil, err
+	}
+	var out []GmailMessage
+	for _, m := range list.Messages {
+		if sinceID != "" && m.ID == sinceID {
+			break
+		}
+		msg, err := c.fetchMessage(ctx, token.AccessToken, m.ID)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, msg)
+	}
+	return out, nil
+}
+
+func (c *Client) fetchMessage(ctx context.Context, accessToken, msgID string) (GmailMessage, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://www.googleapis.com/gmail/v1/users/me/messages/"+msgID+"?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date", nil)
+	if err != nil {
+		return GmailMessage{}, err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return GmailMessage{}, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return GmailMessage{}, fmt.Errorf("get message status %d: %s", resp.StatusCode, string(body))
+	}
+	var data struct {
+		ID      string `json:"id"`
+		Snippet string `json:"snippet"`
+		Payload struct {
+			Headers []struct {
+				Name  string `json:"name"`
+				Value string `json:"value"`
+			} `json:"headers"`
+		} `json:"payload"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return GmailMessage{}, err
+	}
+	msg := GmailMessage{
+		ID:      data.ID,
+		Snippet: data.Snippet,
+	}
+	for _, h := range data.Payload.Headers {
+		switch strings.ToLower(h.Name) {
+		case "from":
+			msg.From = h.Value
+		case "subject":
+			msg.Subject = h.Value
+		case "date":
+			msg.Date = h.Value
+		}
+	}
+	return msg, nil
 }
 
 // mustEnv retrieves an environment variable or panics if not set.

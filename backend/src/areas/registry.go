@@ -48,6 +48,12 @@ func List() []Service {
 				{Key: "interval_minutes", Type: "number", Required: true, Description: "Delay between runs in minutes", Example: 5},
 			},
 		},
+		{
+			ID:          "gmail_inbound",
+			Name:        "When a Gmail is received",
+			Description: "Triggers on new unread messages in Gmail inbox.",
+			Fields:      []Field{},
+		},
 	}
 
 	discord := Service{

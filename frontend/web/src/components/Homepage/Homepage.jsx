@@ -203,7 +203,8 @@ export default function Homepage() {
 
   const buildPayloadForWorkflow = (wf) => {
     if (!wf) return {};
-    return form.values || {};
+    const payload = { ...(form.values || {}) };
+    return payload;
   };
 
   const buildIntervalPayload = () => {
@@ -243,14 +244,16 @@ export default function Homepage() {
       const actionUrl = buildActionUrl();
       const triggerType =
         form.triggerType || (triggers.length ? triggers[0].id : "");
+      const triggerConfig = {
+        ...form.triggerValues,
+        payload: buildIntervalPayload(),
+        payload_template: form.values || {},
+      };
       const body = {
         name: form.name,
         trigger_type: triggerType,
         action_url: actionUrl,
-        trigger_config: {
-          ...form.triggerValues,
-          payload: buildIntervalPayload(),
-        },
+        trigger_config: triggerConfig,
       };
       const res = await fetch(`${API_BASE}/workflows`, {
         method: "POST",
@@ -533,35 +536,37 @@ export default function Homepage() {
                     {triggers.find((t) => t.id === form.triggerType)?.description}
                   </div>
                 </label>
-                {triggerFields.map((field) => (
-                  <label className="field" key={field.key}>
-                    <span>
-                      {field.key} {field.required ? "*" : ""}
-                    </span>
-                    <input
-                      type={field.type === "number" ? "number" : "text"}
-                      value={form.triggerValues?.[field.key] ?? ""}
-                      placeholder={
-                        field.example
-                          ? String(field.example)
-                          : field.description || ""
-                      }
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          triggerValues: {
-                            ...prev.triggerValues,
-                            [field.key]:
-                              field.type === "number"
-                                ? Number(e.target.value)
-                                : e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <div className="muted">{field.description}</div>
-                  </label>
-                ))}
+                {triggerFields
+                  .filter((f) => f.key !== "token_id")
+                  .map((field) => (
+                    <label className="field" key={field.key}>
+                      <span>
+                        {field.key} {field.required ? "*" : ""}
+                      </span>
+                      <input
+                        type={field.type === "number" ? "number" : "text"}
+                        value={form.triggerValues?.[field.key] ?? ""}
+                        placeholder={
+                          field.example
+                            ? String(field.example)
+                            : field.description || ""
+                        }
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            triggerValues: {
+                              ...prev.triggerValues,
+                              [field.key]:
+                                field.type === "number"
+                                  ? Number(e.target.value)
+                                  : e.target.value,
+                            },
+                          }))
+                        }
+                      />
+                      <div className="muted">{field.description}</div>
+                    </label>
+                  ))}
                 <label className="field">
                   <span>Reaction</span>
                   <select

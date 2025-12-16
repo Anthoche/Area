@@ -116,13 +116,46 @@ func (s *Store) ListWorkflows(ctx context.Context, userID int64) ([]Workflow, er
 		if nextRun.Valid {
 			wf.NextRunAt = &nextRun.Time
 		}
-		if wf.TriggerType != "manual" && wf.Enabled && wf.NextRunAt == nil {
+		if wf.TriggerType == "interval" && wf.Enabled && wf.NextRunAt == nil {
 			wf.Enabled = false
 		}
 		out = append(out, wf)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("list workflows: %w", err)
+	}
+	return out, nil
+}
+
+// ListWorkflowsByTrigger returns workflows filtered by trigger type (all users).
+func (s *Store) ListWorkflowsByTrigger(ctx context.Context, triggerType string) ([]Workflow, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT id, user_id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at
+		FROM workflows
+		WHERE trigger_type = $1
+		ORDER BY created_at DESC`, triggerType)
+	if err != nil {
+		return nil, fmt.Errorf("list workflows by trigger: %w", err)
+	}
+	defer rows.Close()
+
+	var out []Workflow
+	for rows.Next() {
+		var wf Workflow
+		var nextRun sql.NullTime
+		if err := rows.Scan(&wf.ID, &wf.UserID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &wf.Enabled, &nextRun, &wf.CreatedAt); err != nil {
+			return nil, fmt.Errorf("list workflows by trigger: %w", err)
+		}
+		if nextRun.Valid {
+			wf.NextRunAt = &nextRun.Time
+		}
+		if wf.TriggerType == "interval" && wf.Enabled && wf.NextRunAt == nil {
+			wf.Enabled = false
+		}
+		out = append(out, wf)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("list workflows by trigger: %w", err)
 	}
 	return out, nil
 }
@@ -146,7 +179,7 @@ func (s *Store) GetWorkflow(ctx context.Context, id int64) (*Workflow, error) {
 	if nextRun.Valid {
 		wf.NextRunAt = &nextRun.Time
 	}
-	if wf.TriggerType != "manual" && wf.Enabled && wf.NextRunAt == nil {
+	if wf.TriggerType == "interval" && wf.Enabled && wf.NextRunAt == nil {
 		wf.Enabled = false
 	}
 	return &wf, nil
@@ -184,7 +217,7 @@ func (s *Store) GetWorkflowForUser(ctx context.Context, id int64, userID int64) 
 	if nextRun.Valid {
 		wf.NextRunAt = &nextRun.Time
 	}
-	if wf.TriggerType != "manual" && wf.Enabled && wf.NextRunAt == nil {
+	if wf.TriggerType == "interval" && wf.Enabled && wf.NextRunAt == nil {
 		wf.Enabled = false
 	}
 	return &wf, nil
