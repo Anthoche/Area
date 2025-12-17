@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -84,6 +85,13 @@ func StartGithubPoller(ctx context.Context, wfStore *workflows.Store, wfService 
 						"author":  cmt.Author,
 						"message": cmt.Message,
 						"date":    cmt.Date.Format(time.RFC3339),
+					}
+					// Merge payload_template if present (e.g., discord content)
+					for k, v := range cfg.PayloadTemplate {
+						payload[k] = v
+					}
+					if content, ok := payload["content"]; !ok || fmt.Sprint(content) == "" {
+						payload["content"] = fmt.Sprintf("New commit on %s (%s): %s", cfg.Repo, cfg.Branch, cmt.Message)
 					}
 					if _, err := wfService.Trigger(workflows.WithUserID(ctx, wf.UserID), wf.ID, payload); err != nil {
 						log.Printf("github poller trigger wf %d: %v", wf.ID, err)

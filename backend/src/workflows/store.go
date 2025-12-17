@@ -68,9 +68,10 @@ type IntervalConfig struct {
 }
 
 type GithubCommitConfig struct {
-	TokenID int64  `json:"token_id"`
-	Repo    string `json:"repo"`
-	Branch  string `json:"branch"`
+	TokenID         int64                  `json:"token_id"`
+	Repo            string                 `json:"repo"`
+	Branch          string                 `json:"branch"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
 }
 
 type Store struct {
