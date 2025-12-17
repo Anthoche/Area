@@ -57,3 +57,12 @@ type GoogleToken struct {
 	Expiry       time.Time
 	CreatedAt    time.Time
 }
+
+type GithubToken struct {
+	gorm.Model
+	UserID      *int64
+	AccessToken string
+	TokenType   string
+	Scope       string
+	CreatedAt   time.Time
+}

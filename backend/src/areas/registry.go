@@ -54,6 +54,16 @@ func List() []Service {
 			Description: "Triggers on new unread messages in Gmail inbox.",
 			Fields:      []Field{},
 		},
+		{
+			ID:          "github_commit",
+			Name:        "When a GitHub commit is pushed",
+			Description: "Triggers on new commits on a branch.",
+			Fields: []Field{
+				{Key: "token_id", Type: "number", Required: true, Description: "Stored GitHub token id"},
+				{Key: "repo", Type: "string", Required: true, Description: "Repository in owner/name format", Example: "owner/repo"},
+				{Key: "branch", Type: "string", Required: true, Description: "Branch to watch", Example: "main"},
+			},
+		},
 	}
 
 	discord := Service{

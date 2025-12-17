@@ -15,6 +15,7 @@ import (
 
 	"area/src/areas"
 	"area/src/auth"
+	gh "area/src/integrations/github"
 	goog "area/src/integrations/google"
 	"area/src/workflows"
 )
@@ -27,6 +28,7 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	}
 
 	googleHTTP := goog.NewHTTPHandlers(nil)
+	githubHTTP := gh.NewHTTPHandlers(nil)
 	mux := http.NewServeMux()
 	mux.Handle("/login", server.Login())
 	mux.Handle("/register", server.Register())
@@ -38,6 +40,8 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/oauth/github/exchange", server.exchangeGithubToken())
 	mux.Handle("/oauth/google/login", googleHTTP.Login())
 	mux.Handle("/oauth/google/callback", googleHTTP.Callback())
+	mux.Handle("/oauth/github/login", githubHTTP.Login())
+	mux.Handle("/oauth/github/callback", githubHTTP.Callback())
 	mux.Handle("/actions/google/email", googleHTTP.SendEmail())
 	mux.Handle("/actions/google/calendar", googleHTTP.CreateEvent())
 	mux.Handle("/areas", server.listAreas())

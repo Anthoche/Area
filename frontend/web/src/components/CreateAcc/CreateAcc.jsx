@@ -5,6 +5,11 @@ import logo from "../../../lib/assets/Kikonect_logo.png";
 import logoGoogle from "../../../lib/assets/G_logo.png";
 import logoGithub from "../../../lib/assets/github_logo.png";
 
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:8080`;
+
 export default function CreateAcc() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -21,8 +26,20 @@ export default function CreateAcc() {
     navigate("/register", { state: { email } });
   };
 
-  const handleGoogleLogin = () => alert("Google login clicked");
-  const handleGithubLogin = () => alert("Github login clicked");
+  const handleGoogleLogin = () => {
+    const id = Number(localStorage.getItem("user_id"));
+    const uiRedirect = encodeURIComponent("http://localhost:8081/home");
+    const baseUrl = `${API_BASE}/oauth/google/login?ui_redirect=${uiRedirect}`;
+    const url = id && id > 0 ? `${baseUrl}&user_id=${id}` : baseUrl;
+    window.location.href = url;
+  };
+  const handleGithubLogin = () => {
+    const id = Number(localStorage.getItem("user_id"));
+    const uiRedirect = encodeURIComponent("http://localhost:8081/home");
+    const baseUrl = `${API_BASE}/oauth/github/login?ui_redirect=${uiRedirect}`;
+    const url = id && id > 0 ? `${baseUrl}&user_id=${id}` : baseUrl;
+    window.location.href = url;
+  };
 
   return (
     <div className="reg-page">

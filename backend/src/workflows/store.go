@@ -67,6 +67,12 @@ type IntervalConfig struct {
 	Payload         map[string]interface{} `json:"payload,omitempty"`
 }
 
+type GithubCommitConfig struct {
+	TokenID int64  `json:"token_id"`
+	Repo    string `json:"repo"`
+	Branch  string `json:"branch"`
+}
+
 type Store struct {
 	db *gorm.DB
 }
@@ -505,6 +511,18 @@ func intervalConfigFromJSON(raw json.RawMessage) (IntervalConfig, error) {
 	var cfg IntervalConfig
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return IntervalConfig{}, err
+	}
+	return cfg, nil
+}
+
+// githubCommitConfigFromJSON parses GitHub commit trigger config.
+func githubCommitConfigFromJSON(raw json.RawMessage) (GithubCommitConfig, error) {
+	if len(raw) == 0 {
+		return GithubCommitConfig{}, errors.New("empty config")
+	}
+	var cfg GithubCommitConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return GithubCommitConfig{}, err
 	}
 	return cfg, nil
 }

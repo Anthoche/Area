@@ -66,6 +66,11 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 		if len(triggerConfig) == 0 {
 			triggerConfig = []byte(`{}`)
 		}
+	case "github_commit":
+		cfg, err := githubCommitConfigFromJSON(triggerConfig)
+		if err != nil || cfg.TokenID <= 0 || cfg.Repo == "" || cfg.Branch == "" {
+			return nil, errors.New("github_commit requires token_id, repo and branch")
+		}
 	default:
 		return nil, fmt.Errorf("unsupported trigger_type %s", triggerType)
 	}
@@ -144,6 +149,11 @@ func (s *Service) TriggerWebhook(ctx context.Context, token string, payload map[
 // IntervalConfigFromJSON exposes interval config parsing to callers (e.g., scheduler).
 func IntervalConfigFromJSON(raw json.RawMessage) (IntervalConfig, error) {
 	return intervalConfigFromJSON(raw)
+}
+
+// GithubCommitConfigFromJSON exposes parsing for github_commit trigger config.
+func GithubCommitConfigFromJSON(raw json.RawMessage) (GithubCommitConfig, error) {
+	return githubCommitConfigFromJSON(raw)
 }
 
 type ctxUserIDKey struct{}
