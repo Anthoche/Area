@@ -147,12 +147,18 @@ func pollPullRequests(ctx context.Context, wfStore *workflows.Store, wfService *
 
 		var toTrigger []PullRequest
 		last := lastSeen[k]
+		found := false
 		for i := 0; i < len(prs); i++ {
 			curr := fmt.Sprintf("%d-%s", prs[i].Number, prs[i].UpdatedAt.Format(time.RFC3339Nano))
 			if curr == last {
+				found = true
 				break
 			}
 			toTrigger = append(toTrigger, prs[i])
+		}
+		if !found && lastSeen[k] != "" && len(toTrigger) > 0 {
+			lastSeen[k] = fmt.Sprintf("%d-%s", prs[0].Number, prs[0].UpdatedAt.Format(time.RFC3339Nano))
+			continue
 		}
 		for i := len(toTrigger) - 1; i >= 0; i-- {
 			pr := toTrigger[i]
@@ -228,12 +234,18 @@ func pollIssues(ctx context.Context, wfStore *workflows.Store, wfService *workfl
 
 		var toTrigger []Issue
 		last := lastSeen[k]
+		found := false
 		for i := 0; i < len(issues); i++ {
 			curr := fmt.Sprintf("%d-%s", issues[i].Number, issues[i].UpdatedAt.Format(time.RFC3339Nano))
 			if curr == last {
+				found = true
 				break
 			}
 			toTrigger = append(toTrigger, issues[i])
+		}
+		if !found && lastSeen[k] != "" && len(toTrigger) > 0 {
+			lastSeen[k] = fmt.Sprintf("%d-%s", issues[0].Number, issues[0].UpdatedAt.Format(time.RFC3339Nano))
+			continue
 		}
 		for i := len(toTrigger) - 1; i >= 0; i-- {
 			iss := toTrigger[i]
