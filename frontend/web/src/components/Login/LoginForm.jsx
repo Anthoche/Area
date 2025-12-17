@@ -16,7 +16,7 @@ export default function LoginForm({
 
   const navigate = useNavigate();
   const goToRegister = () => {
-    navigate("/home");
+    navigate("/createacc");
   };
 
   return (
