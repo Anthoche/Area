@@ -472,6 +472,7 @@ func (c *Client) ListRecentIssues(ctx context.Context, userID *int64, tokenID in
 	return result, nil
 }
 
+// mustEnv fetches a required environment variable or panics.
 func mustEnv(key string) string {
 	val := os.Getenv(key)
 	if val == "" {

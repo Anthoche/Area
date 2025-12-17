@@ -117,6 +117,7 @@ func workflowModelToAPI(model database.Workflow) Workflow {
 	}
 }
 
+// runModelToAPI converts a database.Run model to the API Run type.
 func runModelToAPI(model database.Run) Run {
 	return Run{
 		ID:         int64(model.ID),
@@ -129,6 +130,7 @@ func runModelToAPI(model database.Run) Run {
 	}
 }
 
+// jobModelToAPI converts a database.Job model to the API Job type.
 func jobModelToAPI(model database.Job) Job {
 	return Job{
 		ID:         int64(model.ID),
@@ -542,6 +544,7 @@ func githubCommitConfigFromJSON(raw json.RawMessage) (GithubCommitConfig, error)
 	return cfg, nil
 }
 
+// githubPRConfigFromJSON parses GitHub pull request trigger config.
 func githubPRConfigFromJSON(raw json.RawMessage) (GithubPullRequestConfig, error) {
 	if len(raw) == 0 {
 		return GithubPullRequestConfig{}, errors.New("empty config")
@@ -553,6 +556,7 @@ func githubPRConfigFromJSON(raw json.RawMessage) (GithubPullRequestConfig, error
 	return cfg, nil
 }
 
+// githubIssueConfigFromJSON parses GitHub issue trigger config.
 func githubIssueConfigFromJSON(raw json.RawMessage) (GithubIssueConfig, error) {
 	if len(raw) == 0 {
 		return GithubIssueConfig{}, errors.New("empty config")

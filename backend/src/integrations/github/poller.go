@@ -40,6 +40,7 @@ func StartGithubPoller(ctx context.Context, wfStore *workflows.Store, wfService 
 	}()
 }
 
+// pollCommits checks for new commits and triggers workflows accordingly.
 func pollCommits(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, client *Client, lastSeen map[int64]string) {
 	wfs, err := wfStore.ListWorkflowsByTrigger(ctx, "github_commit")
 	if err != nil {
@@ -111,6 +112,7 @@ func pollCommits(ctx context.Context, wfStore *workflows.Store, wfService *workf
 	}
 }
 
+// pollPullRequests checks for new or updated pull requests and triggers workflows accordingly.
 func pollPullRequests(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, client *Client, lastSeen map[int64]string) {
 	wfs, err := wfStore.ListWorkflowsByTrigger(ctx, "github_pull_request")
 	if err != nil {
@@ -198,6 +200,7 @@ func pollPullRequests(ctx context.Context, wfStore *workflows.Store, wfService *
 	}
 }
 
+// pollPullRequests checks for new or updated pull requests and triggers workflows accordingly.
 func pollIssues(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, client *Client, lastSeen map[int64]string) {
 	wfs, err := wfStore.ListWorkflowsByTrigger(ctx, "github_issue")
 	if err != nil {
@@ -281,6 +284,7 @@ func pollIssues(ctx context.Context, wfStore *workflows.Store, wfService *workfl
 	}
 }
 
+// containsString checks if a string slice contains a string (case-insensitive).
 func containsString(list []string, v string) bool {
 	for _, s := range list {
 		if strings.EqualFold(s, v) {

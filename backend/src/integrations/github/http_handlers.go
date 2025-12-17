@@ -198,12 +198,14 @@ func (h *HTTPHandlers) PullRequest() http.Handler {
 	})
 }
 
+// writeJSON writes a JSON response with the given status code.
 func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(value)
 }
 
+// optionalUserID extracts an optional user ID from the request headers or query parameters.
 func optionalUserID(r *http.Request) *int64 {
 	user := r.Header.Get("X-User-ID")
 	if user == "" {
@@ -219,6 +221,7 @@ func optionalUserID(r *http.Request) *int64 {
 	return &id
 }
 
+// randomState generates a random string for OAuth state parameter.
 func randomState() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
