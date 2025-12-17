@@ -73,21 +73,16 @@ func StartGithubPoller(ctx context.Context, wfStore *workflows.Store, wfService 
 				}
 
 				var toTrigger []Commit
-				found := false
-				for i := len(commits) - 1; i >= 0; i-- {
+				for i := 0; i < len(commits); i++ {
 					if commits[i].SHA == lastSeen[k] {
-						found = true
 						break
 					}
 					toTrigger = append(toTrigger, commits[i])
 				}
-				// If we never saw lastSeen in this page (e.g., skipped due to per_page),
-				// only trigger the newest commit to avoid duplicates.
-				if !found && lastSeen[k] != "" && len(toTrigger) > 1 {
-					toTrigger = toTrigger[len(toTrigger)-1:]
-				}
 
-				for _, cmt := range toTrigger {
+				// trigger oldest-first among new commits
+				for i := len(toTrigger) - 1; i >= 0; i-- {
+					cmt := toTrigger[i]
 					payload := map[string]any{
 						"repo":    cfg.Repo,
 						"branch":  cfg.Branch,
