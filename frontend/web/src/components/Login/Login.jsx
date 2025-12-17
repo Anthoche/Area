@@ -85,7 +85,16 @@ export default function Login() {
               : baseUrl;
           window.location.href = url;
         }}
-        onGithubLogin={() => alert('Github login clicked - not implemented')}
+        onGithubLogin={() => {
+          const id = userId || Number(localStorage.getItem("user_id"));
+          const uiRedirect = encodeURIComponent("http://localhost:8081/home");
+          const baseUrl = `${API_BASE}/oauth/github/login?ui_redirect=${uiRedirect}`;
+          const url =
+            id && id > 0
+              ? `${baseUrl}&user_id=${id}`
+              : baseUrl;
+          window.location.href = url;
+        }}
         />
         }
       </div>

@@ -15,6 +15,7 @@ import (
 	"area/src/auth"
 	"area/src/database"
 	"area/src/httpapi"
+	"area/src/integrations/github"
 	"area/src/integrations/google"
 	"area/src/workflows"
 
@@ -70,6 +71,7 @@ func main() {
 	triggerer := workflows.NewTriggerer(wfStore)
 	wfService := workflows.NewService(wfStore, triggerer)
 	googleClient := google.NewClient()
+	githubClient := github.NewClient()
 
 	// Start a simple executor loop in background for outgoing webhooks.
 	sender := newHTTPSender()
@@ -106,6 +108,8 @@ func main() {
 
 	// Gmail inbound poller (simple polling of new messages).
 	google.StartGmailPoller(context.Background(), wfStore, wfService, googleClient)
+	// GitHub commits poller (new commits on watched branches).
+	github.StartGithubPoller(context.Background(), wfStore, wfService, githubClient)
 
 	server := &http.Server{
 		Addr:              ":" + port,

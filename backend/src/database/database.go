@@ -53,6 +53,7 @@ func Connect() {
 	dbContext = context.Background()
 	Db.AutoMigrate(&User{})
 	Db.AutoMigrate(&GoogleToken{})
+	Db.AutoMigrate(&GithubToken{})
 	Db.AutoMigrate(&Job{})
 	Db.AutoMigrate(&Run{})
 	Db.AutoMigrate(&Workflow{})

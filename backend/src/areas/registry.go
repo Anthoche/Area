@@ -54,6 +54,36 @@ func List() []Service {
 			Description: "Triggers on new unread messages in Gmail inbox.",
 			Fields:      []Field{},
 		},
+		{
+			ID:          "github_commit",
+			Name:        "When a GitHub commit is pushed",
+			Description: "Triggers on new commits on a branch.",
+			Fields: []Field{
+				{Key: "token_id", Type: "number", Required: true, Description: "Stored GitHub token id"},
+				{Key: "repo", Type: "string", Required: true, Description: "Repository in owner/name format", Example: "owner/repo"},
+				{Key: "branch", Type: "string", Required: true, Description: "Branch to watch", Example: "main"},
+			},
+		},
+		{
+			ID:          "github_pull_request",
+			Name:        "When a GitHub pull request changes",
+			Description: "Triggers on PR updates (opened/closed/merged).",
+			Fields: []Field{
+				{Key: "token_id", Type: "number", Required: true, Description: "Stored GitHub token id"},
+				{Key: "repo", Type: "string", Required: true, Description: "Repository in owner/name format", Example: "owner/repo"},
+				{Key: "actions", Type: "array<string>", Required: false, Description: "Actions to watch (opened,closed,merged)", Example: []string{"opened", "closed", "merged"}},
+			},
+		},
+		{
+			ID:          "github_issue",
+			Name:        "When a GitHub issue changes",
+			Description: "Triggers on issue updates (opened/closed/reopened).",
+			Fields: []Field{
+				{Key: "token_id", Type: "number", Required: true, Description: "Stored GitHub token id"},
+				{Key: "repo", Type: "string", Required: true, Description: "Repository in owner/name format", Example: "owner/repo"},
+				{Key: "actions", Type: "array<string>", Required: false, Description: "Actions to watch (opened,closed,reopened)", Example: []string{"opened", "closed"}},
+			},
+		},
 	}
 
 	discord := Service{
@@ -114,6 +144,42 @@ func List() []Service {
 		},
 	}
 
+	githubEnabled := os.Getenv("GITHUB_OAUTH_CLIENT_ID") != "" && os.Getenv("GITHUB_OAUTH_CLIENT_SECRET") != ""
+	github := Service{
+		ID:      "github",
+		Name:    "GitHub",
+		Enabled: githubEnabled,
+		Reactions: []Capability{
+			{
+				ID:          "github_issue",
+				Name:        "Create issue",
+				Description: "Create a new issue in a repository.",
+				ActionURL:   "/actions/github/issue",
+				Fields: []Field{
+					{Key: "token_id", Type: "number", Required: true, Description: "Stored GitHub token id"},
+					{Key: "repo", Type: "string", Required: true, Description: "Repository in owner/name format", Example: "owner/repo"},
+					{Key: "title", Type: "string", Required: true, Description: "Issue title"},
+					{Key: "body", Type: "string", Required: false, Description: "Issue body"},
+					{Key: "labels", Type: "array<string>", Required: false, Description: "Labels to add"},
+				},
+			},
+			{
+				ID:          "github_pull_request",
+				Name:        "Create pull request",
+				Description: "Create a pull request from a branch.",
+				ActionURL:   "/actions/github/pr",
+				Fields: []Field{
+					{Key: "token_id", Type: "number", Required: true, Description: "Stored GitHub token id"},
+					{Key: "repo", Type: "string", Required: true, Description: "Repository in owner/name format", Example: "owner/repo"},
+					{Key: "title", Type: "string", Required: true, Description: "Pull request title"},
+					{Key: "head", Type: "string", Required: true, Description: "Source branch (or owner:branch)", Example: "feature-branch"},
+					{Key: "base", Type: "string", Required: true, Description: "Base branch", Example: "main"},
+					{Key: "body", Type: "string", Required: false, Description: "Pull request body"},
+				},
+			},
+		},
+	}
+
 	webhook := Service{
 		ID:      "webhook",
 		Name:    "Webhook",
@@ -141,6 +207,7 @@ func List() []Service {
 		},
 		discord,
 		google,
+		github,
 		webhook,
 	}
 }

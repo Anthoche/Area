@@ -67,6 +67,27 @@ type IntervalConfig struct {
 	Payload         map[string]interface{} `json:"payload,omitempty"`
 }
 
+type GithubCommitConfig struct {
+	TokenID         int64                  `json:"token_id"`
+	Repo            string                 `json:"repo"`
+	Branch          string                 `json:"branch"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type GithubPullRequestConfig struct {
+	TokenID         int64                  `json:"token_id"`
+	Repo            string                 `json:"repo"`
+	Actions         []string               `json:"actions,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type GithubIssueConfig struct {
+	TokenID         int64                  `json:"token_id"`
+	Repo            string                 `json:"repo"`
+	Actions         []string               `json:"actions,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
 type Store struct {
 	db *gorm.DB
 }
@@ -96,6 +117,7 @@ func workflowModelToAPI(model database.Workflow) Workflow {
 	}
 }
 
+// runModelToAPI converts a database.Run model to the API Run type.
 func runModelToAPI(model database.Run) Run {
 	return Run{
 		ID:         int64(model.ID),
@@ -108,6 +130,7 @@ func runModelToAPI(model database.Run) Run {
 	}
 }
 
+// jobModelToAPI converts a database.Job model to the API Job type.
 func jobModelToAPI(model database.Job) Job {
 	return Job{
 		ID:         int64(model.ID),
@@ -505,6 +528,42 @@ func intervalConfigFromJSON(raw json.RawMessage) (IntervalConfig, error) {
 	var cfg IntervalConfig
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return IntervalConfig{}, err
+	}
+	return cfg, nil
+}
+
+// githubCommitConfigFromJSON parses GitHub commit trigger config.
+func githubCommitConfigFromJSON(raw json.RawMessage) (GithubCommitConfig, error) {
+	if len(raw) == 0 {
+		return GithubCommitConfig{}, errors.New("empty config")
+	}
+	var cfg GithubCommitConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return GithubCommitConfig{}, err
+	}
+	return cfg, nil
+}
+
+// githubPRConfigFromJSON parses GitHub pull request trigger config.
+func githubPRConfigFromJSON(raw json.RawMessage) (GithubPullRequestConfig, error) {
+	if len(raw) == 0 {
+		return GithubPullRequestConfig{}, errors.New("empty config")
+	}
+	var cfg GithubPullRequestConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return GithubPullRequestConfig{}, err
+	}
+	return cfg, nil
+}
+
+// githubIssueConfigFromJSON parses GitHub issue trigger config.
+func githubIssueConfigFromJSON(raw json.RawMessage) (GithubIssueConfig, error) {
+	if len(raw) == 0 {
+		return GithubIssueConfig{}, errors.New("empty config")
+	}
+	var cfg GithubIssueConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return GithubIssueConfig{}, err
 	}
 	return cfg, nil
 }

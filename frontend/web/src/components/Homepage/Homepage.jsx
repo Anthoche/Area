@@ -48,12 +48,23 @@ export default function Homepage() {
 
   const reactionFields = selectedReactionDef?.fields || [];
 
-  const defaultValuesFromFields = (fields) => {
-    const tokenId = localStorage.getItem("google_token_id");
+  const defaultValuesFromFields = (fields, hint) => {
+    const googleToken = localStorage.getItem("google_token_id");
+    const githubToken = localStorage.getItem("github_token_id");
     return (
       fields?.reduce((acc, f) => {
-        if (f.key === "token_id" && tokenId) {
-          acc[f.key] = Number(tokenId);
+        if (f.key === "token_id") {
+          if (hint?.startsWith("google_") && googleToken) {
+            acc[f.key] = Number(googleToken);
+          } else if (hint?.startsWith("github") && githubToken) {
+            acc[f.key] = Number(githubToken);
+          } else if (googleToken) {
+            acc[f.key] = Number(googleToken);
+          } else if (githubToken) {
+            acc[f.key] = Number(githubToken);
+          } else {
+            acc[f.key] = f.example || "";
+          }
         } else if (f.type === "number") {
           acc[f.key] =
             f.example !== undefined && f.example !== null
@@ -71,18 +82,24 @@ export default function Homepage() {
     const params = new URLSearchParams(window.location.search);
     const tokenId = params.get("token_id");
     const googleEmail = params.get("google_email");
+    const githubLogin = params.get("github_login");
     const userIdFromQuery = params.get("user_id");
-    if (tokenId) {
+    if (tokenId && (googleEmail || params.get("google_email"))) {
       localStorage.setItem("google_token_id", tokenId);
+    } else if (tokenId && (githubLogin || params.get("github_email"))) {
+      localStorage.setItem("github_token_id", tokenId);
     }
     if (googleEmail) {
       localStorage.setItem("google_email", googleEmail);
       localStorage.setItem("user_email", googleEmail);
     }
+    if (githubLogin) {
+      localStorage.setItem("github_login", githubLogin);
+    }
     if (userIdFromQuery) {
       localStorage.setItem("user_id", userIdFromQuery);
     }
-    if (tokenId || googleEmail) {
+    if (tokenId || googleEmail || githubLogin) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     fetchAreas().then(() => fetchWorkflows());
@@ -99,7 +116,7 @@ export default function Homepage() {
   useEffect(() => {
     if (!form.triggerType && triggers.length) {
       const first = triggers[0];
-      const defaults = defaultValuesFromFields(first.fields || []);
+      const defaults = defaultValuesFromFields(first.fields || [], first.id);
       setForm((prev) => ({
         ...prev,
         triggerType: first.id,
@@ -506,19 +523,16 @@ export default function Homepage() {
                   <span>Trigger</span>
                   <select
                     value={form.triggerType}
-                    onChange={(e) =>
-                      setForm((prev) => {
-                        const trig = triggers.find((t) => t.id === e.target.value);
-                        const defaults =
-                          trig?.fields?.reduce((acc, f) => {
-                            acc[f.key] = f.example || "";
-                            return acc;
-                          }, {}) || {};
-                        return {
-                          ...prev,
-                          triggerType: e.target.value,
-                          triggerValues: defaults,
-                        };
+                  onChange={(e) =>
+                    setForm((prev) => {
+                      const trig = triggers.find((t) => t.id === e.target.value);
+                      const defaults =
+                        defaultValuesFromFields(trig?.fields || [], trig?.id);
+                      return {
+                        ...prev,
+                        triggerType: e.target.value,
+                        triggerValues: defaults,
+                      };
                       })
                     }
                   >
@@ -575,7 +589,7 @@ export default function Homepage() {
                       const nextId = e.target.value;
                       setSelectedReaction(nextId);
                       const next = reactions.find((r) => r.id === nextId);
-                      const defaults = defaultValuesFromFields(next?.fields || []);
+                      const defaults = defaultValuesFromFields(next?.fields || [], next?.id);
                       setForm((prev) => ({ ...prev, values: defaults }));
                     }}
                   >
