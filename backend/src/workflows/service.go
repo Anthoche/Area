@@ -62,7 +62,6 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 			return nil, errors.New("interval_minutes must be > 0 for interval trigger")
 		}
 	case "webhook", "manual", "gmail_inbound":
-		// no-op, but ensure valid JSON
 		if len(triggerConfig) == 0 {
 			triggerConfig = []byte(`{}`)
 		}
@@ -70,6 +69,16 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 		cfg, err := githubCommitConfigFromJSON(triggerConfig)
 		if err != nil || cfg.TokenID <= 0 || cfg.Repo == "" || cfg.Branch == "" {
 			return nil, errors.New("github_commit requires token_id, repo and branch")
+		}
+	case "github_pull_request":
+		cfg, err := githubPRConfigFromJSON(triggerConfig)
+		if err != nil || cfg.TokenID <= 0 || cfg.Repo == "" {
+			return nil, errors.New("github_pull_request requires token_id and repo")
+		}
+	case "github_issue":
+		cfg, err := githubIssueConfigFromJSON(triggerConfig)
+		if err != nil || cfg.TokenID <= 0 || cfg.Repo == "" {
+			return nil, errors.New("github_issue requires token_id and repo")
 		}
 	default:
 		return nil, fmt.Errorf("unsupported trigger_type %s", triggerType)
@@ -154,6 +163,16 @@ func IntervalConfigFromJSON(raw json.RawMessage) (IntervalConfig, error) {
 // GithubCommitConfigFromJSON exposes parsing for github_commit trigger config.
 func GithubCommitConfigFromJSON(raw json.RawMessage) (GithubCommitConfig, error) {
 	return githubCommitConfigFromJSON(raw)
+}
+
+// GithubPRConfigFromJSON exposes parsing for github_pull_request trigger config.
+func GithubPRConfigFromJSON(raw json.RawMessage) (GithubPullRequestConfig, error) {
+	return githubPRConfigFromJSON(raw)
+}
+
+// GithubIssueConfigFromJSON exposes parsing for github_issue trigger config.
+func GithubIssueConfigFromJSON(raw json.RawMessage) (GithubIssueConfig, error) {
+	return githubIssueConfigFromJSON(raw)
 }
 
 type ctxUserIDKey struct{}

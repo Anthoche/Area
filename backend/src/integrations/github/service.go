@@ -184,6 +184,27 @@ type Commit struct {
 	Date    time.Time
 }
 
+type PullRequest struct {
+	Number    int
+	Title     string
+	State     string
+	Merged    bool
+	Author    string
+	Base      string
+	Head      string
+	UpdatedAt time.Time
+	URL       string
+}
+
+type Issue struct {
+	Number    int
+	Title     string
+	State     string
+	Author    string
+	UpdatedAt time.Time
+	URL       string
+}
+
 // CreateIssue creates a GitHub issue in the given repo.
 func (c *Client) CreateIssue(ctx context.Context, userID *int64, tokenID int64, owner, repo, title, body string, labels []string) error {
 	token, err := c.ensureToken(ctx, userID, tokenID)
@@ -329,6 +350,126 @@ func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) 
 		return nil, err
 	}
 	return t, nil
+}
+
+// ListRecentPullRequests fetches recently updated PRs.
+func (c *Client) ListRecentPullRequests(ctx context.Context, userID *int64, tokenID int64, owner, repo string, limit int) ([]PullRequest, error) {
+	token, err := c.ensureToken(ctx, userID, tokenID)
+	if err != nil {
+		return nil, err
+	}
+	if limit <= 0 {
+		limit = 5
+	}
+	u := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls?state=all&sort=updated&direction=desc&per_page=%d", url.PathEscape(owner), url.PathEscape(repo), limit)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+	req.Header.Set("Accept", "application/vnd.github+json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("list prs status %d: %s", resp.StatusCode, string(body))
+	}
+	var payload []struct {
+		Number    int        `json:"number"`
+		Title     string     `json:"title"`
+		State     string     `json:"state"`
+		HTMLURL   string     `json:"html_url"`
+		UpdatedAt time.Time  `json:"updated_at"`
+		MergedAt  *time.Time `json:"merged_at"`
+		User      struct {
+			Login string `json:"login"`
+		} `json:"user"`
+		Base struct {
+			Ref string `json:"ref"`
+		} `json:"base"`
+		Head struct {
+			Ref string `json:"ref"`
+		} `json:"head"`
+	}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, err
+	}
+	result := make([]PullRequest, 0, len(payload))
+	for _, pr := range payload {
+		result = append(result, PullRequest{
+			Number:    pr.Number,
+			Title:     pr.Title,
+			State:     pr.State,
+			Merged:    pr.MergedAt != nil,
+			Author:    pr.User.Login,
+			Base:      pr.Base.Ref,
+			Head:      pr.Head.Ref,
+			UpdatedAt: pr.UpdatedAt,
+			URL:       pr.HTMLURL,
+		})
+	}
+	return result, nil
+}
+
+// ListRecentIssues fetches recently updated issues (excluding PRs).
+func (c *Client) ListRecentIssues(ctx context.Context, userID *int64, tokenID int64, owner, repo string, limit int) ([]Issue, error) {
+	token, err := c.ensureToken(ctx, userID, tokenID)
+	if err != nil {
+		return nil, err
+	}
+	if limit <= 0 {
+		limit = 5
+	}
+	u := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues?state=all&sort=updated&direction=desc&per_page=%d", url.PathEscape(owner), url.PathEscape(repo), limit)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+	req.Header.Set("Accept", "application/vnd.github+json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("list issues status %d: %s", resp.StatusCode, string(body))
+	}
+	var payload []struct {
+		Number    int       `json:"number"`
+		Title     string    `json:"title"`
+		State     string    `json:"state"`
+		HTMLURL   string    `json:"html_url"`
+		UpdatedAt time.Time `json:"updated_at"`
+		User      struct {
+			Login string `json:"login"`
+		} `json:"user"`
+		PullRequest *struct{} `json:"pull_request,omitempty"`
+	}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, err
+	}
+	result := make([]Issue, 0, len(payload))
+	for _, iss := range payload {
+		if iss.PullRequest != nil {
+			continue
+		}
+		result = append(result, Issue{
+			Number:    iss.Number,
+			Title:     iss.Title,
+			State:     iss.State,
+			Author:    iss.User.Login,
+			UpdatedAt: iss.UpdatedAt,
+			URL:       iss.HTMLURL,
+		})
+	}
+	return result, nil
 }
 
 func mustEnv(key string) string {

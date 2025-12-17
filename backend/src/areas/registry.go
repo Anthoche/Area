@@ -64,6 +64,26 @@ func List() []Service {
 				{Key: "branch", Type: "string", Required: true, Description: "Branch to watch", Example: "main"},
 			},
 		},
+		{
+			ID:          "github_pull_request",
+			Name:        "When a GitHub pull request changes",
+			Description: "Triggers on PR updates (opened/closed/merged).",
+			Fields: []Field{
+				{Key: "token_id", Type: "number", Required: true, Description: "Stored GitHub token id"},
+				{Key: "repo", Type: "string", Required: true, Description: "Repository in owner/name format", Example: "owner/repo"},
+				{Key: "actions", Type: "array<string>", Required: false, Description: "Actions to watch (opened,closed,merged)", Example: []string{"opened", "closed", "merged"}},
+			},
+		},
+		{
+			ID:          "github_issue",
+			Name:        "When a GitHub issue changes",
+			Description: "Triggers on issue updates (opened/closed/reopened).",
+			Fields: []Field{
+				{Key: "token_id", Type: "number", Required: true, Description: "Stored GitHub token id"},
+				{Key: "repo", Type: "string", Required: true, Description: "Repository in owner/name format", Example: "owner/repo"},
+				{Key: "actions", Type: "array<string>", Required: false, Description: "Actions to watch (opened,closed,reopened)", Example: []string{"opened", "closed"}},
+			},
+		},
 	}
 
 	discord := Service{

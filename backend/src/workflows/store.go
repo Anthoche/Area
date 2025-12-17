@@ -74,6 +74,20 @@ type GithubCommitConfig struct {
 	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
 }
 
+type GithubPullRequestConfig struct {
+	TokenID         int64                  `json:"token_id"`
+	Repo            string                 `json:"repo"`
+	Actions         []string               `json:"actions,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type GithubIssueConfig struct {
+	TokenID         int64                  `json:"token_id"`
+	Repo            string                 `json:"repo"`
+	Actions         []string               `json:"actions,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
 type Store struct {
 	db *gorm.DB
 }
@@ -524,6 +538,28 @@ func githubCommitConfigFromJSON(raw json.RawMessage) (GithubCommitConfig, error)
 	var cfg GithubCommitConfig
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return GithubCommitConfig{}, err
+	}
+	return cfg, nil
+}
+
+func githubPRConfigFromJSON(raw json.RawMessage) (GithubPullRequestConfig, error) {
+	if len(raw) == 0 {
+		return GithubPullRequestConfig{}, errors.New("empty config")
+	}
+	var cfg GithubPullRequestConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return GithubPullRequestConfig{}, err
+	}
+	return cfg, nil
+}
+
+func githubIssueConfigFromJSON(raw json.RawMessage) (GithubIssueConfig, error) {
+	if len(raw) == 0 {
+		return GithubIssueConfig{}, errors.New("empty config")
+	}
+	var cfg GithubIssueConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return GithubIssueConfig{}, err
 	}
 	return cfg, nil
 }
