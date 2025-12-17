@@ -1,6 +1,7 @@
 package github
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -181,6 +182,81 @@ type Commit struct {
 	Message string
 	Author  string
 	Date    time.Time
+}
+
+// CreateIssue creates a GitHub issue in the given repo.
+func (c *Client) CreateIssue(ctx context.Context, userID *int64, tokenID int64, owner, repo, title, body string, labels []string) error {
+	token, err := c.ensureToken(ctx, userID, tokenID)
+	if err != nil {
+		return err
+	}
+	payload := map[string]any{
+		"title": title,
+	}
+	if body != "" {
+		payload["body"] = body
+	}
+	if len(labels) > 0 {
+		payload["labels"] = labels
+	}
+	buf, _ := json.Marshal(payload)
+
+	u := fmt.Sprintf("https://api.github.com/repos/%s/%s/issues", url.PathEscape(owner), url.PathEscape(repo))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(buf))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("create issue status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+	return nil
+}
+
+// CreatePullRequest opens a new pull request.
+func (c *Client) CreatePullRequest(ctx context.Context, userID *int64, tokenID int64, owner, repo, title, head, base, body string) error {
+	token, err := c.ensureToken(ctx, userID, tokenID)
+	if err != nil {
+		return err
+	}
+	payload := map[string]any{
+		"title": title,
+		"head":  head,
+		"base":  base,
+	}
+	if body != "" {
+		payload["body"] = body
+	}
+	buf, _ := json.Marshal(payload)
+
+	u := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls", url.PathEscape(owner), url.PathEscape(repo))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(buf))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("create pr status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+	return nil
 }
 
 // ListRecentCommits fetches the newest commits for a repo/branch.

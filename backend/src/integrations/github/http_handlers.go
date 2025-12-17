@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -115,6 +116,88 @@ func (h *HTTPHandlers) Callback() http.Handler {
 	})
 }
 
+// Issue handles POST /actions/github/issue
+func (h *HTTPHandlers) Issue() http.Handler {
+	type payload struct {
+		TokenID int64           `json:"token_id"`
+		Repo    string          `json:"repo"`
+		Title   string          `json:"title"`
+		Body    string          `json:"body"`
+		Labels  json.RawMessage `json:"labels"`
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		userID := optionalUserID(r)
+		var p payload
+		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
+		if err := decoder.Decode(&p); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON payload"})
+			return
+		}
+		if p.TokenID <= 0 || p.Repo == "" || p.Title == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "token_id, repo and title are required"})
+			return
+		}
+		parts := strings.Split(p.Repo, "/")
+		if len(parts) != 2 {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "repo must be owner/name"})
+			return
+		}
+		labels, err := parseStringList(p.Labels)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "labels must be an array or comma-separated string"})
+			return
+		}
+		if err := h.client.CreateIssue(r.Context(), userID, p.TokenID, parts[0], parts[1], p.Title, p.Body, labels); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"status": "created"})
+	})
+}
+
+// PullRequest handles POST /actions/github/pr
+func (h *HTTPHandlers) PullRequest() http.Handler {
+	type payload struct {
+		TokenID int64  `json:"token_id"`
+		Repo    string `json:"repo"`
+		Title   string `json:"title"`
+		Head    string `json:"head"`
+		Base    string `json:"base"`
+		Body    string `json:"body"`
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		userID := optionalUserID(r)
+		var p payload
+		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
+		if err := decoder.Decode(&p); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON payload"})
+			return
+		}
+		if p.TokenID <= 0 || p.Repo == "" || p.Title == "" || p.Head == "" || p.Base == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "token_id, repo, title, head and base are required"})
+			return
+		}
+		parts := strings.Split(p.Repo, "/")
+		if len(parts) != 2 {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "repo must be owner/name"})
+			return
+		}
+		if err := h.client.CreatePullRequest(r.Context(), userID, p.TokenID, parts[0], parts[1], p.Title, p.Head, p.Base, p.Body); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"status": "created"})
+	})
+}
+
 func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -138,4 +221,28 @@ func optionalUserID(r *http.Request) *int64 {
 
 func randomState() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
+}
+
+// parseStringList accepts a JSON array of strings or a single comma-separated string.
+func parseStringList(raw json.RawMessage) ([]string, error) {
+	if len(raw) == 0 {
+		return nil, nil
+	}
+	var arr []string
+	if err := json.Unmarshal(raw, &arr); err == nil {
+		return arr, nil
+	}
+	var one string
+	if err := json.Unmarshal(raw, &one); err == nil {
+		one = strings.TrimSpace(one)
+		if one == "" {
+			return nil, nil
+		}
+		parts := strings.Split(one, ",")
+		for i := range parts {
+			parts[i] = strings.TrimSpace(parts[i])
+		}
+		return parts, nil
+	}
+	return nil, fmt.Errorf("invalid string list")
 }

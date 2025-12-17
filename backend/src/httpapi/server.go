@@ -42,6 +42,8 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/oauth/google/callback", googleHTTP.Callback())
 	mux.Handle("/oauth/github/login", githubHTTP.Login())
 	mux.Handle("/oauth/github/callback", githubHTTP.Callback())
+	mux.Handle("/actions/github/issue", githubHTTP.Issue())
+	mux.Handle("/actions/github/pr", githubHTTP.PullRequest())
 	mux.Handle("/actions/google/email", googleHTTP.SendEmail())
 	mux.Handle("/actions/google/calendar", googleHTTP.CreateEvent())
 	mux.Handle("/areas", server.listAreas())
