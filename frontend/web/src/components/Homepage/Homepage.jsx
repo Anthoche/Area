@@ -3,6 +3,7 @@ import "./homepage.css";
 import SearchBar from "./SearchBar";
 import FilterTag from "./FilterTag";
 import ServiceCard from "./ServiceCard";
+import user from "../../../lib/assets/user.png";
 
 const API_BASE =
   import.meta.env.VITE_API_URL ||
@@ -375,7 +376,16 @@ export default function Homepage() {
               onClick={() => setShowProfile((p) => !p)}
               aria-label="Profile"
             >
-              👤
+              <img
+                src={user}
+                alt="User Profile"
+                style={{
+                  width: "80%",
+                  height: "80%",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
             </button>
 
             <div className="konect-hero-content">
