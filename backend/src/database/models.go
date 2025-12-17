@@ -11,7 +11,7 @@ type User struct {
 	gorm.Model
 	Firstname    string
 	Lastname     string
-	Email        string
+	Email        string `gorm:"uniqueIndex:uni_users_email"`
 	PasswordHash string
 }
 
@@ -35,8 +35,12 @@ type Run struct {
 	Error      string
 }
 
+// TableName aligns with legacy schema initialized from SQL files.
+func (Run) TableName() string { return "workflow_runs" }
+
 type Workflow struct {
 	gorm.Model
+	UserID        uint            `gorm:"not null;index"`
 	Name          string          `gorm:"not null"`
 	TriggerType   string          `gorm:"not null"`
 	TriggerConfig json.RawMessage `gorm:"type:jsonb"`

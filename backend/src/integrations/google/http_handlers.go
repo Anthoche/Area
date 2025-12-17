@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -150,11 +151,11 @@ func (h *HTTPHandlers) SendEmail() http.Handler {
 // CreateEvent handles POST /actions/google/calendar
 func (h *HTTPHandlers) CreateEvent() http.Handler {
 	type payload struct {
-		TokenID  int64    `json:"token_id"`
-		Summary  string   `json:"summary"`
-		Start    string   `json:"start"`
-		End      string   `json:"end"`
-		Attendee []string `json:"attendees"`
+		TokenID   int64           `json:"token_id"`
+		Summary   string          `json:"summary"`
+		Start     string          `json:"start"`
+		End       string          `json:"end"`
+		Attendees json.RawMessage `json:"attendees"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -186,12 +187,43 @@ func (h *HTTPHandlers) CreateEvent() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid end datetime"})
 			return
 		}
-		if err := h.client.CreateCalendarEvent(r.Context(), userID, p.TokenID, p.Summary, start, end, p.Attendee); err != nil {
+		attendees, err := parseAttendees(p.Attendees)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+		if err := h.client.CreateCalendarEvent(r.Context(), userID, p.TokenID, p.Summary, start, end, attendees); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"status": "created"})
 	})
+}
+
+func parseAttendees(raw json.RawMessage) ([]string, error) {
+	if len(raw) == 0 {
+		return nil, nil
+	}
+	var list []string
+	if err := json.Unmarshal(raw, &list); err == nil {
+		return list, nil
+	}
+	var single string
+	if err := json.Unmarshal(raw, &single); err == nil {
+		single = strings.TrimSpace(single)
+		if single == "" {
+			return nil, nil
+		}
+		parts := strings.Split(single, ",")
+		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			if p != "" {
+				list = append(list, p)
+			}
+		}
+		return list, nil
+	}
+	return nil, fmt.Errorf("invalid attendees format")
 }
 
 // Helpers duplicated locally to keep httpapi clean.

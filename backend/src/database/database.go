@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var sqlDB *sql.DB
@@ -29,7 +31,16 @@ func Connect() {
 		host, port, user, password, dbname, sslmode)
 	var err error
 
-	Db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	gormLogger := logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), logger.Config{
+		SlowThreshold:             time.Second,
+		LogLevel:                  logger.Warn,
+		IgnoreRecordNotFoundError: true,
+		Colorful:                  true,
+	})
+
+	Db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: gormLogger,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -85,6 +85,7 @@ func NewDefaultStore() *Store {
 func workflowModelToAPI(model database.Workflow) Workflow {
 	return Workflow{
 		ID:            int64(model.ID),
+		UserID:        int64(model.UserID),
 		Name:          model.Name,
 		TriggerType:   model.TriggerType,
 		TriggerConfig: model.TriggerConfig,
@@ -127,6 +128,7 @@ func (s *Store) CreateWorkflow(ctx context.Context, userID int64, name, triggerT
 	initialEnabled := triggerType == "manual"
 
 	model := database.Workflow{
+		UserID:        uint(userID),
 		Name:          name,
 		TriggerType:   triggerType,
 		TriggerConfig: triggerConfig,
@@ -152,8 +154,8 @@ func (s *Store) ListWorkflows(ctx context.Context, userID int64) ([]Workflow, er
 	workflows := make([]Workflow, len(models))
 	for i, model := range models {
 		workflows[i] = workflowModelToAPI(model)
-		// Apply business logic: disable workflows without valid next_run_at
-		if workflows[i].TriggerType != "manual" && workflows[i].Enabled && workflows[i].NextRunAt == nil {
+		// Apply business logic: disable interval workflows without a next_run_at
+		if workflows[i].TriggerType == "interval" && workflows[i].Enabled && workflows[i].NextRunAt == nil {
 			workflows[i].Enabled = false
 		}
 	}
@@ -243,7 +245,7 @@ func (s *Store) GetWorkflowForUser(ctx context.Context, id int64, userID int64) 
 
 // DeleteWorkflowForUser deletes a workflow if it belongs to the user.
 func (s *Store) DeleteWorkflowForUser(ctx context.Context, id int64, userID int64) error {
-	res := s.db.WithContext(ctx).Model(database.Workflow{}).Where("id = ? AND user_id = ?", id, userID).Delete(ctx)
+	res := s.db.WithContext(ctx).Where("id = ? AND user_id = ?", id, userID).Delete(&database.Workflow{})
 
 	if res.Error != nil {
 		return fmt.Errorf("delete workflow: %w", res.Error)
@@ -370,16 +372,17 @@ func (s *Store) FetchNextPendingJob(ctx context.Context) (*Job, error) {
 	defer tx.Rollback()
 
 	var model database.Job
-	err := tx.Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).
+	result := tx.Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).
 		Where("status = ?", JobStatusPending).
-		Order("created_at").
-		First(&model).Error
+		Order("created_at, id").
+		Limit(1).
+		Find(&model)
 
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, fmt.Errorf("scan job: %w", err)
+	if result.Error != nil {
+		return nil, fmt.Errorf("scan job: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	now := time.Now()

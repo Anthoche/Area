@@ -18,7 +18,7 @@ func TestTriggererEnqueueRun_Success(t *testing.T) {
 
 	// Mock CreateRun
 	mock.ExpectBegin()
-	mock.ExpectQuery(`^INSERT INTO "runs" \("created_at","updated_at","deleted_at","workflow_id","status","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\) RETURNING "id"$`).
+	mock.ExpectQuery(`^INSERT INTO "workflow_runs" \("created_at","updated_at","deleted_at","workflow_id","status","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\) RETURNING "id"$`).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(5), workflows.RunStatusPending, nil, nil, "").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(10)))
 	mock.ExpectCommit()
@@ -58,7 +58,7 @@ func TestTriggererEnqueueRun_CreateRunError(t *testing.T) {
 	defer cleanup()
 
 	mock.ExpectBegin()
-	mock.ExpectQuery(`^INSERT INTO "runs" \("created_at","updated_at","deleted_at","workflow_id","status","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\) RETURNING "id"$`).
+	mock.ExpectQuery(`^INSERT INTO "workflow_runs" \("created_at","updated_at","deleted_at","workflow_id","status","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\) RETURNING "id"$`).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(1), workflows.RunStatusPending, nil, nil, "").
 		WillReturnError(errors.New("insert fail"))
 	mock.ExpectRollback()
@@ -79,7 +79,7 @@ func TestTriggererEnqueueRun_CreateJobError(t *testing.T) {
 
 	// Mock CreateRun success
 	mock.ExpectBegin()
-	mock.ExpectQuery(`^INSERT INTO "runs" \("created_at","updated_at","deleted_at","workflow_id","status","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\) RETURNING "id"$`).
+	mock.ExpectQuery(`^INSERT INTO "workflow_runs" \("created_at","updated_at","deleted_at","workflow_id","status","started_at","ended_at","error"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\) RETURNING "id"$`).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, uint(1), workflows.RunStatusPending, nil, nil, "").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(2)))
 	mock.ExpectCommit()
