@@ -66,16 +66,17 @@ func (c *Client) ExchangeAndStore(ctx context.Context, code string, redirectURI 
 	}
 	email, _ := c.fetchEmail(ctx, tokenResp.AccessToken)
 	if userID == nil && email != "" {
-		if u, err := database.GetUserByEmail(ctx, email); err == nil {
-			userID = &u.Id
+		if u, err := database.GetUserByEmail(email); err == nil {
+			id := int64(u.ID)
+			userID = &id
 		} else {
-			uid, createErr := database.CreateUser(ctx, "Google", "User", email, "google-oauth")
+			uid, createErr := database.CreateUser("Google", "User", email, "google-oauth")
 			if createErr == nil {
 				userID = &uid
 			}
 		}
 	}
-	id, err := database.InsertGoogleToken(ctx, userID, tokenResp.AccessToken, tokenResp.RefreshToken, tokenResp.Expiry)
+	id, err := database.InsertGoogleToken(userID, tokenResp.AccessToken, tokenResp.RefreshToken, tokenResp.Expiry)
 	if err != nil {
 		return -1, 0, "", err
 	}
@@ -266,9 +267,9 @@ func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) 
 		t, err = database.GetLatestGoogleTokenForUser(ctx, *userID)
 	} else {
 		if userID != nil && *userID > 0 {
-			t, err = database.GetGoogleTokenForUser(ctx, tokenID, *userID)
+			t, err = database.GetGoogleTokenForUser(tokenID, *userID)
 		} else {
-			t, err = database.GetGoogleToken(ctx, tokenID)
+			t, err = database.GetGoogleToken(tokenID)
 		}
 	}
 	if err != nil {
@@ -289,7 +290,7 @@ func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) 
 	if err != nil {
 		return nil, err
 	}
-	if err := database.UpdateGoogleToken(ctx, t.Id, newToken.AccessToken, newToken.RefreshToken, newToken.Expiry); err != nil {
+	if err := database.UpdateGoogleToken(int64(t.ID), newToken.AccessToken, newToken.RefreshToken, newToken.Expiry); err != nil {
 		return nil, err
 	}
 	return newToken, nil

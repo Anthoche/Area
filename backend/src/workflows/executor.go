@@ -2,10 +2,12 @@ package workflows
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
+	"errors"
 	"log"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // OutboundSender is implemented by integrations that can send actions (webhooks, email, etc.).
@@ -56,7 +58,7 @@ func (e *Executor) RunLoop(ctx context.Context) {
 func (e *Executor) processOne(ctx context.Context) {
 	job, err := e.store.FetchNextPendingJob(ctx)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return
 		}
 		log.Println("executor: fetch job:", err)

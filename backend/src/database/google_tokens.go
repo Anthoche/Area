@@ -4,76 +4,57 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"gorm.io/gorm"
 )
 
-type GoogleToken struct {
-	Id           int64
-	UserID       *int64
-	AccessToken  string
-	RefreshToken string
-	Expiry       time.Time
-	CreatedAt    time.Time
-}
-
 // InsertGoogleToken persists a new token and returns its ID.
-func InsertGoogleToken(ctx context.Context, userID *int64, access, refresh string, expiry time.Time) (int64, error) {
-	var id int64
-	err := db.QueryRowContext(ctx, `
-		INSERT INTO google_tokens (user_id, access_token, refresh_token, expiry)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id`,
-		userID, access, refresh, expiry).
-		Scan(&id)
+func InsertGoogleToken(userID *int64, access, refresh string, expiry time.Time) (int64, error) {
+	token := &GoogleToken{
+		UserID:       userID,
+		AccessToken:  access,
+		RefreshToken: refresh,
+		Expiry:       expiry,
+	}
+
+	err := gorm.G[GoogleToken](Db).Create(GetDBContext(), token)
 	if err != nil {
 		return -1, fmt.Errorf("insert google token: %w", err)
 	}
-	return id, nil
+	return int64(token.ID), nil
 }
 
 // GetGoogleToken fetches a token by its ID.
-func GetGoogleToken(ctx context.Context, id int64) (*GoogleToken, error) {
+func GetGoogleToken(id int64) (*GoogleToken, error) {
 	var t GoogleToken
-	var userID *int64
-	err := db.QueryRowContext(ctx, `
-		SELECT id, user_id, access_token, refresh_token, expiry, created_at
-		FROM google_tokens
-		WHERE id = $1`, id).
-		Scan(&t.Id, &userID, &t.AccessToken, &t.RefreshToken, &t.Expiry, &t.CreatedAt)
+
+	t, err := gorm.G[GoogleToken](Db).Where("id = ?", id).First(GetDBContext())
 	if err != nil {
 		return nil, fmt.Errorf("get google token: %w", err)
-	}
-	if userID != nil {
-		t.UserID = userID
 	}
 	return &t, nil
 }
 
 // GetGoogleTokenForUser fetches a token only if it matches the provided user id.
-func GetGoogleTokenForUser(ctx context.Context, id int64, userID int64) (*GoogleToken, error) {
+func GetGoogleTokenForUser(id int64, userID int64) (*GoogleToken, error) {
 	var t GoogleToken
-	var uid *int64
-	err := db.QueryRowContext(ctx, `
-		SELECT id, user_id, access_token, refresh_token, expiry, created_at
-		FROM google_tokens
-		WHERE id = $1 AND user_id = $2`,
-		id, userID,
-	).Scan(&t.Id, &uid, &t.AccessToken, &t.RefreshToken, &t.Expiry, &t.CreatedAt)
+
+	t, err := gorm.G[GoogleToken](Db).Where("id = ? AND user_id = ?", id, userID).First(GetDBContext())
 	if err != nil {
 		return nil, fmt.Errorf("get google token for user: %w", err)
-	}
-	if uid != nil {
-		t.UserID = uid
 	}
 	return &t, nil
 }
 
 // UpdateGoogleToken stores new access/refresh tokens and expiry for a token row.
-func UpdateGoogleToken(ctx context.Context, id int64, access, refresh string, expiry time.Time) error {
-	_, err := db.ExecContext(ctx, `
-		UPDATE google_tokens
-		SET access_token = $1, refresh_token = $2, expiry = $3
-		WHERE id = $4`,
-		access, refresh, expiry, id)
+func UpdateGoogleToken(id int64, access, refresh string, expiry time.Time) error {
+	token := &GoogleToken{
+		AccessToken:  access,
+		RefreshToken: refresh,
+		Expiry:       expiry,
+	}
+
+	_, err := gorm.G[GoogleToken](Db).Where("id = ?", id).Updates(GetDBContext(), *token)
 	if err != nil {
 		return fmt.Errorf("update google token: %w", err)
 	}
@@ -83,20 +64,10 @@ func UpdateGoogleToken(ctx context.Context, id int64, access, refresh string, ex
 // GetLatestGoogleTokenForUser returns the most recently created token for a user.
 func GetLatestGoogleTokenForUser(ctx context.Context, userID int64) (*GoogleToken, error) {
 	var t GoogleToken
-	var uid *int64
-	err := db.QueryRowContext(ctx, `
-		SELECT id, user_id, access_token, refresh_token, expiry, created_at
-		FROM google_tokens
-		WHERE user_id = $1
-		ORDER BY created_at DESC
-		LIMIT 1`,
-		userID,
-	).Scan(&t.Id, &uid, &t.AccessToken, &t.RefreshToken, &t.Expiry, &t.CreatedAt)
+
+	t, err := gorm.G[GoogleToken](Db).Where("user_id = ?", userID).Order("created_at DESC").First(GetDBContext())
 	if err != nil {
-		return nil, fmt.Errorf("get latest google token: %w", err)
-	}
-	if uid != nil {
-		t.UserID = uid
+		return nil, fmt.Errorf("get latest google token for user: %w", err)
 	}
 	return &t, nil
 }

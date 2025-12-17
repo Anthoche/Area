@@ -1,13 +1,16 @@
 package database
 
-import "testing"
+import (
+	"area/src/database"
+	"testing"
+)
 
 func TestFirstNonEmpty(t *testing.T) {
-	got := firstNonEmpty("", "foo", "bar")
+	got := database.FirstNonEmpty("", "foo", "bar")
 	if got != "foo" {
 		t.Fatalf("firstNonEmpty returned %q, want %q", got, "foo")
 	}
-	if firstNonEmpty("", "", "") != "" {
+	if database.FirstNonEmpty("", "", "") != "" {
 		t.Fatalf("firstNonEmpty should return empty string when all inputs are empty")
 	}
 }
