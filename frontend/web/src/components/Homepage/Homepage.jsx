@@ -700,6 +700,6 @@ export default function Homepage() {
 }
 
 function getColor(i) {
-  const colors = ["#00D2FF", "#FF4081", "#FF4081", "#00E676", "#D500F9"];
+  const colors = ["#00d0ff93", "#ff40809c", "#ff40807f", "#00e677b0", "#d400f99a"];
   return colors[i % colors.length];
 }
