@@ -72,12 +72,22 @@ func StartGithubPoller(ctx context.Context, wfStore *workflows.Store, wfService 
 					continue
 				}
 
-				// emit new commits (oldest first) until we reach lastSeen
+				var toTrigger []Commit
+				found := false
 				for i := len(commits) - 1; i >= 0; i-- {
-					cmt := commits[i]
-					if cmt.SHA == lastSeen[k] {
+					if commits[i].SHA == lastSeen[k] {
+						found = true
 						break
 					}
+					toTrigger = append(toTrigger, commits[i])
+				}
+				// If we never saw lastSeen in this page (e.g., skipped due to per_page),
+				// only trigger the newest commit to avoid duplicates.
+				if !found && lastSeen[k] != "" && len(toTrigger) > 1 {
+					toTrigger = toTrigger[len(toTrigger)-1:]
+				}
+
+				for _, cmt := range toTrigger {
 					payload := map[string]any{
 						"repo":    cfg.Repo,
 						"branch":  cfg.Branch,
@@ -86,7 +96,6 @@ func StartGithubPoller(ctx context.Context, wfStore *workflows.Store, wfService 
 						"message": cmt.Message,
 						"date":    cmt.Date.Format(time.RFC3339),
 					}
-					// Merge payload_template if present (e.g., discord content)
 					for k, v := range cfg.PayloadTemplate {
 						payload[k] = v
 					}
