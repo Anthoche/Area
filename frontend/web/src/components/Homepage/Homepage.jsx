@@ -360,27 +360,48 @@ export default function Homepage() {
               setSelectedWorkflow(null);
             }}
           >
-            Create Konect
+            Create a Konect
           </button>
           <button className="ghost" onClick={fetchWorkflows} disabled={loading}>
             {loading ? "…" : "Refresh"}
           </button>
         </nav>
       </aside>
-
       <div className={`content-container ${panelOpen ? "panel-open" : ""}`}>
         <main className="main-content">
+          <div className="konect-hero">
+            <button
+              className="profile-btn hero-profile"
+              onClick={() => setShowProfile((p) => !p)}
+              aria-label="Profile"
+            >
+              👤
+            </button>
+
+            <div className="konect-hero-content">
+              <div className="konect-hero-left">
+                <h1 className="konect-title">My Konect</h1>
+                <p className="konect-subtitle">
+                  Manage and automate your favorite services seamlessly.
+                  Create and organize your Konects to boost productivity.
+                </p>
+              </div>
+
+          <div className="konect-hero-right">
+            <button
+              className="create-konect-btn"
+              onClick={() => {
+                setShowCreate(true);
+                setPanelOpen(true);
+                setSelectedWorkflow(null);
+              }}
+            >
+              + Create a Konect
+            </button>
+          </div>
+        </div>
+     </div>
           <div className="section-card">
-            <div className="top-row">
-              <h1 className="main-title">KiKoNect</h1>
-              <button
-                className="profile-btn"
-                onClick={() => setShowProfile((p) => !p)}
-                aria-label="Profile"
-              >
-                👤
-              </button>
-            </div>
             {showProfile && (
               <div className="profile-card">
                 <div className="profile-email">{userEmail}</div>
@@ -398,7 +419,7 @@ export default function Homepage() {
             <SearchBar
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="Search a Konect"
+              placeholder="🔎  Search a Konect"
             />
             <div className="tags-row">
               {filters.map((f) => (
@@ -415,17 +436,6 @@ export default function Homepage() {
           <div className="section-card">
             <h2 className="section-header centered">My Konects</h2>
             <div className="services-grid">
-              <ServiceCard
-                title="Create Konect"
-                color="rgba(0,0,0,0.05)"
-                icons={["＋"]}
-                ghost
-                onClick={() => {
-                  setShowCreate(true);
-                  setPanelOpen(true);
-                  setSelectedWorkflow(null);
-                }}
-              />
               {workflows
                 .filter(matchesFilters)
                 .filter((wf) =>
@@ -448,7 +458,7 @@ export default function Homepage() {
                   />
                 ))}
               {!workflows.length && (
-                <div className="muted">No Konect yet. Create the first one!</div>
+                <div className="muted">No Konect created yet. Create the first one!</div>
               )}
             </div>
           </div>
@@ -467,7 +477,7 @@ export default function Homepage() {
                 >
                   ✖
                 </button>
-                <h2>Create Konect</h2>
+                <h2>Create a Konect</h2>
                 <label className="field">
                   <span>Name</span>
                   <input
