@@ -1,0 +1,150 @@
+:root {
+    --navbar-height: 65px;
+    --navbar-text-color: #4a5565;
+    --navbar-text-color-hovered: #101828;
+    --accent-color: #48179c;
+    --transition: .25s;
+    --page-padding: 20vw;
+}
+
+@media (max-width: 1600px) {
+    :root {
+        --page-padding: 10vw;
+    }
+}
+
+@media (max-width: 1100px) {
+    :root {
+        --page-padding: 5vw;
+    }
+}
+
+@media (max-width: 850px) {
+    /* TODO: "hamburger" type navbar */
+}
+
+/* Page style */
+.welcome-page-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.welcome-page-content {
+    padding: var(--navbar-height) var(--page-padding) 0;
+}
+
+/* Navbar style */
+.navbar-wrapper {
+    background-color: white;
+    z-index: 50;
+    position: fixed;
+    width: 100%;
+    height: var(--navbar-height);
+}
+
+nav {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+    border: #ebe6e7 solid 1px;
+    padding-inline: var(--page-padding);
+}
+
+.navbar-list {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 50px;
+}
+
+.navbar-list > li {
+    list-style: none;
+}
+
+.navbar-list > li > a {
+    text-decoration: none;
+    transition: var(--transition);
+    color: var(--navbar-text-color);
+}
+
+.navbar-list > li > a:hover {
+    transition: var(--transition);
+    color: var(--navbar-text-color-hovered);
+}
+
+.navbar-list-logo {
+    gap: 10px;
+}
+
+.logo-navbar {
+    height: 40px;
+}
+
+.navbar-login-btn > a {
+    border-radius: 25px;
+    border: #d1d5dc 1px solid;
+    padding: 10px 25px;
+    font-weight: bold;
+    transition: var(--transition);
+}
+
+.navbar-login-btn > a:hover {
+    border-color: #99a1af;
+    color: var(--accent-color) !important;
+    transition: var(--transition);
+}
+
+/* Footer style */
+.footer-wrapper {
+    color: #99a1af;
+    background-color: #101828;
+    padding: 50px 0;
+    width: 100%;
+    padding-inline: var(--page-padding);
+}
+
+footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+footer > div {
+    border: none;
+}
+
+footer > p {
+    padding-top: 30px;
+}
+
+.footer-sections {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    padding-bottom: 30px;
+    border-bottom: #1e2939 1px solid;
+}
+
+.footer-section {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.5;
+}
+
+.footer-section > li {
+    list-style: none;
+}
+
+.footer-section > li > a {
+    text-decoration: none;
+}
+
+.footer-section-title {
+    font-weight: bold;
+    margin-bottom: 16px;
+}
