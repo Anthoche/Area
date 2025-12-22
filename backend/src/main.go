@@ -17,6 +17,7 @@ import (
 	"area/src/httpapi"
 	"area/src/integrations/github"
 	"area/src/integrations/google"
+	"area/src/integrations/weather"
 	"area/src/workflows"
 
 	"github.com/joho/godotenv"
@@ -110,6 +111,8 @@ func main() {
 	google.StartGmailPoller(context.Background(), wfStore, wfService, googleClient)
 	// GitHub commits poller (new commits on watched branches).
 	github.StartGithubPoller(context.Background(), wfStore, wfService, githubClient)
+	// Weather poller (Open-Meteo thresholds).
+	weather.StartWeatherPoller(context.Background(), wfStore, wfService)
 
 	server := &http.Server{
 		Addr:              ":" + port,

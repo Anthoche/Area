@@ -88,6 +88,24 @@ type GithubIssueConfig struct {
 	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
 }
 
+type WeatherTempConfig struct {
+	City            string                 `json:"city,omitempty"`
+	Lat             float64                `json:"lat"`
+	Lon             float64                `json:"lon"`
+	Threshold       float64                `json:"threshold"`
+	Direction       string                 `json:"direction"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type WeatherReportConfig struct {
+	City            string                 `json:"city,omitempty"`
+	Lat             float64                `json:"lat"`
+	Lon             float64                `json:"lon"`
+	IntervalMin     int                    `json:"interval_minutes"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
 type Store struct {
 	db *gorm.DB
 }
@@ -564,6 +582,28 @@ func githubIssueConfigFromJSON(raw json.RawMessage) (GithubIssueConfig, error) {
 	var cfg GithubIssueConfig
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return GithubIssueConfig{}, err
+	}
+	return cfg, nil
+}
+
+func weatherTempConfigFromJSON(raw json.RawMessage) (WeatherTempConfig, error) {
+	if len(raw) == 0 {
+		return WeatherTempConfig{}, errors.New("empty config")
+	}
+	var cfg WeatherTempConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return WeatherTempConfig{}, err
+	}
+	return cfg, nil
+}
+
+func weatherReportConfigFromJSON(raw json.RawMessage) (WeatherReportConfig, error) {
+	if len(raw) == 0 {
+		return WeatherReportConfig{}, errors.New("empty config")
+	}
+	var cfg WeatherReportConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return WeatherReportConfig{}, err
 	}
 	return cfg, nil
 }

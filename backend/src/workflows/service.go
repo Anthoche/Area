@@ -80,6 +80,21 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 		if err != nil || cfg.TokenID <= 0 || cfg.Repo == "" {
 			return nil, errors.New("github_issue requires token_id and repo")
 		}
+	case "weather_temp":
+		cfg, err := weatherTempConfigFromJSON(triggerConfig)
+		if err != nil || cfg.Direction == "" || cfg.Threshold == 0 || cfg.City == "" {
+			return nil, errors.New("weather_temp requires city, threshold and direction")
+		}
+		switch strings.ToLower(cfg.Direction) {
+		case "above", "below":
+		default:
+			return nil, errors.New("weather_temp direction must be above or below")
+		}
+	case "weather_report":
+		cfg, err := weatherReportConfigFromJSON(triggerConfig)
+		if err != nil || cfg.IntervalMin <= 0 || cfg.City == "" {
+			return nil, errors.New("weather_report requires city and interval_minutes")
+		}
 	default:
 		return nil, fmt.Errorf("unsupported trigger_type %s", triggerType)
 	}
@@ -173,6 +188,11 @@ func GithubPRConfigFromJSON(raw json.RawMessage) (GithubPullRequestConfig, error
 // GithubIssueConfigFromJSON exposes parsing for github_issue trigger config.
 func GithubIssueConfigFromJSON(raw json.RawMessage) (GithubIssueConfig, error) {
 	return githubIssueConfigFromJSON(raw)
+}
+
+// WeatherTempConfigFromJSON exposes parsing for weather_temp trigger config.
+func WeatherTempConfigFromJSON(raw json.RawMessage) (WeatherTempConfig, error) {
+	return weatherTempConfigFromJSON(raw)
 }
 
 type ctxUserIDKey struct{}
