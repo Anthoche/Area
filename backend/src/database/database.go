@@ -1,15 +1,21 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
-	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-var db *sql.DB
+var sqlDB *sql.DB
+var Db *gorm.DB
+var dbContext context.Context
 
 // Connect initializes the shared PostgreSQL connection using environment variables.
 func Connect() {
@@ -18,39 +24,68 @@ func Connect() {
 	user := mustEnv("POSTGRES_USER")
 	password := mustEnv("POSTGRES_PASSWORD")
 	dbname := mustEnv("POSTGRES_DB")
-	sslmode := firstNonEmpty(os.Getenv("POSTGRES_SSLMODE"), "disable")
+	sslmode := FirstNonEmpty(os.Getenv("POSTGRES_SSLMODE"), "disable")
 
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
+	dsn := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=%s",
 		host, port, user, password, dbname, sslmode)
 	var err error
-	db, err = sql.Open("postgres", psqlInfo)
+
+	gormLogger := logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), logger.Config{
+		SlowThreshold:             time.Second,
+		LogLevel:                  logger.Warn,
+		IgnoreRecordNotFoundError: true,
+		Colorful:                  true,
+	})
+
+	Db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: gormLogger,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	pingErr := db.Ping()
-	if pingErr != nil {
-		log.Fatal(pingErr)
+	sqlDB, err = Db.DB()
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	dbContext = context.Background()
+	Db.AutoMigrate(&User{})
+	Db.AutoMigrate(&GoogleToken{})
+	Db.AutoMigrate(&GithubToken{})
+	Db.AutoMigrate(&Job{})
+	Db.AutoMigrate(&Run{})
+	Db.AutoMigrate(&Workflow{})
 }
 
 // Disconnect closes the database connection if it is open.
 func Disconnect() {
-	if db != nil && IsConnected() {
-		db.Close()
+	if sqlDB != nil && IsConnected() {
+		sqlDB.Close()
 	}
 }
 
 // IsConnected reports whether the database connection is alive.
 func IsConnected() bool {
-	err := db.Ping()
+	err := sqlDB.Ping()
 	return err == nil
 }
 
 // GetDB exposes the shared sql.DB handle for packages that need direct queries.
-func GetDB() *sql.DB {
-	return db
+func GetDB() *gorm.DB {
+	return Db
+}
+
+// SetDBForTesting allows tests to inject a mock database instance.
+// This should only be used in test code.
+func SetDBForTesting(testDB *gorm.DB) {
+	Db = testDB
+}
+
+// GetDBContext TODO: doc
+func GetDBContext() context.Context {
+	return dbContext
 }
 
 // mustEnv reads an environment variable or exits if it is missing.
@@ -62,8 +97,8 @@ func mustEnv(key string) string {
 	return val
 }
 
-// firstNonEmpty returns the first non-empty string in the provided list.
-func firstNonEmpty(values ...string) string {
+// FirstNonEmpty returns the first non-empty string in the provided list.
+func FirstNonEmpty(values ...string) string {
 	for _, v := range values {
 		if v != "" {
 			return v

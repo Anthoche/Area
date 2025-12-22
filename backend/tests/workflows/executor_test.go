@@ -1,6 +1,9 @@
 package workflows
 
-import "testing"
+import (
+	"area/src/workflows"
+	"testing"
+)
 
 func TestDecodePayload(t *testing.T) {
 	payload := []byte(`{"foo":"bar","n":3}`)
@@ -9,7 +12,7 @@ func TestDecodePayload(t *testing.T) {
 		N   int    `json:"n"`
 	}
 
-	if err := DecodePayload(payload, &target); err != nil {
+	if err := workflows.DecodePayload(payload, &target); err != nil {
 		t.Fatalf("DecodePayload error: %v", err)
 	}
 	if target.Foo != "bar" || target.N != 3 {
@@ -21,7 +24,7 @@ func TestDecodePayload_Empty(t *testing.T) {
 	var target struct {
 		Value string `json:"value"`
 	}
-	if err := DecodePayload([]byte{}, &target); err != nil {
+	if err := workflows.DecodePayload([]byte{}, &target); err != nil {
 		t.Fatalf("DecodePayload should succeed on empty payload: %v", err)
 	}
 	if target.Value != "" {

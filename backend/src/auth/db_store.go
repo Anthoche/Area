@@ -1,12 +1,12 @@
 package auth
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 
 	"area/src/database"
-	"github.com/lib/pq"
+
+	"gorm.io/gorm"
 )
 
 // DBStore implements UserStore backed by PostgreSQL.
@@ -18,10 +18,10 @@ func NewDBStore() *DBStore {
 }
 
 // Create inserts a new user row and updates the passed user with its ID.
-func (DBStore) Create(ctx context.Context, user *User, passwordHash string) error {
-	id, err := database.CreateUser(ctx, user.FirstName, user.LastName, user.Email, passwordHash)
+func (DBStore) Create(user *User, passwordHash string) error {
+	id, err := database.CreateUser(user.FirstName, user.LastName, user.Email, passwordHash)
 	if err != nil {
-		if isUniqueViolation(err) {
+		if database.UserExists(user.Email) {
 			return ErrUserExists
 		}
 		return err
@@ -31,24 +31,18 @@ func (DBStore) Create(ctx context.Context, user *User, passwordHash string) erro
 }
 
 // GetByEmail returns a user and their hashed password for the given email.
-func (DBStore) GetByEmail(ctx context.Context, email string) (*User, string, error) {
-	dbUser, err := database.GetUserByEmail(ctx, email)
+func (DBStore) GetByEmail(email string) (*User, string, error) {
+	dbUser, err := database.GetUserByEmail(email)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, "", ErrInvalidCredentials
 		}
 		return nil, "", err
 	}
 	return &User{
-		ID:        dbUser.Id,
+		ID:        int64(dbUser.ID),
 		Email:     dbUser.Email,
-		FirstName: dbUser.FirstName,
-		LastName:  dbUser.LastName,
+		FirstName: dbUser.Firstname,
+		LastName:  dbUser.Lastname,
 	}, dbUser.PasswordHash, nil
-}
-
-// isUniqueViolation checks if the error corresponds to a PostgreSQL unique constraint violation.
-func isUniqueViolation(err error) bool {
-	pqErr, ok := err.(*pq.Error)
-	return ok && pqErr.Code == "23505"
 }

@@ -1,6 +1,7 @@
 package google
 
 import (
+	"area/src/integrations/google"
 	"bytes"
 	"context"
 	"net/http"
@@ -32,7 +33,7 @@ func (s *stubClient) CreateCalendarEvent(ctx context.Context, userID *int64, tok
 }
 
 func TestSendEmail_BadMethod(t *testing.T) {
-	h := NewHTTPHandlers(&Client{})
+	h := google.NewHTTPHandlers(&google.Client{})
 	req := httptest.NewRequest(http.MethodGet, "/actions/google/email", nil)
 	rr := httptest.NewRecorder()
 	h.SendEmail().ServeHTTP(rr, req)
@@ -42,7 +43,7 @@ func TestSendEmail_BadMethod(t *testing.T) {
 }
 
 func TestSendEmail_MissingFields(t *testing.T) {
-	h := NewHTTPHandlers(&Client{})
+	h := google.NewHTTPHandlers(&google.Client{})
 	req := httptest.NewRequest(http.MethodPost, "/actions/google/email", bytes.NewBufferString(`{"token_id":0}`))
 	rr := httptest.NewRecorder()
 	h.SendEmail().ServeHTTP(rr, req)
@@ -52,7 +53,7 @@ func TestSendEmail_MissingFields(t *testing.T) {
 }
 
 func TestCallback_InvalidState(t *testing.T) {
-	h := NewHTTPHandlers(&Client{})
+	h := google.NewHTTPHandlers(&google.Client{})
 	req := httptest.NewRequest(http.MethodGet, "/oauth/google/callback?state=bad", nil)
 	rr := httptest.NewRecorder()
 	h.Callback().ServeHTTP(rr, req)
