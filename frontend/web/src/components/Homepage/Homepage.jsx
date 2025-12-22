@@ -3,6 +3,7 @@ import "./homepage.css";
 import SearchBar from "./SearchBar";
 import FilterTag from "./FilterTag";
 import ServiceCard from "./ServiceCard";
+import user from "../../../lib/assets/user.png";
 
 const API_BASE =
   import.meta.env.VITE_API_URL ||
@@ -404,27 +405,57 @@ export default function Homepage() {
               setSelectedWorkflow(null);
             }}
           >
-            Create Konect
+            Create a Konect
           </button>
           <button className="ghost" onClick={fetchWorkflows} disabled={loading}>
             {loading ? "…" : "Refresh"}
           </button>
         </nav>
       </aside>
-
       <div className={`content-container ${panelOpen ? "panel-open" : ""}`}>
         <main className="main-content">
+          <div className="konect-hero">
+            <button
+              className="profile-btn hero-profile"
+              onClick={() => setShowProfile((p) => !p)}
+              aria-label="Profile"
+            >
+              <img
+                src={user}
+                alt="User Profile"
+                style={{
+                  width: "80%",
+                  height: "80%",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
+            </button>
+
+            <div className="konect-hero-content">
+              <div className="konect-hero-left">
+                <h1 className="konect-title">My Konect</h1>
+                <p className="konect-subtitle">
+                  Manage and automate your favorite services seamlessly.
+                  Create and organize your Konects to boost productivity.
+                </p>
+              </div>
+
+          <div className="konect-hero-right">
+            <button
+              className="create-konect-btn"
+              onClick={() => {
+                setShowCreate(true);
+                setPanelOpen(true);
+                setSelectedWorkflow(null);
+              }}
+            >
+              + Create a Konect
+            </button>
+          </div>
+        </div>
+     </div>
           <div className="section-card">
-            <div className="top-row">
-              <h1 className="main-title">KiKoNect</h1>
-              <button
-                className="profile-btn"
-                onClick={() => setShowProfile((p) => !p)}
-                aria-label="Profile"
-              >
-                👤
-              </button>
-            </div>
             {showProfile && (
               <div className="profile-card">
                 <div className="profile-email">{userEmail}</div>
@@ -442,7 +473,7 @@ export default function Homepage() {
             <SearchBar
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="Search a Konect"
+              placeholder="🔎  Search a Konect"
             />
             <div className="tags-row">
               {filters.map((f) => (
@@ -459,17 +490,6 @@ export default function Homepage() {
           <div className="section-card">
             <h2 className="section-header centered">My Konects</h2>
             <div className="services-grid">
-              <ServiceCard
-                title="Create Konect"
-                color="rgba(0,0,0,0.05)"
-                icons={["＋"]}
-                ghost
-                onClick={() => {
-                  setShowCreate(true);
-                  setPanelOpen(true);
-                  setSelectedWorkflow(null);
-                }}
-              />
               {workflows
                 .filter(matchesFilters)
                 .filter((wf) =>
@@ -492,215 +512,326 @@ export default function Homepage() {
                   />
                 ))}
               {!workflows.length && (
-                <div className="muted">No Konect yet. Create the first one!</div>
+                <div className="muted">No Konect created yet. Create the first one!</div>
               )}
             </div>
           </div>
         </main>
 
         {panelOpen && (
-          <aside className="right-panel">
-            {showCreate ? (
-              <>
-                <button
-                  className="close-btn"
-                  onClick={() => {
-                    setShowCreate(false);
-                    setPanelOpen(false);
-                  }}
-                >
-                  ✖
-                </button>
-                <h2>Create Konect</h2>
-                <label className="field">
-                  <span>Name</span>
-                  <input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
-                </label>
-                <label className="field">
-                  <span>Trigger</span>
-                  <select
-                    value={form.triggerType}
-                  onChange={(e) =>
-                    setForm((prev) => {
-                      const trig = triggers.find((t) => t.id === e.target.value);
-                      const defaults =
-                        defaultValuesFromFields(trig?.fields || [], trig?.id);
-                      return {
-                        ...prev,
-                        triggerType: e.target.value,
-                        triggerValues: defaults,
-                      };
-                      })
-                    }
-                  >
-                    {triggers.length ? (
-                      triggers.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">Loading triggers…</option>
-                    )}
-                  </select>
-                  <div className="muted">
-                    {triggers.find((t) => t.id === form.triggerType)?.description}
-                  </div>
-                </label>
-                {triggerFields
-                  .filter((f) => f.key !== "token_id")
-                  .map((field) => (
-                    <label className="field" key={field.key}>
-                      <span>
-                        {field.key} {field.required ? "*" : ""}
-                      </span>
-                      <input
-                        type={field.type === "number" ? "number" : "text"}
-                        value={form.triggerValues?.[field.key] ?? ""}
-                        placeholder={
-                          field.example
-                            ? String(field.example)
-                            : field.description || ""
-                        }
-                        onChange={(e) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            triggerValues: {
-                              ...prev.triggerValues,
-                              [field.key]:
-                                field.type === "number"
-                                  ? Number(e.target.value)
-                                  : e.target.value,
-                            },
-                          }))
-                        }
-                      />
-                      <div className="muted">{field.description}</div>
-                    </label>
-                  ))}
-                <label className="field">
-                  <span>Reaction</span>
-                  <select
-                    value={selectedReaction || form.reaction}
-                    onChange={(e) => {
-                      const nextId = e.target.value;
-                      setSelectedReaction(nextId);
-                      const next = reactions.find((r) => r.id === nextId);
-                      const defaults = defaultValuesFromFields(next?.fields || [], next?.id);
-                      setForm((prev) => ({ ...prev, values: defaults }));
-                    }}
-                  >
-                    {reactions.length ? (
-                      reactions.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.service} - {r.name}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">Loading reactions…</option>
-                    )}
-                  </select>
-                  <div className="muted">
-                    {reactions.find((r) => r.id === selectedReaction)?.description}
-                  </div>
-                </label>
-                {reactionFields
-                  .filter((f) => f.key !== "token_id")
-                  .map((field) => (
-                  <label className="field" key={field.key}>
-                    <span>
-                      {field.key} {field.required ? "*" : ""}
-                    </span>
-                    <input
-                      type={field.type === "number" ? "number" : "text"}
-                      value={form.values?.[field.key] ?? ""}
-                      placeholder={
-                        field.example
-                          ? String(field.example)
-                          : field.description || ""
-                      }
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          values: {
-                            ...prev.values,
-                            [field.key]:
-                              field.type === "number"
-                                ? Number(e.target.value)
-                                : e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <div className="muted">{field.description}</div>
-                  </label>
-                ))}
-                <button
-                  className="primary-btn"
-                  onClick={handleCreate}
-                  disabled={creating}
-                >
-                  {creating ? "Creating..." : "Create workflow"}
-                </button>
-              </>
-            ) : selectedWorkflow ? (
-              <>
-                <button
-                  className="close-btn"
-                  onClick={() => {
-                    setSelectedWorkflow(null);
-                    setPanelOpen(false);
-                  }}
-                >
-                  ✖
-                </button>
-                <h2>{selectedWorkflow?.name}</h2>
-                <p className="muted">{selectedWorkflow?.trigger_type}</p>
-                <label className="field">
-                  <span>Payload</span>
-                  <textarea
-                    value={payloadPreview}
-                    onChange={(e) => setPayloadPreview(e.target.value)}
-                    rows={8}
-                  />
-                </label>
-                {selectedWorkflow?.trigger_type !== "manual" ? (
-                  <button
-                    className="primary-btn"
-                    onClick={handleToggleTimer}
-                    disabled={togglingTimer}
-                  >
-                    {togglingTimer
-                      ? "Applying…"
-                      : selectedWorkflow?.enabled
-                      ? "Stop Konect"
-                      : "Start Konect"}
-                  </button>
+          <>
+            <div
+              className="panel-backdrop"
+              onClick={() => {
+                setPanelOpen(false);
+                setShowCreate(false);
+                setSelectedWorkflow(null);
+              }}
+            />
+            <aside className="right-panel">
+              <div className="panel-inner">
+                {showCreate ? (
+                  <>
+                    <div className="panel-header">
+                      <div>
+                        <div className="panel-kicker">Create</div>
+                        <h2>Create a Konect</h2>
+                        <div className="panel-meta-row">
+                          <span className="panel-chip">Trigger + Reaction</span>
+                        </div>
+                      </div>
+                      <button
+                        className="panel-close"
+                        onClick={() => {
+                          setShowCreate(false);
+                          setPanelOpen(false);
+                        }}
+                      >
+                        x
+                      </button>
+                    </div>
+                    <div className="panel-body">
+                      <div className="panel-section">
+                        <div className="panel-section-title">Basics</div>
+                        <label className="field">
+                          <span>Name</span>
+                          <input
+                            value={form.name}
+                            onChange={(e) =>
+                              setForm({ ...form, name: e.target.value })
+                            }
+                          />
+                        </label>
+                      </div>
+                      <div className="panel-section">
+                        <div className="panel-section-title">Trigger</div>
+                        <label className="field">
+                          <span>Trigger</span>
+                          <select
+                            value={form.triggerType}
+                            onChange={(e) =>
+                              setForm((prev) => {
+                                const trig = triggers.find(
+                                  (t) => t.id === e.target.value
+                                );
+                                const defaults = defaultValuesFromFields(
+                                  trig?.fields || [],
+                                  trig?.id
+                                );
+                                return {
+                                  ...prev,
+                                  triggerType: e.target.value,
+                                  triggerValues: defaults,
+                                };
+                              })
+                            }
+                          >
+                            {triggers.length ? (
+                              triggers.map((t) => (
+                                <option key={t.id} value={t.id}>
+                                  {t.name}
+                                </option>
+                              ))
+                            ) : (
+                              <option value="">Loading triggers…</option>
+                            )}
+                          </select>
+                          <div className="muted">
+                            {
+                              triggers.find((t) => t.id === form.triggerType)
+                                ?.description
+                            }
+                          </div>
+                        </label>
+                        {triggerFields
+                          .filter((f) => f.key !== "token_id")
+                          .map((field) => (
+                            <label className="field" key={field.key}>
+                              <span>
+                                {field.key} {field.required ? "*" : ""}
+                              </span>
+                              <input
+                                type={field.type === "number" ? "number" : "text"}
+                                value={form.triggerValues?.[field.key] ?? ""}
+                                placeholder={
+                                  field.example
+                                    ? String(field.example)
+                                    : field.description || ""
+                                }
+                                onChange={(e) =>
+                                  setForm((prev) => ({
+                                    ...prev,
+                                    triggerValues: {
+                                      ...prev.triggerValues,
+                                      [field.key]:
+                                        field.type === "number"
+                                          ? Number(e.target.value)
+                                          : e.target.value,
+                                    },
+                                  }))
+                                }
+                              />
+                              <div className="muted">{field.description}</div>
+                            </label>
+                          ))}
+                      </div>
+                      <div className="panel-section">
+                        <div className="panel-section-title">Reaction</div>
+                        <label className="field">
+                          <span>Reaction</span>
+                          <select
+                            value={selectedReaction || form.reaction}
+                            onChange={(e) => {
+                              const nextId = e.target.value;
+                              setSelectedReaction(nextId);
+                              const next = reactions.find((r) => r.id === nextId);
+                              const defaults = defaultValuesFromFields(
+                                next?.fields || [],
+                                next?.id
+                              );
+                              setForm((prev) => ({ ...prev, values: defaults }));
+                            }}
+                          >
+                            {reactions.length ? (
+                              reactions.map((r) => (
+                                <option key={r.id} value={r.id}>
+                                  {r.service} - {r.name}
+                                </option>
+                              ))
+                            ) : (
+                              <option value="">Loading reactions…</option>
+                            )}
+                          </select>
+                          <div className="muted">
+                            {
+                              reactions.find((r) => r.id === selectedReaction)
+                                ?.description
+                            }
+                          </div>
+                        </label>
+                        {reactionFields
+                          .filter((f) => f.key !== "token_id")
+                          .map((field) => (
+                            <label className="field" key={field.key}>
+                              <span>
+                                {field.key} {field.required ? "*" : ""}
+                              </span>
+                              <input
+                                type={field.type === "number" ? "number" : "text"}
+                                value={form.values?.[field.key] ?? ""}
+                                placeholder={
+                                  field.example
+                                    ? String(field.example)
+                                    : field.description || ""
+                                }
+                                onChange={(e) =>
+                                  setForm((prev) => ({
+                                    ...prev,
+                                    values: {
+                                      ...prev.values,
+                                      [field.key]:
+                                        field.type === "number"
+                                          ? Number(e.target.value)
+                                          : e.target.value,
+                                    },
+                                  }))
+                                }
+                              />
+                              <div className="muted">{field.description}</div>
+                            </label>
+                          ))}
+                      </div>
+                    </div>
+                    <div className="panel-actions">
+                      <button
+                        className="ghost"
+                        onClick={() => {
+                          setShowCreate(false);
+                          setPanelOpen(false);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="primary-btn"
+                        onClick={handleCreate}
+                        disabled={creating}
+                      >
+                        {creating ? "Creating..." : "Create Konect"}
+                      </button>
+                    </div>
+                  </>
+                ) : selectedWorkflow ? (
+                  <>
+                    <div className="panel-header">
+                      <div>
+                        <div className="panel-kicker">Konect</div>
+                        <h2>{selectedWorkflow?.name}</h2>
+                        <div className="panel-meta-row">
+                          <span className="panel-chip">
+                            {selectedWorkflow?.trigger_type}
+                          </span>
+                          <span
+                            className={`panel-chip ${
+                              selectedWorkflow?.enabled ? "active" : ""
+                            }`}
+                          >
+                            {selectedWorkflow?.trigger_type === "manual"
+                              ? "manual"
+                              : selectedWorkflow?.enabled
+                              ? "active"
+                              : "paused"}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        className="panel-close"
+                        onClick={() => {
+                          setSelectedWorkflow(null);
+                          setPanelOpen(false);
+                        }}
+                      >
+                        x
+                      </button>
+                    </div>
+                    <div className="panel-body">
+                      <div className="panel-section">
+                        <div className="panel-section-title">Payload preview</div>
+                        <label className="field">
+                          <span>Payload</span>
+                          <textarea
+                            className="payload-area"
+                            value={payloadPreview}
+                            onChange={(e) => setPayloadPreview(e.target.value)}
+                            rows={8}
+                          />
+                        </label>
+                      </div>
+                      <div className="muted">
+                        Edit the payload before triggering or saving updates.
+                      </div>
+                    </div>
+                    <div className="panel-actions">
+                      {selectedWorkflow?.trigger_type !== "manual" ? (
+                        <button
+                          className="primary-btn"
+                          onClick={handleToggleTimer}
+                          disabled={togglingTimer}
+                        >
+                          {togglingTimer
+                            ? "Applying..."
+                            : selectedWorkflow?.enabled
+                            ? "Pause Konect"
+                            : "Start Konect"}
+                        </button>
+                      ) : (
+                        <button
+                          className="primary-btn"
+                          onClick={handleTrigger}
+                          disabled={triggering}
+                        >
+                          {triggering ? "Triggering..." : "Trigger now"}
+                        </button>
+                      )}
+                      <button
+                        className="danger-btn"
+                        onClick={handleDelete}
+                        disabled={deleting}
+                      >
+                        {deleting ? "Deleting..." : "Delete Konect"}
+                      </button>
+                    </div>
+                  </>
                 ) : (
-                  <button
-                    className="primary-btn"
-                    onClick={handleTrigger}
-                    disabled={triggering}
-                  >
-                    {triggering ? "Triggering…" : "Trigger now"}
-                  </button>
+                  <>
+                    <div className="panel-header">
+                      <div>
+                        <div className="panel-kicker">Konect</div>
+                        <h2>No selection</h2>
+                        <div className="panel-meta-row">
+                          <span className="panel-chip">Choose a Konect</span>
+                        </div>
+                      </div>
+                      <button
+                        className="panel-close"
+                        onClick={() => {
+                          setSelectedWorkflow(null);
+                          setPanelOpen(false);
+                        }}
+                      >
+                        x
+                      </button>
+                    </div>
+                    <div className="panel-body">
+                      <div className="muted">
+                        Select a Konect from the list or create a new one.
+                      </div>
+                    </div>
+                  </>
                 )}
-                <button
-                  className="danger-btn"
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  style={{ marginTop: 10 }}
-                >
-                  {deleting ? "Deleting…" : "Delete Konnect"}
-                </button>
-              </>
-            ) : (
-              <div className="muted">Sélectionnez un konect ou créez-en un.</div>
-            )}
-          </aside>
+              </div>
+            </aside>
+          </>
         )}
       </div>
     </div>
@@ -708,6 +839,6 @@ export default function Homepage() {
 }
 
 function getColor(i) {
-  const colors = ["#00D2FF", "#FF4081", "#FF4081", "#00E676", "#D500F9"];
+  const colors = ["#00d0ff93", "#ff40809c", "#ff40807f", "#00e677b0", "#d400f99a"];
   return colors[i % colors.length];
 }
