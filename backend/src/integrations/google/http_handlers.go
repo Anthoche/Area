@@ -57,6 +57,27 @@ func (h *HTTPHandlers) Login() http.Handler {
 	})
 }
 
+// Start returns an auth_url for clients that want a JSON response.
+func (h *HTTPHandlers) Start() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		state := randomState()
+		redirectURI := r.URL.Query().Get("redirect_uri")
+		if redirectURI == "" {
+			redirectURI = os.Getenv("GOOGLE_OAUTH_REDIRECT_URI")
+		}
+		if redirectURI == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "redirect_uri is required"})
+			return
+		}
+		authURL := h.client.AuthURL(state, redirectURI)
+		writeJSON(w, http.StatusOK, map[string]string{"auth_url": authURL, "state": state})
+	})
+}
+
 // Callback exchanges code for token, stores it, and returns token_id/email.
 func (h *HTTPHandlers) Callback() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -102,6 +123,64 @@ func (h *HTTPHandlers) Callback() http.Handler {
 			}
 		}
 		resp := map[string]any{"token_id": tokenID}
+		if resolvedUserID > 0 {
+			resp["user_id"] = resolvedUserID
+		}
+		if email != "" {
+			resp["email"] = email
+		}
+		writeJSON(w, http.StatusOK, resp)
+	})
+}
+
+// Exchange handles JSON exchanges from mobile clients.
+func (h *HTTPHandlers) Exchange() http.Handler {
+	type payload struct {
+		Code        string `json:"code"`
+		State       string `json:"state"`
+		RedirectURI string `json:"redirect_uri"`
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		var p payload
+		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
+		if err := decoder.Decode(&p); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON payload"})
+			return
+		}
+		if err := ensureNoTrailingData(decoder); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unexpected data in payload"})
+			return
+		}
+		if p.Code == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing code"})
+			return
+		}
+		if stateCookie, _ := r.Cookie("oauthstate"); stateCookie != nil && p.State != "" && p.State != stateCookie.Value {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid oauth state"})
+			return
+		}
+		redirectURI := p.RedirectURI
+		if redirectURI == "" {
+			redirectURI = os.Getenv("GOOGLE_OAUTH_REDIRECT_URI")
+		}
+		if redirectURI == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "redirect_uri is required"})
+			return
+		}
+		userID := optionalUserID(r)
+		tokenID, resolvedUserID, email, err := h.client.ExchangeAndStore(r.Context(), p.Code, redirectURI, userID)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+		resp := map[string]any{
+			"token":    tokenID,
+			"token_id": tokenID,
+		}
 		if resolvedUserID > 0 {
 			resp["user_id"] = resolvedUserID
 		}

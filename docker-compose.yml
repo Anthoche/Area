@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  db:
+  db: 
     image: "postgres:latest"
     restart: on-failure
     environment:
@@ -49,7 +49,7 @@ services:
 
   client_mobile:
     build:
-      context: frontend/mobile
+      context: frontend/mobile/kikonect
     volumes:
       - shared_apk:/app/shared_output
     command: >
