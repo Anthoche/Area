@@ -84,6 +84,26 @@ func List() []Service {
 				{Key: "actions", Type: "array<string>", Required: false, Description: "Actions to watch (opened,closed,reopened)", Example: []string{"opened", "closed"}},
 			},
 		},
+		{
+			ID:          "weather_temp",
+			Name:        "When temperature crosses a threshold",
+			Description: "Triggers when current temperature crosses above/below a threshold.",
+			Fields: []Field{
+				{Key: "city", Type: "string", Required: true, Description: "City name (e.g. Paris)"},
+				{Key: "threshold", Type: "number", Required: true, Description: "Temperature threshold (°C)", Example: 20},
+				{Key: "direction", Type: "string", Required: true, Description: "above or below", Example: "above"},
+				{Key: "interval_minutes", Type: "number", Required: false, Description: "Minimum polling interval in minutes", Example: 5},
+			},
+		},
+		{
+			ID:          "weather_report",
+			Name:        "Weather report (interval)",
+			Description: "Sends current weather for a city every X minutes.",
+			Fields: []Field{
+				{Key: "city", Type: "string", Required: true, Description: "City name (e.g. Paris)"},
+				{Key: "interval_minutes", Type: "number", Required: true, Description: "Polling interval in minutes", Example: 10},
+			},
+		},
 	}
 
 	discord := Service{
