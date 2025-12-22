@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:app_links/app_links.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'register_middle_page.dart';
 import 'home_page.dart';
@@ -25,6 +26,7 @@ class _LoginPageState extends State<LoginPage> {
   final OAuthService _authService = OAuthService();
   StreamSubscription? _sub;
   final _appLinks = AppLinks();
+  final _storage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -74,7 +76,9 @@ class _LoginPageState extends State<LoginPage> {
           print('Token reçu: $token, Email: $email');
 
           // Sauvegarder le token
-          await _saveToken(token.toString());
+          if (token != null) {
+            await _saveToken(token.toString());
+          }
 
           // Naviguer vers la home page
           if (mounted) {
@@ -89,15 +93,12 @@ class _LoginPageState extends State<LoginPage> {
       }
       return;
     }
-
   }
-
 
   Future<void> _saveToken(String token) async {
-    print("Token saved: $token");
-    // Implémenter la sauvegarde sécurisée (SharedPreferences, FlutterSecureStorage, etc.)
+    await _storage.write(key: 'jwt_token', value: token);
+    print("Token saved securely");
   }
-
 
   void _errorPopup(String msg) {
     showDialog(
@@ -122,20 +123,33 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _loginUser() async {
     final url = Uri.parse("${dotenv.env['API_URL']}/login");
 
-    final res = await http.post(url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "email": emailController.text,
-          "password": passwordController.text,
-        }));
+    try {
+      final res = await http.post(url,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({
+            "email": emailController.text,
+            "password": passwordController.text,
+          }));
 
-    if (res.statusCode == 200) {
-      if (mounted) {
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (_) => const Homepage()));
+      if (res.statusCode == 200) {
+        try {
+          final body = jsonDecode(res.body);
+          if (body is Map && body.containsKey('token')) {
+            await _saveToken(body['token'].toString());
+          }
+        } catch (e) {
+          print("Could not parse token from login response: $e");
+        }
+
+        if (mounted) {
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (_) => const Homepage()));
+        }
+      } else {
+        _errorPopup("Login failed (${res.statusCode})");
       }
-    } else {
-      _errorPopup("Login failed (${res.statusCode})");
+    } catch (e) {
+      _errorPopup("Connection error: $e");
     }
   }
 

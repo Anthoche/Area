@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../widgets/filter_tag.dart';
 import '../widgets/service_card.dart';
 import '../widgets/search_bar.dart';
 import 'create_area_page.dart';
+import 'login_page.dart';
 
 /// Home screen showing saved Konects and quick actions.
 class Homepage extends StatelessWidget {
@@ -37,6 +39,15 @@ class Homepage extends StatelessWidget {
             ListTile(
               title: const Text('test'),
               onTap: () {},
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text(
+                'Logout',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () => _logout(context),
             ),
           ],
         ),
@@ -180,5 +191,18 @@ class Homepage extends StatelessWidget {
       const Color(0xFFD500F9),
     ];
     return colors[index % colors.length];
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    const storage = FlutterSecureStorage();
+    await storage.deleteAll();
+
+    if (context.mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+            (route) => false,
+      );
+    }
   }
 }
