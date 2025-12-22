@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'service_selection_page.dart';
 import '../widgets/logic_block_card.dart';
+import '../services/api_service.dart';
 
 class CreateAreaPage extends StatefulWidget {
   const CreateAreaPage({super.key});
@@ -15,6 +16,44 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
 
   // Actions (initialement une seule, mais extensible)
   List<Map<String, dynamic>?> actionsData = [null];
+
+  bool _isSubmitting = false;
+
+  Future<void> _submitArea() async {
+    if (triggerData == null || actionsData.any((a) => a == null)) return;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final apiService = ApiService();
+      
+      // Construct payload for backend
+      final payload = {
+        "name": "New Area", // You might want to add a text field for this
+        "trigger": {
+          "service_id": triggerData!['service_id'],
+          "trigger_id": triggerData!['id'],
+          "fields": triggerData!['fields'] ?? {}
+        },
+        "actions": actionsData.where((e) => e != null).map((action) => {
+          "service_id": action!['service_id'],
+          "action_id": action!['id'],
+          "fields": action!['fields'] ?? {}
+        }).toList()
+      };
+
+      await apiService.createArea(payload);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Area Created!")));
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -164,14 +203,10 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
                       ),
                       elevation: 5,
                     ),
-                    onPressed: () {
-                      // TODO: Envoyer la création au backend
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Area Created!")),
-                      );
-                      Navigator.pop(context);
-                    },
-                    child: const Text(
+                    onPressed: _isSubmitting ? null : _submitArea,
+                    child: _isSubmitting 
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
                       "Connect",
                       style: TextStyle(
                         fontSize: 20,
