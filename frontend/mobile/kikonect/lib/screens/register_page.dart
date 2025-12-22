@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // widgets
 import '../widgets/app_text_field.dart';
@@ -25,6 +26,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  final _storage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -51,6 +53,13 @@ class _RegisterPageState extends State<RegisterPage> {
       body: jsonEncode(body),
     );
     if (response.statusCode == 201 && mounted) {
+      try {
+        final body = jsonDecode(response.body);
+        if (body is Map && body.containsKey('id')) {
+          await _storage.write(key: 'user_id', value: body['id'].toString());
+        }
+      } catch (_) {}
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const Homepage()),

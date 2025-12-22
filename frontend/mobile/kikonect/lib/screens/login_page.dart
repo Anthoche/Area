@@ -58,10 +58,15 @@ class _LoginPageState extends State<LoginPage> {
       final code = uri.queryParameters['code'];
       final state = uri.queryParameters['state'];
       final error = uri.queryParameters['error'];
+      final userIdFromQuery = uri.queryParameters['user_id'];
 
       if (error != null) {
         _errorPopup('OAuth error: $error');
         return;
+      }
+
+      if (userIdFromQuery != null && userIdFromQuery.isNotEmpty) {
+        await _saveUserId(userIdFromQuery);
       }
 
       if (code != null && code.isNotEmpty) {
@@ -72,12 +77,16 @@ class _LoginPageState extends State<LoginPage> {
           final result = await _authService.exchangeCodeForToken(code, state: state);
           final token = result['token'];
           final email = result['email'] ?? '';
+          final userId = result['user_id'];
 
           print('Token reçu: $token, Email: $email');
 
           // Sauvegarder le token
           if (token != null) {
             await _saveToken(token.toString());
+          }
+          if (userId != null) {
+            await _saveUserId(userId);
           }
 
           // Naviguer vers la home page
@@ -98,6 +107,12 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _saveToken(String token) async {
     await _storage.write(key: 'jwt_token', value: token);
     print("Token saved securely");
+  }
+
+  Future<void> _saveUserId(dynamic userId) async {
+    if (userId == null) return;
+    await _storage.write(key: 'user_id', value: userId.toString());
+    print("User id saved securely");
   }
 
   void _errorPopup(String msg) {
@@ -134,8 +149,13 @@ class _LoginPageState extends State<LoginPage> {
       if (res.statusCode == 200) {
         try {
           final body = jsonDecode(res.body);
-          if (body is Map && body.containsKey('token')) {
-            await _saveToken(body['token'].toString());
+          if (body is Map) {
+            if (body.containsKey('token')) {
+              await _saveToken(body['token'].toString());
+            }
+            if (body.containsKey('id')) {
+              await _saveUserId(body['id']);
+            }
           }
         } catch (e) {
           print("Could not parse token from login response: $e");

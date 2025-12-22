@@ -9,9 +9,11 @@ class ApiService {
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await _storage.read(key: 'jwt_token');
+    final userId = await _storage.read(key: 'user_id');
     return {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
+      if (userId != null && userId.isNotEmpty) 'X-User-ID': userId,
     };
   }
 
@@ -30,6 +32,29 @@ class ApiService {
       return [];
     } else {
       throw Exception('Failed to load services: ${response.statusCode} ${response.body}');
+    }
+  }
+
+  /// Fetches workflows for the current user.
+  Future<List<dynamic>> getWorkflows() async {
+    final userId = await _storage.read(key: 'user_id');
+    if (userId == null || userId.isEmpty) {
+      throw Exception('Missing user id. Please login again.');
+    }
+
+    final url = Uri.parse('$_baseUrl/workflows');
+    final headers = await _getHeaders();
+
+    final response = await http.get(url, headers: headers);
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body is List) {
+        return body;
+      }
+      return [];
+    } else {
+      throw Exception('Failed to load workflows: ${response.statusCode} ${response.body}');
     }
   }
 

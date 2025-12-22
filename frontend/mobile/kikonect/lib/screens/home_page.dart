@@ -3,22 +3,91 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../widgets/filter_tag.dart';
 import '../widgets/service_card.dart';
 import '../widgets/search_bar.dart';
+import '../services/api_service.dart';
 import 'create_area_page.dart';
 import 'login_page.dart';
 
 /// Home screen showing saved Konects and quick actions.
-class Homepage extends StatelessWidget {
+class Homepage extends StatefulWidget {
   const Homepage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> items = List.generate(8, (index) {
-      return {
-        'title': index == 0 ? 'Push To Ping' : 'Service ${index + 1}',
-        'color': _getColor(index),
-        'icons': index == 0 ? [Icons.code, Icons.message] : <IconData>[],
-      };
+  State<Homepage> createState() => _HomepageState();
+}
+
+class _HomepageState extends State<Homepage> {
+  final ApiService _apiService = ApiService();
+  final TextEditingController _searchController = TextEditingController();
+  final Set<String> _activeFilters = {};
+  List<dynamic> _workflows = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWorkflows();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadWorkflows() async {
+    setState(() {
+      _loading = true;
+      _error = null;
     });
+
+    try {
+      final items = await _apiService.getWorkflows();
+      if (mounted) {
+        setState(() {
+          _workflows = items;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  List<String> get _availableFilters {
+    final types = _workflows
+        .map((w) => (w['trigger_type'] ?? '').toString())
+        .where((t) => t.isNotEmpty)
+        .toSet()
+        .toList();
+    types.sort();
+    return types;
+  }
+
+  List<dynamic> get _filteredWorkflows {
+    final search = _searchController.text.trim().toLowerCase();
+    return _workflows.where((w) {
+      final name = (w['name'] ?? '').toString().toLowerCase();
+      final trigger = (w['trigger_type'] ?? '').toString();
+      final matchesSearch = search.isEmpty || name.contains(search);
+      final matchesFilter =
+          _activeFilters.isEmpty || _activeFilters.contains(trigger);
+      return matchesSearch && matchesFilter;
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final workflows = _filteredWorkflows;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -81,21 +150,6 @@ class Homepage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Search_bar(),
-                  SizedBox(height: 20),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        FilterTag(label: 'test 1'),
-                        FilterTag(label: 'test 2'),
-                        FilterTag(label: 'test 3'),
-                        FilterTag(label: 'test 4'),
-                        FilterTag(label: 'test 5'),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 24),
                   Text(
                     'My Konects',
                     style: TextStyle(
@@ -109,6 +163,78 @@ class Homepage extends StatelessWidget {
               ),
             ),
           ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Search_bar(
+                controller: _searchController,
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    FilterTag(
+                      label: 'All',
+                      isSelected: _activeFilters.isEmpty,
+                      onTap: () {
+                        setState(() => _activeFilters.clear());
+                      },
+                    ),
+                    ..._availableFilters.map(
+                      (filter) => FilterTag(
+                        label: filter,
+                        isSelected: _activeFilters.contains(filter),
+                        onTap: () {
+                          setState(() {
+                            if (_activeFilters.contains(filter)) {
+                              _activeFilters.remove(filter);
+                            } else {
+                              _activeFilters.add(filter);
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (_loading)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            )
+          else if (_error != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Center(
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            )
+          else if (workflows.isEmpty)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(
+                  child: Text("No Konect yet. Create the first one!"),
+                ),
+              ),
+            ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverGrid(
@@ -119,14 +245,14 @@ class Homepage extends StatelessWidget {
                 childAspectRatio: 1.3,
               ),
               delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                  final item = items[index];
+                (context, index) {
+                  final item = workflows[index];
                   return ServiceCard(
-                    title: item['title'],
-                    color: item['color'],
+                    title: (item['name'] ?? 'Konect #${item['id']}').toString(),
+                    color: _getColor(index),
                   );
                 },
-                childCount: items.length,
+                childCount: workflows.length,
               ),
             ),
           ),

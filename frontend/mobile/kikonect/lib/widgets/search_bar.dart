@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 
 /// Lightweight search field used in the home screen header.
 class Search_bar extends StatelessWidget {
-  const Search_bar({super.key});
+  final TextEditingController? controller;
+  final ValueChanged<String>? onChanged;
+
+  const Search_bar({super.key, this.controller, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller,
+      onChanged: onChanged,
       decoration: InputDecoration(
         hintText: 'Search in my library',
         hintStyle: TextStyle(color: Colors.grey[400]),
