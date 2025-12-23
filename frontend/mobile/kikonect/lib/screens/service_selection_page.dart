@@ -139,15 +139,21 @@ class ServiceSelectionPage extends StatelessWidget {
                       onTap: () {
                         // On ferme la modal
                         Navigator.pop(context);
-                        // On ferme la page de sélection et on renvoie les données
-                        Navigator.pop(context, {
-                          "service_id": rawData['id'],
-                          "service": service['name'],
-                          "id": item['id'],
-                          "name": item['name'],
-                          "color": service['color'],
-                          "icon": service['icon'],
-                        });
+                        final fields = (item['fields'] as List? ?? []);
+                        if (fields.isNotEmpty) {
+                          _showFieldsModal(context, service, item, fields);
+                        } else {
+                          Navigator.pop(context, {
+                            "service_id": rawData['id'],
+                            "service": service['name'],
+                            "id": item['id'],
+                            "name": item['name'],
+                            "action_url": item['action_url'],
+                            "fields": {},
+                            "color": service['color'],
+                            "icon": service['icon'],
+                          });
+                        }
                       },
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 16),
@@ -183,4 +189,169 @@ class ServiceSelectionPage extends StatelessWidget {
       },
     );
   }
+
+  void _showFieldsModal(
+    BuildContext context,
+    Map<String, dynamic> service,
+    Map<String, dynamic> item,
+    List fields,
+  ) {
+    final rawData = service['raw'] as Map<String, dynamic>;
+    final values = <String, dynamic>{};
+    for (final field in fields) {
+      final key = field['key']?.toString() ?? '';
+      if (key.isEmpty) continue;
+      if (field.containsKey('example')) {
+        values[key] = field['example'];
+      } else if ((field['type'] ?? '') == 'number') {
+        values[key] = 0;
+      } else {
+        values[key] = '';
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.7,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Container(
+                        width: 50,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      item['name']?.toString() ?? 'Parameters',
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: ListView(
+                        children: fields.map<Widget>((field) {
+                          final key = field['key']?.toString() ?? '';
+                          final type = field['type']?.toString() ?? 'string';
+                          final requiredField = field['required'] == true;
+                          final description = field['description']?.toString() ?? '';
+                          final example = field['example']?.toString() ?? '';
+                          final currentValue = values[key];
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  requiredField ? "$key *" : key,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  keyboardType: type == 'number'
+                                      ? TextInputType.number
+                                      : TextInputType.text,
+                                  initialValue: currentValue?.toString() ?? '',
+                                  decoration: InputDecoration(
+                                    hintText: example.isNotEmpty ? example : description,
+                                    hintStyle: TextStyle(color: Colors.grey[500]),
+                                    filled: true,
+                                    fillColor: const Color(0xFFF3F6F8),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                      horizontal: 12,
+                                    ),
+                                  ),
+                                  onChanged: (value) {
+                                    setSheetState(() {
+                                      if (type == 'number') {
+                                        values[key] = num.tryParse(value) ?? 0;
+                                      } else if (type.startsWith('array')) {
+                                        values[key] = value
+                                            .split(',')
+                                            .map((v) => v.trim())
+                                            .where((v) => v.isNotEmpty)
+                                            .toList();
+                                      } else {
+                                        values[key] = value;
+                                      }
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.pop(context, {
+                            "service_id": rawData['id'],
+                            "service": service['name'],
+                            "id": item['id'],
+                            "name": item['name'],
+                            "action_url": item['action_url'],
+                            "fields": values,
+                            "color": service['color'],
+                            "icon": service['icon'],
+                          });
+                        },
+                        child: const Text(
+                          "Validate",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }
+

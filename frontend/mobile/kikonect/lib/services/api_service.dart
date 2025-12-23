@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
   static final String _baseUrl = dotenv.env['API_URL'] ?? 'http://10.0.2.2:8080';
+  static String get baseUrl => _baseUrl;
   final _storage = const FlutterSecureStorage();
 
   Future<Map<String, String>> _getHeaders() async {
@@ -60,7 +61,7 @@ class ApiService {
 
   /// Sends the created area configuration to the backend.
   Future<void> createArea(Map<String, dynamic> areaData) async {
-    final url = Uri.parse('$_baseUrl/areas');
+    final url = Uri.parse('$_baseUrl/workflows');
     final headers = await _getHeaders();
 
     final response = await http.post(
@@ -70,7 +71,23 @@ class ApiService {
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Failed to create area: ${response.body}');
+      throw Exception('Failed to create area: ${response.statusCode} ${response.body}');
+    }
+  }
+
+  /// Triggers a manual workflow run.
+  Future<void> triggerWorkflow(int workflowId, Map<String, dynamic> payload) async {
+    final url = Uri.parse('$_baseUrl/workflows/$workflowId/trigger');
+    final headers = await _getHeaders();
+
+    final response = await http.post(
+      url,
+      headers: headers,
+      body: jsonEncode(payload),
+    );
+
+    if (response.statusCode != 202 && response.statusCode != 200) {
+      throw Exception('Failed to trigger workflow: ${response.statusCode} ${response.body}');
     }
   }
 }

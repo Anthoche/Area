@@ -13,46 +13,102 @@ class CreateAreaPage extends StatefulWidget {
 class _CreateAreaPageState extends State<CreateAreaPage> {
   // Trigger
   Map<String, dynamic>? triggerData;
+  Map<String, dynamic> triggerFieldValues = {};
 
   // Actions (initialement une seule, mais extensible)
   List<Map<String, dynamic>?> actionsData = [null];
 
   bool _isSubmitting = false;
+  final TextEditingController _nameController = TextEditingController();
 
   Future<void> _submitArea() async {
     if (triggerData == null || actionsData.any((a) => a == null)) return;
+
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Please enter a name for this Konect."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
 
     setState(() => _isSubmitting = true);
 
     try {
       final apiService = ApiService();
-      
-      // Construct payload for backend
+
+      final selectedAction = actionsData.firstWhere((a) => a != null, orElse: () => null);
+      if (selectedAction == null) return;
+      final actionUrl = _buildActionUrl(selectedAction);
+      if (actionUrl.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Missing action URL. Please fill required fields."),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      final triggerType = triggerData!['id']?.toString() ?? '';
+      final actionFields = (selectedAction['fields'] as Map<String, dynamic>?) ?? {};
+      final triggerConfig = Map<String, dynamic>.from(triggerFieldValues);
+      if (triggerType == 'interval') {
+        triggerConfig['payload'] = actionFields;
+      }
+      triggerConfig['payload_template'] = actionFields;
+
+      // Backend expects workflow payload (one trigger + one action_url).
       final payload = {
-        "name": "New Area", // You might want to add a text field for this
-        "trigger": {
-          "service_id": triggerData!['service_id'],
-          "trigger_id": triggerData!['id'],
-          "fields": triggerData!['fields'] ?? {}
-        },
-        "actions": actionsData.where((e) => e != null).map((action) => {
-          "service_id": action!['service_id'],
-          "action_id": action!['id'],
-          "fields": action!['fields'] ?? {}
-        }).toList()
+        "name": name,
+        "trigger_type": triggerType,
+        "action_url": actionUrl,
+        "trigger_config": triggerConfig,
       };
 
       await apiService.createArea(payload);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Area Created!")));
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  String _buildActionUrl(Map<String, dynamic> action) {
+    final rawUrl = (action['action_url'] ?? '').toString().trim();
+    if (rawUrl.isNotEmpty) {
+      if (rawUrl.startsWith('http')) return rawUrl;
+      if (rawUrl.startsWith('/')) return '${ApiService.baseUrl}$rawUrl';
+      return rawUrl;
+    }
+
+    final fields = action['fields'];
+    if (fields is Map) {
+      final webhookUrl = fields['webhook_url'] ?? fields['url'];
+      if (webhookUrl != null && webhookUrl.toString().trim().isNotEmpty) {
+        return webhookUrl.toString().trim();
+      }
+    }
+
+    return '';
   }
 
   @override
@@ -97,6 +153,8 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
                   if (result != null) {
                     setState(() {
                       triggerData = result;
+                      triggerFieldValues =
+                          (result['fields'] as Map<String, dynamic>?) ?? {};
                     });
                   }
                 },
@@ -111,6 +169,26 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
               
               const SizedBox(height: 10),
 
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  hintText: "Konect name",
+                  hintStyle: TextStyle(color: Colors.grey[500]),
+                  filled: true,
+                  fillColor: const Color(0xFFF3F6F8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 12,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+              
               // --- THEN THAT (Actions) ---
               ListView.separated(
                 physics: const NeverScrollableScrollPhysics(),

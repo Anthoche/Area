@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../widgets/filter_tag.dart';
@@ -19,6 +20,7 @@ class _HomepageState extends State<Homepage> {
   final ApiService _apiService = ApiService();
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _activeFilters = {};
+  final Set<int> _triggering = {};
   List<dynamic> _workflows = [];
   bool _loading = true;
   String? _error;
@@ -83,6 +85,78 @@ class _HomepageState extends State<Homepage> {
           _activeFilters.isEmpty || _activeFilters.contains(trigger);
       return matchesSearch && matchesFilter;
     }).toList();
+  }
+
+  Future<void> _triggerManualWorkflow(dynamic item) async {
+    final triggerType = (item['trigger_type'] ?? '').toString();
+    if (triggerType != 'manual') {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Only manual Konects can be triggered here."),
+          ),
+        );
+      }
+      return;
+    }
+
+    final idValue = item['id'];
+    final id = idValue is int ? idValue : int.tryParse(idValue?.toString() ?? '');
+    if (id == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Invalid Konect id."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+    if (_triggering.contains(id)) return;
+
+    setState(() => _triggering.add(id));
+    try {
+      final payload = _payloadFromWorkflow(item);
+      await _apiService.triggerWorkflow(id, payload);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Konect triggered!")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Trigger failed: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _triggering.remove(id));
+      }
+    }
+  }
+
+  Map<String, dynamic> _payloadFromWorkflow(dynamic item) {
+    final raw = item['trigger_config'];
+    dynamic config = raw;
+    if (raw is String && raw.isNotEmpty) {
+      try {
+        config = jsonDecode(raw);
+      } catch (_) {
+        config = null;
+      }
+    }
+    if (config is Map<String, dynamic>) {
+      final payload = config['payload_template'];
+      if (payload is Map<String, dynamic>) {
+        return payload;
+      }
+    }
+    return {};
   }
 
   @override
@@ -250,6 +324,7 @@ class _HomepageState extends State<Homepage> {
                   return ServiceCard(
                     title: (item['name'] ?? 'Konect #${item['id']}').toString(),
                     color: _getColor(index),
+                    onTap: () => _triggerManualWorkflow(item),
                   );
                 },
                 childCount: workflows.length,
@@ -265,10 +340,14 @@ class _HomepageState extends State<Homepage> {
         shape: const CircleBorder(),
         elevation: 4,
         onPressed: () {
-          Navigator.push(
+          Navigator.push<bool>(
             context,
             MaterialPageRoute(builder: (context) => const CreateAreaPage()),
-          );
+          ).then((created) {
+            if (created == true) {
+              _loadWorkflows();
+            }
+          });
         },
         child: const Icon(Icons.add, size: 30),
       ),
