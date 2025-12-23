@@ -95,6 +95,16 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 		if err != nil || cfg.IntervalMin <= 0 || cfg.City == "" {
 			return nil, errors.New("weather_report requires city and interval_minutes")
 		}
+	case "reddit_new_post":
+		cfg, err := redditNewPostConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.Subreddit) == "" {
+			return nil, errors.New("reddit_new_post requires subreddit")
+		}
+	case "youtube_new_video":
+		cfg, err := youtubeNewVideoConfigFromJSON(triggerConfig)
+		if err != nil || (strings.TrimSpace(cfg.ChannelID) == "" && strings.TrimSpace(cfg.Channel) == "") {
+			return nil, errors.New("youtube_new_video requires channel")
+		}
 	default:
 		return nil, fmt.Errorf("unsupported trigger_type %s", triggerType)
 	}
@@ -193,6 +203,16 @@ func GithubIssueConfigFromJSON(raw json.RawMessage) (GithubIssueConfig, error) {
 // WeatherTempConfigFromJSON exposes parsing for weather_temp trigger config.
 func WeatherTempConfigFromJSON(raw json.RawMessage) (WeatherTempConfig, error) {
 	return weatherTempConfigFromJSON(raw)
+}
+
+// RedditNewPostConfigFromJSON exposes parsing for reddit_new_post trigger config.
+func RedditNewPostConfigFromJSON(raw json.RawMessage) (RedditNewPostConfig, error) {
+	return redditNewPostConfigFromJSON(raw)
+}
+
+// YouTubeNewVideoConfigFromJSON exposes parsing for youtube_new_video trigger config.
+func YouTubeNewVideoConfigFromJSON(raw json.RawMessage) (YouTubeNewVideoConfig, error) {
+	return youtubeNewVideoConfigFromJSON(raw)
 }
 
 type ctxUserIDKey struct{}

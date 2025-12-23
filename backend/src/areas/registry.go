@@ -104,6 +104,24 @@ func List() []Service {
 				{Key: "interval_minutes", Type: "number", Required: true, Description: "Polling interval in minutes", Example: 10},
 			},
 		},
+		{
+			ID:          "reddit_new_post",
+			Name:        "Reddit new post",
+			Description: "Triggers when a new post appears in a subreddit.",
+			Fields: []Field{
+				{Key: "subreddit", Type: "string", Required: true, Description: "Subreddit name (without r/)", Example: "golang"},
+				{Key: "interval_minutes", Type: "number", Required: false, Description: "Polling interval in minutes", Example: 5},
+			},
+		},
+		{
+			ID:          "youtube_new_video",
+			Name:        "YouTube new video",
+			Description: "Triggers when a channel publishes a new video.",
+			Fields: []Field{
+				{Key: "channel", Type: "string", Required: true, Description: "YouTube channel name, handle, or ID", Example: "@GoogleDevelopers"},
+				{Key: "interval_minutes", Type: "number", Required: false, Description: "Polling interval in minutes", Example: 5},
+			},
+		},
 	}
 
 	discord := Service{
