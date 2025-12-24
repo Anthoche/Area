@@ -2,6 +2,7 @@
     --navbar-height: 65px;
     --navbar-text-color: #4a5565;
     --navbar-text-color-hovered: #101828;
+    --footer-text-color: #99a1af;
     --accent-color: #48179c;
     --transition: .25s;
     --page-padding: 20vw;
@@ -140,11 +141,33 @@ footer > p {
     list-style: none;
 }
 
-.footer-section > li > a {
+.footer-section-item {
+    color: #5b6779;
+}
+
+.footer-section-item > a {
     text-decoration: none;
+    transition: .25s;
+    color: inherit;
+}
+
+.footer-section-item > a:hover {
+    transition: .25s;
+    color: var(--footer-text-color);
 }
 
 .footer-section-title {
     font-weight: bold;
     margin-bottom: 16px;
+}
+
+.footer-section-logo {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+.logo-footer {
+    height: 28px;
 }
