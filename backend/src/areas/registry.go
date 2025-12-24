@@ -328,6 +328,58 @@ func List() []Service {
 		},
 	}
 
+	notionEnabled := os.Getenv("NOTION_TOKEN") != ""
+	notion := Service{
+		ID:      "notion",
+		Name:    "Notion",
+		Enabled: notionEnabled,
+		Reactions: []Capability{
+			{
+				ID:          "notion_create_page",
+				Name:        "Create page",
+				Description: "Create a page under a parent page.",
+				ActionURL:   "/actions/notion/page",
+				Fields: []Field{
+					{Key: "parent_page_id", Type: "string", Required: true, Description: "Parent page ID"},
+					{Key: "title", Type: "string", Required: true, Description: "Page title"},
+					{Key: "content", Type: "string", Required: false, Description: "Optional paragraph content"},
+					{Key: "blocks", Type: "array<object>", Required: false, Description: "Optional Notion blocks (JSON array)"},
+				},
+			},
+			{
+				ID:          "notion_append_blocks",
+				Name:        "Append blocks",
+				Description: "Append blocks to a page or block.",
+				ActionURL:   "/actions/notion/blocks",
+				Fields: []Field{
+					{Key: "block_id", Type: "string", Required: true, Description: "Page or block ID"},
+					{Key: "blocks", Type: "array<object>", Required: true, Description: "Notion blocks (JSON array)"},
+				},
+			},
+			{
+				ID:          "notion_create_database_row",
+				Name:        "Create database row",
+				Description: "Create a new page in a database.",
+				ActionURL:   "/actions/notion/database",
+				Fields: []Field{
+					{Key: "database_id", Type: "string", Required: true, Description: "Database ID"},
+					{Key: "properties", Type: "object", Required: true, Description: "Notion properties JSON object"},
+					{Key: "children", Type: "array<object>", Required: false, Description: "Optional blocks (JSON array)"},
+				},
+			},
+			{
+				ID:          "notion_update_page",
+				Name:        "Update page",
+				Description: "Update page properties.",
+				ActionURL:   "/actions/notion/page/update",
+				Fields: []Field{
+					{Key: "page_id", Type: "string", Required: true, Description: "Page ID"},
+					{Key: "properties", Type: "object", Required: true, Description: "Notion properties JSON object"},
+				},
+			},
+		},
+	}
+
 	webhook := Service{
 		ID:      "webhook",
 		Name:    "Webhook",
@@ -357,6 +409,7 @@ func List() []Service {
 		google,
 		github,
 		slack,
+		notion,
 		webhook,
 	}
 }
