@@ -106,6 +106,19 @@ type WeatherReportConfig struct {
 	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
 }
 
+type RedditNewPostConfig struct {
+	Subreddit       string                 `json:"subreddit"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type YouTubeNewVideoConfig struct {
+	ChannelID       string                 `json:"channel_id"`
+	Channel         string                 `json:"channel"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
 type Store struct {
 	db *gorm.DB
 }
@@ -604,6 +617,28 @@ func weatherReportConfigFromJSON(raw json.RawMessage) (WeatherReportConfig, erro
 	var cfg WeatherReportConfig
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return WeatherReportConfig{}, err
+	}
+	return cfg, nil
+}
+
+func redditNewPostConfigFromJSON(raw json.RawMessage) (RedditNewPostConfig, error) {
+	if len(raw) == 0 {
+		return RedditNewPostConfig{}, errors.New("empty config")
+	}
+	var cfg RedditNewPostConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return RedditNewPostConfig{}, err
+	}
+	return cfg, nil
+}
+
+func youtubeNewVideoConfigFromJSON(raw json.RawMessage) (YouTubeNewVideoConfig, error) {
+	if len(raw) == 0 {
+		return YouTubeNewVideoConfig{}, errors.New("empty config")
+	}
+	var cfg YouTubeNewVideoConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return YouTubeNewVideoConfig{}, err
 	}
 	return cfg, nil
 }

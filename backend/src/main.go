@@ -17,7 +17,9 @@ import (
 	"area/src/httpapi"
 	"area/src/integrations/github"
 	"area/src/integrations/google"
+	"area/src/integrations/reddit"
 	"area/src/integrations/weather"
+	"area/src/integrations/youtube"
 	"area/src/workflows"
 
 	"github.com/joho/godotenv"
@@ -113,6 +115,10 @@ func main() {
 	github.StartGithubPoller(context.Background(), wfStore, wfService, githubClient)
 	// Weather poller (Open-Meteo thresholds).
 	weather.StartWeatherPoller(context.Background(), wfStore, wfService)
+	// Reddit poller (new posts in subreddits).
+	reddit.StartRedditPoller(context.Background(), wfStore, wfService)
+	// YouTube poller (new videos from channel feed).
+	youtube.StartYouTubePoller(context.Background(), wfStore, wfService)
 
 	server := &http.Server{
 		Addr:              ":" + port,

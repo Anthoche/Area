@@ -15,6 +15,7 @@ import (
 
 	"area/src/areas"
 	"area/src/auth"
+	"area/src/integrations/discord"
 	gh "area/src/integrations/github"
 	goog "area/src/integrations/google"
 	"area/src/workflows"
@@ -29,6 +30,7 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 
 	googleHTTP := goog.NewHTTPHandlers(nil)
 	githubHTTP := gh.NewHTTPHandlers(nil)
+	discordHTTP := discord.NewHTTPHandlers(nil)
 	mux := http.NewServeMux()
 	mux.Handle("/login", server.Login())
 	mux.Handle("/register", server.Register())
@@ -46,6 +48,11 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/actions/github/pr", githubHTTP.PullRequest())
 	mux.Handle("/actions/google/email", googleHTTP.SendEmail())
 	mux.Handle("/actions/google/calendar", googleHTTP.CreateEvent())
+	mux.Handle("/actions/discord/message", discordHTTP.Message())
+	mux.Handle("/actions/discord/embed", discordHTTP.Embed())
+	mux.Handle("/actions/discord/message/edit", discordHTTP.Edit())
+	mux.Handle("/actions/discord/message/delete", discordHTTP.Delete())
+	mux.Handle("/actions/discord/message/react", discordHTTP.React())
 	mux.Handle("/areas", server.listAreas())
 	mux.Handle("/resources/openapi.json", server.openAPISpec())
 	mux.Handle("/docs/", v5emb.New(
