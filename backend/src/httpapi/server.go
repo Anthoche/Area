@@ -18,6 +18,7 @@ import (
 	"area/src/integrations/discord"
 	gh "area/src/integrations/github"
 	goog "area/src/integrations/google"
+	"area/src/integrations/slack"
 	"area/src/workflows"
 )
 
@@ -31,6 +32,7 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	googleHTTP := goog.NewHTTPHandlers(nil)
 	githubHTTP := gh.NewHTTPHandlers(nil)
 	discordHTTP := discord.NewHTTPHandlers(nil)
+	slackHTTP := slack.NewHTTPHandlers(nil)
 	mux := http.NewServeMux()
 	mux.Handle("/login", server.Login())
 	mux.Handle("/register", server.Register())
@@ -53,6 +55,11 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/actions/discord/message/edit", discordHTTP.Edit())
 	mux.Handle("/actions/discord/message/delete", discordHTTP.Delete())
 	mux.Handle("/actions/discord/message/react", discordHTTP.React())
+	mux.Handle("/actions/slack/message", slackHTTP.Message())
+	mux.Handle("/actions/slack/blocks", slackHTTP.Blocks())
+	mux.Handle("/actions/slack/message/update", slackHTTP.Update())
+	mux.Handle("/actions/slack/message/delete", slackHTTP.Delete())
+	mux.Handle("/actions/slack/message/react", slackHTTP.React())
 	mux.Handle("/areas", server.listAreas())
 	mux.Handle("/resources/openapi.json", server.openAPISpec())
 	mux.Handle("/docs/", v5emb.New(
