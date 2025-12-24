@@ -265,6 +265,121 @@ func List() []Service {
 		},
 	}
 
+	slackEnabled := os.Getenv("SLACK_BOT_TOKEN") != ""
+	slack := Service{
+		ID:      "slack",
+		Name:    "Slack",
+		Enabled: slackEnabled,
+		Reactions: []Capability{
+			{
+				ID:             "slack_message",
+				Name:           "Send message",
+				Description:    "Send a message to a Slack channel.",
+				ActionURL:      "/actions/slack/message",
+				DefaultPayload: map[string]any{"text": "Hello from Area"},
+				Fields: []Field{
+					{Key: "channel_id", Type: "string", Required: true, Description: "Target channel ID", Example: "C1234567890"},
+					{Key: "text", Type: "string", Required: true, Description: "Message text", Example: "Hello from Area"},
+				},
+			},
+			{
+				ID:          "slack_blocks",
+				Name:        "Send blocks message",
+				Description: "Send a message with Block Kit payload.",
+				ActionURL:   "/actions/slack/blocks",
+				Fields: []Field{
+					{Key: "channel_id", Type: "string", Required: true, Description: "Target channel ID", Example: "C1234567890"},
+					{Key: "text", Type: "string", Required: false, Description: "Fallback text"},
+					{Key: "blocks", Type: "array<object>", Required: true, Description: "Block Kit JSON array"},
+				},
+			},
+			{
+				ID:          "slack_update",
+				Name:        "Update message",
+				Description: "Update an existing message.",
+				ActionURL:   "/actions/slack/message/update",
+				Fields: []Field{
+					{Key: "channel_id", Type: "string", Required: true, Description: "Target channel ID", Example: "C1234567890"},
+					{Key: "message_ts", Type: "string", Required: true, Description: "Message timestamp"},
+					{Key: "text", Type: "string", Required: true, Description: "New message text"},
+				},
+			},
+			{
+				ID:          "slack_delete",
+				Name:        "Delete message",
+				Description: "Delete a message by timestamp.",
+				ActionURL:   "/actions/slack/message/delete",
+				Fields: []Field{
+					{Key: "channel_id", Type: "string", Required: true, Description: "Target channel ID", Example: "C1234567890"},
+					{Key: "message_ts", Type: "string", Required: true, Description: "Message timestamp"},
+				},
+			},
+			{
+				ID:          "slack_reaction",
+				Name:        "Add reaction",
+				Description: "Add an emoji reaction to a message.",
+				ActionURL:   "/actions/slack/message/react",
+				Fields: []Field{
+					{Key: "channel_id", Type: "string", Required: true, Description: "Target channel ID"},
+					{Key: "message_ts", Type: "string", Required: true, Description: "Message timestamp"},
+					{Key: "emoji", Type: "string", Required: true, Description: "Emoji name without colons", Example: "thumbsup"},
+				},
+			},
+		},
+	}
+
+	notionEnabled := os.Getenv("NOTION_TOKEN") != ""
+	notion := Service{
+		ID:      "notion",
+		Name:    "Notion",
+		Enabled: notionEnabled,
+		Reactions: []Capability{
+			{
+				ID:          "notion_create_page",
+				Name:        "Create page",
+				Description: "Create a page under a parent page.",
+				ActionURL:   "/actions/notion/page",
+				Fields: []Field{
+					{Key: "parent_page_id", Type: "string", Required: true, Description: "Parent page ID"},
+					{Key: "title", Type: "string", Required: true, Description: "Page title"},
+					{Key: "content", Type: "string", Required: false, Description: "Optional paragraph content"},
+					{Key: "blocks", Type: "array<object>", Required: false, Description: "Optional Notion blocks (JSON array)"},
+				},
+			},
+			{
+				ID:          "notion_append_blocks",
+				Name:        "Append blocks",
+				Description: "Append blocks to a page or block.",
+				ActionURL:   "/actions/notion/blocks",
+				Fields: []Field{
+					{Key: "block_id", Type: "string", Required: true, Description: "Page or block ID"},
+					{Key: "blocks", Type: "array<object>", Required: true, Description: "Notion blocks (JSON array)"},
+				},
+			},
+			{
+				ID:          "notion_create_database_row",
+				Name:        "Create database row",
+				Description: "Create a new page in a database.",
+				ActionURL:   "/actions/notion/database",
+				Fields: []Field{
+					{Key: "database_id", Type: "string", Required: true, Description: "Database ID"},
+					{Key: "properties", Type: "object", Required: true, Description: "Notion properties JSON object"},
+					{Key: "children", Type: "array<object>", Required: false, Description: "Optional blocks (JSON array)"},
+				},
+			},
+			{
+				ID:          "notion_update_page",
+				Name:        "Update page",
+				Description: "Update page properties.",
+				ActionURL:   "/actions/notion/page/update",
+				Fields: []Field{
+					{Key: "page_id", Type: "string", Required: true, Description: "Page ID"},
+					{Key: "properties", Type: "object", Required: true, Description: "Notion properties JSON object"},
+				},
+			},
+		},
+	}
+
 	webhook := Service{
 		ID:      "webhook",
 		Name:    "Webhook",
@@ -293,6 +408,8 @@ func List() []Service {
 		discord,
 		google,
 		github,
+		slack,
+		notion,
 		webhook,
 	}
 }
