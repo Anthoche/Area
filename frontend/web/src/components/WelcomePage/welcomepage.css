@@ -324,7 +324,7 @@ footer > p {
 
 /* How it works */
 .how-it-works {
-padding: 80px 20px;
+    padding: 80px 20px;
     text-align: center;
 }
 
@@ -434,5 +434,60 @@ padding: 80px 20px;
     .how-steps {
         grid-template-columns: 1fr;
         gap: 30px;
+    }
+}
+
+.popular-use-cases {
+    padding: 80px 20px;
+    text-align: center;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 40px 30px;
+    background: linear-gradient(50deg, #aec9ec1f, #aec9ec44, #aec9ec34, #aec9ec19);
+    border-radius: 16px;
+}
+
+.popular-use-cases h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1c1e23;
+}
+
+.use-cases-list ul {
+  display: grid;
+  font-size: 15px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 20%;
+  max-width: 1500px;
+  margin: 40px 10% 0%;
+  list-style: none;
+  padding: 0;
+}
+
+.use-cases-list li {
+  margin-bottom: 15px;
+  text-align: left;
+  display: flex;
+  gap: 10px;
+}
+
+.use-cases-list li::before {
+    content: "✔";
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6a5cff, #493cbd);
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-weight: bold;
+    margin-top: -2px;
+}
+
+@media (max-width: 800px) {
+    .use-cases-list ul {
+        grid-template-columns: 1fr;
+        gap: 10px;
     }
 }
