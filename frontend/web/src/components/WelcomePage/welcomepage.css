@@ -335,9 +335,9 @@ footer > p {
 }
 
 .how-subtitle {
-  color: #6b7280;
-  margin-top: 20px;
-  margin-bottom: 70px;
+    color: #6b7280;
+    margin-top: 20px;
+    margin-bottom: 70px;
 }
 
 .how-steps {
@@ -437,6 +437,7 @@ footer > p {
     }
 }
 
+/* Popular Use Cases */
 .popular-use-cases {
     padding: 80px 20px;
     text-align: center;
@@ -454,21 +455,21 @@ footer > p {
 }
 
 .use-cases-list ul {
-  display: grid;
-  font-size: 15px;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px 20%;
-  max-width: 1500px;
-  margin: 40px 10% 0%;
-  list-style: none;
-  padding: 0;
+    display: grid;
+    font-size: 15px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 20%;
+    max-width: 1500px;
+    margin: 40px 10% 0%;
+    list-style: none;
+    padding: 0;
 }
 
 .use-cases-list li {
-  margin-bottom: 15px;
-  text-align: left;
-  display: flex;
-  gap: 10px;
+    margin-bottom: 15px;
+    text-align: left;
+    display: flex;
+    gap: 10px;
 }
 
 .use-cases-list li::before {
@@ -489,5 +490,82 @@ footer > p {
     .use-cases-list ul {
         grid-template-columns: 1fr;
         gap: 10px;
+    }
+}
+
+/* Why Choose Area */
+.why-us {
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.why-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #1c1e23;
+}
+
+.why-subtitle {
+    color: #6b7280;
+    margin-top: 20px;
+    margin-bottom: 70px;
+}
+
+.why-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 90px;
+    max-width: 1500px;
+    margin-left: auto;
+    margin-bottom: 70px;
+    text-align: left;
+}
+ 
+.why-step {
+    border: #10182827;
+    border-width: 1px 1px 1px 1px;
+    border-style: solid;
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.why-emoji {
+    width: 40px;
+    height: 40px;
+    margin-right: auto;
+    margin-bottom: 20px;
+    border-radius: 20%;
+    color: #fff;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.why-steps h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #111827;
+}
+
+.why-steps p {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+
+.why-step:hover {
+    box-shadow: 0 5px 10px 0.1 rgba(114, 113, 123, 0.45);
+}
+
+
+@media (max-width: 900px) {
+    .why-steps {
+        grid-template-columns: 1fr;
+        gap: 30px;
     }
 }
