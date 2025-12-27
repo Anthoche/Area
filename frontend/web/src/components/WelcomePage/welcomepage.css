@@ -345,7 +345,7 @@ footer > p {
     grid-template-columns: repeat(3, 1fr);
     gap: 90px;
     max-width: 1500px;
-    margin-left: auto;
+    margin: 0 auto 70px;
     margin-bottom: 70px;
     text-align: left;
 }
@@ -516,7 +516,7 @@ footer > p {
     grid-template-columns: repeat(3, 1fr);
     gap: 90px;
     max-width: 1500px;
-    margin-left: auto;
+    margin: 0 auto 70px;
     margin-bottom: 70px;
     text-align: left;
 }
