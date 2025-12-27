@@ -1,13 +1,16 @@
-"use client"
+"use client";
 
 import "./welcomepage.css";
 import Navbar from "./Navbar.jsx";
 import Footer from "./Footer.jsx";
+import HowItWorks from "./HowItWorks.jsx";
+import PopUseCases from "./PopUseCases.jsx";
+import WhyUs from "./WhyUs.jsx";
 
 export default function WelcomePage() {
     return (
         <div className="welcome-page-wrapper">
-            <Navbar/>
+            <Navbar />
             <div className="welcome-page-content">
                 <div className="welcome-page-section" id="features">
                     <div className="welcome-page-section-pres">
@@ -61,11 +64,11 @@ export default function WelcomePage() {
                         </ul>
                     </div>
                 </div>
-                <div className="welcome-page-section" id="how-it-works">
-                    how it works
-                </div>
+                <WhyUs />
+                <PopUseCases />
+                <HowItWorks />
             </div>
-            <Footer/>
+            <Footer />
         </div>
-    )
+    );
 }

@@ -322,6 +322,253 @@ footer > p {
     height: 28px;
 }
 
+/* How it works */
+.how-it-works {
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.how-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #1c1e23;
+}
+
+.how-subtitle {
+    color: #6b7280;
+    margin-top: 20px;
+    margin-bottom: 70px;
+}
+
+.how-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 90px;
+    max-width: 1500px;
+    margin: 0 auto 70px;
+    margin-bottom: 70px;
+    text-align: left;
+}
+ 
+.step-circle {
+    width: 36px;
+    height: 36px;
+    margin-right: auto;
+    margin-bottom: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6a5cff, #493cbd);
+    color: #fff;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.how-steps h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #111827;
+}
+
+.how-steps p {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.step-example {
+    font-size: 12px;
+    color: #1046bac5;
+    padding: 5px;
+    border-radius: 8px;
+    background-color: #c1d5fe4d;
+}
+
+.how-cta {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 40px 30px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.how-cta h3 {
+    font-size: 19px;
+    font-weight: 500;
+    margin-bottom: 40px;
+    color: #273045;
+}
+
+.how-cta p {
+    font-size: 15px;
+    color: #787c84;
+    margin-bottom: 50px;
+    margin-left: 25%;
+    margin-right: 25%;
+}
+
+.how-cta-btn {
+    text-decoration: none;
+    display: inline-block;
+    background: linear-gradient(135deg, #6a5cff, #493cbd);
+    color: #fff;
+    border: none;
+    padding: 14px 26px;
+    border-radius: 999px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(106, 92, 255, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.how-cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 32px rgba(106, 92, 255, 0.45);
+}
+
+@media (max-width: 900px) {
+    .how-steps {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+}
+
+/* Popular Use Cases */
+.popular-use-cases {
+    padding: 80px 20px;
+    text-align: center;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 40px 30px;
+    background: linear-gradient(50deg, #aec9ec1f, #aec9ec44, #aec9ec34, #aec9ec19);
+    border-radius: 16px;
+}
+
+.popular-use-cases h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1c1e23;
+}
+
+.use-cases-list ul {
+    display: grid;
+    font-size: 15px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 20%;
+    max-width: 1500px;
+    margin: 40px 10% 0%;
+    list-style: none;
+    padding: 0;
+}
+
+.use-cases-list li {
+    margin-bottom: 15px;
+    text-align: left;
+    display: flex;
+    gap: 10px;
+}
+
+.use-cases-list li::before {
+    content: "✔";
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6a5cff, #493cbd);
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-weight: bold;
+    margin-top: -2px;
+}
+
+@media (max-width: 800px) {
+    .use-cases-list ul {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+/* Why Choose Area */
+.why-us {
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.why-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #1c1e23;
+}
+
+.why-subtitle {
+    color: #6b7280;
+    margin-top: 20px;
+    margin-bottom: 70px;
+}
+
+.why-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 90px;
+    max-width: 1500px;
+    margin: 0 auto 70px;
+    margin-bottom: 70px;
+    text-align: left;
+}
+ 
+.why-step {
+    border: #10182827;
+    border-width: 1px 1px 1px 1px;
+    border-style: solid;
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.why-emoji {
+    width: 40px;
+    height: 40px;
+    margin-right: auto;
+    margin-bottom: 20px;
+    border-radius: 20%;
+    color: #fff;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.why-steps h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #111827;
+}
+
+.why-steps p {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+
+.why-step:hover {
+    box-shadow: 0 5px 10px 0 rgba(114, 113, 123, 0.45);
+}
+
+
+@media (max-width: 900px) {
+    .why-steps {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+}
 /* Sections style */
 
 .welcome-page-section {
