@@ -559,7 +559,7 @@ footer > p {
 
 
 .why-step:hover {
-    box-shadow: 0 5px 10px 0.1 rgba(114, 113, 123, 0.45);
+    box-shadow: 0 5px 10px 0 rgba(114, 113, 123, 0.45);
 }
 
 
