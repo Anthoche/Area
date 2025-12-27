@@ -354,38 +354,6 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
-  /// Opens a contextual menu anchored to the floating action button.
-  void _showAddOptions(BuildContext context) {
-    final RenderBox overlay = Overlay
-        .of(context)
-        .context
-        .findRenderObject() as RenderBox;
-
-    showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        overlay.size.width - 150,
-        overlay.size.height - 200,
-        16,
-        0,
-      ),
-      items: [
-        const PopupMenuItem<String>(
-          value: 'option1',
-          child: Row(
-            children: [
-              Text('Option 1'),
-            ],
-          ),
-        ),
-      ],
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ).then((value) {
-      if (value == 'option1') {}
-    });
-  }
-
   /// Rotates through a small palette to colorize service cards.
   Color _getColor(int index) {
     final colors = [

@@ -59,6 +59,10 @@ class _LoginPageState extends State<LoginPage> {
       final state = uri.queryParameters['state'];
       final error = uri.queryParameters['error'];
       final userIdFromQuery = uri.queryParameters['user_id'];
+      final tokenIdFromQuery = uri.queryParameters['token_id'];
+      final googleEmail = uri.queryParameters['google_email'];
+      final githubEmail = uri.queryParameters['github_email'];
+      final githubLogin = uri.queryParameters['github_login'];
 
       if (error != null) {
         _errorPopup('OAuth error: $error');
@@ -67,6 +71,26 @@ class _LoginPageState extends State<LoginPage> {
 
       if (userIdFromQuery != null && userIdFromQuery.isNotEmpty) {
         await _saveUserId(userIdFromQuery);
+      }
+
+      if (tokenIdFromQuery != null && tokenIdFromQuery.isNotEmpty) {
+        if (githubLogin != null || githubEmail != null) {
+          await _saveGithubTokenId(tokenIdFromQuery);
+        } else if (googleEmail != null) {
+          await _saveGoogleTokenId(tokenIdFromQuery);
+        }
+      }
+
+      if (tokenIdFromQuery != null &&
+          tokenIdFromQuery.isNotEmpty &&
+          (code == null || code.isEmpty)) {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const Homepage()),
+          );
+        }
+        return;
       }
 
       if (code != null && code.isNotEmpty) {
@@ -78,6 +102,7 @@ class _LoginPageState extends State<LoginPage> {
           final token = result['token'];
           final email = result['email'] ?? '';
           final userId = result['user_id'];
+          final tokenId = result['token_id'];
 
           print('Token reçu: $token, Email: $email');
 
@@ -87,6 +112,9 @@ class _LoginPageState extends State<LoginPage> {
           }
           if (userId != null) {
             await _saveUserId(userId);
+          }
+          if (tokenId != null) {
+            await _saveGoogleTokenId(tokenId.toString());
           }
 
           // Naviguer vers la home page
@@ -113,6 +141,16 @@ class _LoginPageState extends State<LoginPage> {
     if (userId == null) return;
     await _storage.write(key: 'user_id', value: userId.toString());
     print("User id saved securely");
+  }
+
+  Future<void> _saveGoogleTokenId(String tokenId) async {
+    await _storage.write(key: 'google_token_id', value: tokenId);
+    print("Google token id saved securely");
+  }
+
+  Future<void> _saveGithubTokenId(String tokenId) async {
+    await _storage.write(key: 'github_token_id', value: tokenId);
+    print("GitHub token id saved securely");
   }
 
   void _errorPopup(String msg) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../widgets/service_selection_card.dart';
 import '../services/api_service.dart';
 
@@ -198,6 +199,8 @@ class ServiceSelectionPage extends StatelessWidget {
   ) {
     final rawData = service['raw'] as Map<String, dynamic>;
     final values = <String, dynamic>{};
+    final storage = const FlutterSecureStorage();
+    var tokenPrefilled = false;
     for (final field in fields) {
       final key = field['key']?.toString() ?? '';
       if (key.isEmpty) continue;
@@ -217,6 +220,26 @@ class ServiceSelectionPage extends StatelessWidget {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
+            if (!tokenPrefilled) {
+              tokenPrefilled = true;
+              final serviceId = rawData['id']?.toString() ?? '';
+              if (values.containsKey('token_id')) {
+                final tokenKey = serviceId == 'github'
+                    ? 'github_token_id'
+                    : serviceId == 'google'
+                        ? 'google_token_id'
+                        : '';
+                if (tokenKey.isNotEmpty) {
+                  storage.read(key: tokenKey).then((tokenId) {
+                    if (tokenId != null && tokenId.isNotEmpty) {
+                      setSheetState(() {
+                        values['token_id'] = int.tryParse(tokenId) ?? tokenId;
+                      });
+                    }
+                  });
+                }
+              }
+            }
             return Container(
               height: MediaQuery.of(context).size.height * 0.7,
               decoration: const BoxDecoration(

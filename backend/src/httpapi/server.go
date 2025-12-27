@@ -32,6 +32,7 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 
 	googleHTTP := goog.NewHTTPHandlers(nil)
 	githubHTTP := gh.NewHTTPHandlers(nil)
+	githubMobileHTTP := gh.NewHTTPHandlers(gh.NewMobileClient())
 	discordHTTP := discord.NewHTTPHandlers(nil)
 	slackHTTP := slack.NewHTTPHandlers(nil)
 	notionHTTP := notion.NewHTTPHandlers(nil)
@@ -51,6 +52,8 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/oauth/google/mobile/callback", googleHTTP.Callback())
 	mux.Handle("/oauth/github/login", githubHTTP.Login())
 	mux.Handle("/oauth/github/callback", githubHTTP.Callback())
+	mux.Handle("/oauth/github/mobile/login", githubMobileHTTP.LoginMobile())
+	mux.Handle("/oauth/github/mobile/callback", githubMobileHTTP.CallbackMobile())
 	mux.Handle("/actions/github/issue", githubHTTP.Issue())
 	mux.Handle("/actions/github/pr", githubHTTP.PullRequest())
 	mux.Handle("/actions/google/email", googleHTTP.SendEmail())

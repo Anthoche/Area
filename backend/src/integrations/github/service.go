@@ -32,6 +32,15 @@ func NewClient() *Client {
 	}
 }
 
+func NewMobileClient() *Client {
+	return &Client{
+		clientID:     mustEnv("GITHUB_MOBILE_OAUTH_CLIENT_ID"),
+		clientSecret: mustEnv("GITHUB_MOBILE_OAUTH_CLIENT_SECRET"),
+		scopes:       []string{"read:user", "user:email", "repo"},
+		httpClient:   &http.Client{Timeout: 10 * time.Second},
+	}
+}
+
 // AuthURL builds the GitHub authorization URL.
 func (c *Client) AuthURL(state, redirectURI string) string {
 	v := url.Values{}

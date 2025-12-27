@@ -37,29 +37,31 @@ class OAuthService {
 
   Future<void> signInWith(String provider) async {
     if (provider != 'google' && provider != 'github') {
-      throw Exception("Provider non support‚: $provider");
+      throw Exception("Provider non support': $provider");
     }
 
     try {
-      Uri url;
       if (provider == 'google') {
-        url = Uri.parse("$_backendBaseUrl/oauth/google/start")
+        final url = Uri.parse("$_backendBaseUrl/oauth/google/start")
             .replace(queryParameters: {'redirect_uri': _redirectUri});
-      } else {
-        url = Uri.parse("$_backendBaseUrl/oauth/$provider/start");
+
+        final response = await http.get(url);
+        if (response.statusCode != 200) {
+          throw Exception("Backend error ${response.statusCode}: ${response.body}");
+        }
+
+        final data = jsonDecode(response.body);
+        final authUrl = data['auth_url'] as String;
+        final uri = Uri.parse(authUrl);
+        if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+          throw Exception("Impossible d'ouvrir le navigateur");
+        }
+        return;
       }
 
-      final response = await http.get(url);
-
-      if (response.statusCode != 200) {
-        throw Exception("Backend error ${response.statusCode}: ${response.body}");
-      }
-
-      final data = jsonDecode(response.body);
-      final authUrl = data['auth_url'] as String;
-
-      final uri = Uri.parse(authUrl);
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      final url = Uri.parse("$_backendBaseUrl/oauth/github/mobile/login")
+          .replace(queryParameters: {'ui_redirect': _redirectUri});
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
         throw Exception("Impossible d'ouvrir le navigateur");
       }
     } catch (e) {
