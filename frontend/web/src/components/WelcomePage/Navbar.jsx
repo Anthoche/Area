@@ -25,7 +25,6 @@ export default function Navbar() {
                     <ul className="navbar-list">
                         <li><a href="#features">Features</a></li>
                         <li><a href="#how-it-works">How it works</a></li>
-                        <li><a href="#">Pricing</a></li>
                         <li className="navbar-login-btn"><a href="/login">Login</a></li>
                     </ul>
                 </div>
@@ -49,7 +48,6 @@ export default function Navbar() {
                     <ul className="mobile-menu-list">
                         <li><a href="#features" onClick={closeMenu}>Features</a></li>
                         <li><a href="#how-it-works" onClick={closeMenu}>How it works</a></li>
-                        <li><a href="#" onClick={closeMenu}>Pricing</a></li>
                         <li className="mobile-login-btn"><a href="/login" onClick={closeMenu}>Login</a></li>
                     </ul>
                 </div>

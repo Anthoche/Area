@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import "./homepage.css";
 import SearchBar from "./SearchBar";
 import FilterTag from "./FilterTag";
@@ -415,6 +416,9 @@ export default function Homepage() {
       <div className={`content-container ${panelOpen ? "panel-open" : ""}`}>
         <main className="main-content">
           <div className="konect-hero">
+            <Link className="hero-back" to="/">
+              {"<"} Back to landing
+            </Link>
             <button
               className="profile-btn hero-profile"
               onClick={() => setShowProfile((p) => !p)}

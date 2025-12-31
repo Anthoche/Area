@@ -15,6 +15,7 @@ import (
 
 	"area/src/areas"
 	"area/src/auth"
+	"area/src/database"
 	"area/src/integrations/discord"
 	gh "area/src/integrations/github"
 	goog "area/src/integrations/google"
@@ -222,7 +223,14 @@ func (h *Handler) listAreas() http.Handler {
 			return
 		}
 		services := areas.List()
-		writeJSON(w, http.StatusOK, map[string]any{"services": services})
+		var userCount int64
+		if count, err := database.CountUsers(); err == nil {
+			userCount = count
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"services":   services,
+			"user_count": userCount,
+		})
 	})
 }
 

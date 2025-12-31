@@ -1,13 +1,62 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import "./welcomepage.css";
 import Navbar from "./Navbar.jsx";
 import Footer from "./Footer.jsx";
 import HowItWorks from "./HowItWorks.jsx";
 import PopUseCases from "./PopUseCases.jsx";
 import WhyUs from "./WhyUs.jsx";
+import { Link } from "react-router-dom";
 
 export default function WelcomePage() {
+    const userId = Number(localStorage.getItem("user_id"));
+    const isLoggedIn = Number.isFinite(userId) && userId > 0;
+    const [stats, setStats] = useState({
+        userCount: null,
+        serviceCount: null,
+        actionReactionCount: null,
+    });
+
+    const API_BASE =
+        import.meta.env.VITE_API_URL ||
+        import.meta.env.API_URL ||
+        `${window.location.protocol}//${window.location.hostname}:8080`;
+
+    useEffect(() => {
+        let cancelled = false;
+        const fetchStats = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/areas`);
+                if (!res.ok) throw new Error("failed to load areas");
+                const data = await res.json();
+                const services = Array.isArray(data.services) ? data.services : [];
+                const actionReactionCount = services.reduce(
+                    (sum, service) =>
+                        sum +
+                        (service?.triggers?.length || 0) +
+                        (service?.reactions?.length || 0),
+                    0
+                );
+                if (!cancelled) {
+                    setStats({
+                        userCount: Number.isFinite(data.user_count)
+                            ? data.user_count
+                            : 0,
+                        serviceCount: services.length,
+                        actionReactionCount,
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        fetchStats();
+        return () => {
+            cancelled = true;
+        };
+    }, [API_BASE]);
+
     return (
         <div className="welcome-page-wrapper">
             <Navbar />
@@ -32,7 +81,10 @@ export default function WelcomePage() {
                             Create powerful automations in minutes and boost your productivity.
                         </p>
                         <div className="welcome-page-section-pres-btns">
-                            <div className="pres-btn-get-started pres-btn">
+                            <Link
+                                className="pres-btn-get-started pres-btn"
+                                to={isLoggedIn ? "/home" : "/login"}
+                            >
                                 <span>Get Started</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -41,24 +93,21 @@ export default function WelcomePage() {
                                     <path d="M5 12h14"></path>
                                     <path d="m12 5 7 7-7 7"></path>
                                 </svg>
-                            </div>
-                            <div className="pres-btn pres-btn-demo">
-                                <span>Watch demo</span>
-                            </div>
+                            </Link>
                         </div>
                     </div>
                     <div className="welcome-page-section-stats">
                         <ul>
                             <li>
-                                <h1>10+</h1>
+                                <h1>{stats.userCount ?? "…"}</h1>
                                 <span>Active users</span>
                             </li>
                             <li>
-                                <h1>10+</h1>
+                                <h1>{stats.serviceCount ?? "…"}</h1>
                                 <span>Available services</span>
                             </li>
                             <li>
-                                <h1>50+</h1>
+                                <h1>{stats.actionReactionCount ?? "…"}</h1>
                                 <span>Actions/Reactions</span>
                             </li>
                         </ul>
