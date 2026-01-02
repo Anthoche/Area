@@ -23,9 +23,11 @@ The application offers the following functionalities (high level user flow):
 ## ✨ Key Features
 
 - 🔐 Auth: register/login with bcrypt.
-- ⚙️ Workflows: create/list, trigger manually or via webhook, interval scheduling.
+- ⚙️ Workflows: manual, webhook, interval, and polling-based triggers.
 - 🚀 Execution: executor drains pending jobs and POSTs payloads to targets.
 - 🌐 HTTP API with permissive CORS for the web app.
+- 🔌 Integrations: Google, GitHub, Discord, Slack, Notion, Weather, Reddit, YouTube.
+- 📖 Auto‑generated API docs at `/docs/` and service catalog at `/about.json`.
 - 📦 Docker Compose stack (Postgres + API + web + mobile build).
 
 ## 🛠️ Stack
@@ -84,7 +86,7 @@ The project is composed of **four main components** deployed with `docker-compos
 
 ### **API Backend (Go)**
 - HTTP server exposed on port `8080` (configurable using `PORT`).
-- Main routes: auth (`/login`, `/register`), workflows (`/workflows`, `/hooks/{token}`), OAuth endpoints (`/auth/*`, `/oauth/*`).
+- Main routes: auth (`/login`, `/register`), workflows (`/workflows`, `/hooks/{token}`), OAuth endpoints (`/oauth/*`), docs (`/docs/`), and `about.json`.
 - Manages workflow logic: creation, interval scheduling, job queueing, and execution.
 - Uses PostgreSQL for persistence (schema: `backend/resources/database_scheme.sql`).
 
@@ -123,7 +125,14 @@ docker-compose up --build
 Env vars (see `backend/.env`):
 - `PORT` (default 8080)
 - `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_SSLMODE`
-- `BCRYPT_COST` (optional)
+- `BCRYPT_COST`
+- OAuth:
+  - `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`
+  - `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET`, `GITHUB_OAUTH_REDIRECT_URI`
+- Bot/API tokens:
+  - `DISCORD_BOT_TOKEN`
+  - `SLACK_BOT_TOKEN`
+  - `NOTION_TOKEN`
 
 ### Run locally (without Docker)
 ```bash
@@ -151,6 +160,13 @@ CI (GitHub Actions) runs `go build` + `go test` on push/PR.
 **Health**
 - `GET /healthz` — `{"status":"ok"}`.
 
+**Docs**
+- `GET /docs/` — Swagger UI.
+- `GET /resources/openapi.json` — OpenAPI JSON.
+
+**About**
+- `GET /about.json` — service catalog for the current server, includes client IP and server time.
+
 **Workflows**
 - `GET /workflows` — list.
 - `POST /workflows` — create a workflow. Interval example:
@@ -162,13 +178,24 @@ CI (GitHub Actions) runs `go build` + `go test` on push/PR.
     "trigger_config": { "interval_minutes": 5, "payload": { "foo": "bar" } }
   }
   ```
-  Trigger types: `interval`, `manual`, `webhook` (for manual/webhook, `trigger_config` defaults to `{}` if empty).
+  Trigger types: `interval`, `manual`, `webhook`, `gmail_inbound`, `github_commit`, `github_pull_request`, `github_issue`, `weather_temp`, `weather_report`, `reddit_new_post`, `youtube_new_video`.
 - `POST /workflows/{id}/trigger` — enqueue a run with arbitrary JSON payload (202, 404 if missing).
 - `POST /hooks/{token}` — trigger a webhook workflow (matches `trigger_config.token`).
 
 **Execution**
 - A trigger creates a run + job; the executor drains pending jobs and POSTs the payload to `action_url`.
 - Interval workflows are rescheduled via `ClaimDueIntervalWorkflows`.
+
+**OAuth**
+- `GET /oauth/google/login`, `GET /oauth/google/callback`
+- `GET /oauth/github/login`, `GET /oauth/github/callback`
+
+**Actions (HTTP)**
+- Google: `POST /actions/google/email`, `POST /actions/google/calendar`
+- GitHub: `POST /actions/github/issue`, `POST /actions/github/pr`
+- Discord: `POST /actions/discord/message`, `/embed`, `/message/edit`, `/message/delete`, `/message/react`
+- Slack: `POST /actions/slack/message`, `/blocks`, `/message/update`, `/message/delete`, `/message/react`
+- Notion: `POST /actions/notion/page`, `/blocks`, `/database`, `/page/update`
 
 ## 🌐 Frontend (React/Vite)
 
@@ -217,3 +244,5 @@ This project is provided under the MIT License — see the `LICENSE` file for de
 - [Anthony El-Achkar](https://github.com/Anthoche)
 - [Mariia Semenchenko](https://github.com/mariiasemenchenko)
 - [Corto Morrow](https://github.com/NuggetReckt)
+
+*Last update: January 2026*

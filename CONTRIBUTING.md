@@ -30,9 +30,10 @@
 ## Workflow Overview
 - Auth: handled in `backend/src/auth` via `Service` + `DBStore`.
 - Workflows: stored in `backend/src/workflows` with `Store`, `Triggerer`, `Executor`.
-- HTTP API: routes in `backend/src/httpapi/server.go` calling services.
+- HTTP API: routes in `backend/src/httpapi/server.go` calling services, plus `/about.json` and `/docs/`.
 - DB schema: `backend/resources/database_scheme.sql`.
 - Frontend web: `frontend/web` (React + Vite), mobile: `frontend/mobile` (Flutter).
+- Integrations: `backend/src/integrations/{google,github,discord,slack,notion,weather,reddit,youtube}`.
 
 ---
 
@@ -41,10 +42,10 @@
 ### New Workflow Trigger
 1. **Define trigger type handling** in `workflows/service.go` (validate config, default values).
 2. **Persist trigger config** in `workflows/store.go` (e.g., how `interval` uses `next_run_at`).
-3. **Dispatch trigger** in `workflows/triggerer.go` or scheduler loop (for interval-like triggers).
+3. **Dispatch trigger** in `workflows/triggerer.go`, scheduler loop, or a poller (for interval/polling triggers).
 4. **Expose API** in `httpapi/server.go` if needed (new endpoint or payload shape).
 5. **Test**:
-   - Unit tests in `workflows/` and `httpapi/` as appropriate.
+   - Unit tests in `backend/tests/workflows` and `backend/tests/httpapi` as appropriate.
    - Add config parsing tests like `intervalConfigFromJSON`.
 
 ### New Outbound Integration (action/reaction)
@@ -55,7 +56,7 @@
 
 ### New HTTP Endpoint
 1. Add handler in `httpapi/server.go` (prefer small helpers).
-2. Validate inputs strictly (`DisallowUnknownFields`, `ensureNoTrailingData`).
+2. Validate inputs strictly (`DisallowUnknownFields`, `EnsureNoTrailingData`).
 3. Call the right service method; avoid DB access directly from handlers.
 4. Unit test with `httptest` (see `server_test.go`, `cors_test.go`).
 
@@ -94,7 +95,7 @@ Location: `frontend/mobile`
 ## Coding Standards
 - Go: `go fmt ./...` before committing. Keep functions small; prefer interfaces for seams.
 - Tests: table-driven when possible; use `httptest` and `sqlmock`; avoid real network/DB in unit tests.
-- API: strict JSON decoding (`DisallowUnknownFields`, `ensureNoTrailingData`).
+- API: strict JSON decoding (`DisallowUnknownFields`, `EnsureNoTrailingData`).
 - Comments: short doc comments above exported functions (already present).
 
 ## CI & Local Checks
