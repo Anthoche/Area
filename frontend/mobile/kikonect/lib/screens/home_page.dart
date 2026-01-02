@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../widgets/filter_tag.dart';
 import '../widgets/service_card.dart';
 import '../widgets/search_bar.dart';
 import '../services/api_service.dart';
 import 'create_area_page.dart';
-import 'login_page.dart';
+import 'profile_page.dart';
 
 /// Home screen showing saved Konects and quick actions.
 class Homepage extends StatefulWidget {
@@ -278,36 +277,6 @@ class _HomepageState extends State<Homepage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      drawer: Drawer(
-        backgroundColor: Colors.white,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.white),
-              child: Center(
-                child: Text(
-                  'Menu',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-            ListTile(
-              title: const Text('test'),
-              onTap: () {},
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                'Logout',
-                style: TextStyle(color: Colors.red),
-              ),
-              onTap: () => _logout(context),
-            ),
-          ],
-        ),
-      ),
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
@@ -324,7 +293,12 @@ class _HomepageState extends State<Homepage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.person_outline, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfilePage()),
+              );
+            },
           ),
           const SizedBox(width: 8),
         ],
@@ -491,16 +465,4 @@ class _HomepageState extends State<Homepage> {
     return colors[index % colors.length];
   }
 
-  Future<void> _logout(BuildContext context) async {
-    const storage = FlutterSecureStorage();
-    await storage.deleteAll();
-
-    if (context.mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-            (route) => false,
-      );
-    }
-  }
 }

@@ -65,18 +65,26 @@ func (h *HTTPHandlers) LoginMobile() http.Handler {
 			Path:     "/",
 			HttpOnly: true,
 		})
-		if uiRedirect := r.URL.Query().Get("ui_redirect"); uiRedirect != "" {
-			http.SetCookie(w, &http.Cookie{
-				Name:     "oauthredirect",
-				Value:    url.QueryEscape(uiRedirect),
-				Path:     "/",
-				HttpOnly: true,
-			})
-		}
-		redirectURI := r.URL.Query().Get("redirect_uri")
-		if redirectURI == "" {
-			redirectURI = os.Getenv("GITHUB_MOBILE_OAUTH_REDIRECT_URI")
-		}
+	if uiRedirect := r.URL.Query().Get("ui_redirect"); uiRedirect != "" {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "oauthredirect",
+			Value:    url.QueryEscape(uiRedirect),
+			Path:     "/",
+			HttpOnly: true,
+		})
+	}
+	if userID := r.URL.Query().Get("user_id"); userID != "" {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "oauthuserid",
+			Value:    userID,
+			Path:     "/",
+			HttpOnly: true,
+		})
+	}
+	redirectURI := r.URL.Query().Get("redirect_uri")
+	if redirectURI == "" {
+		redirectURI = os.Getenv("GITHUB_MOBILE_OAUTH_REDIRECT_URI")
+	}
 		if redirectURI == "" {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "redirect_uri is required"})
 			return
@@ -157,6 +165,13 @@ func (h *HTTPHandlers) CallbackMobile() http.Handler {
 			return
 		}
 		userID := optionalUserID(r)
+		if userID == nil {
+			if userCookie, _ := r.Cookie("oauthuserid"); userCookie != nil {
+				if id, err := strconv.ParseInt(userCookie.Value, 10, 64); err == nil && id > 0 {
+					userID = &id
+				}
+			}
+		}
 		code := r.URL.Query().Get("code")
 		if code == "" {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing code"})

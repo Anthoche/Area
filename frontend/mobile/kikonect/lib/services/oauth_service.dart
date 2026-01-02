@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OAuthService {
@@ -8,14 +9,20 @@ class OAuthService {
       dotenv.env['API_URL'] ?? 'http://10.0.2.2:8080';
 
   static String get _redirectUri => dotenv.env['REDIRECT_URI'] ?? 'test';
+  final _storage = const FlutterSecureStorage();
 
   Future<Map<String, dynamic>> exchangeCodeForToken(String code,
       {String? state}) async {
     try {
       final url = Uri.parse("$_backendBaseUrl/oauth/google/exchange");
+      final userId = await _storage.read(key: 'user_id');
+      final headers = <String, String>{'Content-Type': 'application/json'};
+      if (userId != null && userId.isNotEmpty) {
+        headers['X-User-ID'] = userId;
+      }
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: jsonEncode({
           'code': code,
           'state': state ?? '',
@@ -41,9 +48,14 @@ class OAuthService {
     }
 
     try {
+      final userId = await _storage.read(key: 'user_id');
       if (provider == 'google') {
+        final query = <String, String>{'redirect_uri': _redirectUri};
+        if (userId != null && userId.isNotEmpty) {
+          query['user_id'] = userId;
+        }
         final url = Uri.parse("$_backendBaseUrl/oauth/google/start")
-            .replace(queryParameters: {'redirect_uri': _redirectUri});
+            .replace(queryParameters: query);
 
         final response = await http.get(url);
         if (response.statusCode != 200) {
@@ -59,8 +71,12 @@ class OAuthService {
         return;
       }
 
+      final query = <String, String>{'ui_redirect': _redirectUri};
+      if (userId != null && userId.isNotEmpty) {
+        query['user_id'] = userId;
+      }
       final url = Uri.parse("$_backendBaseUrl/oauth/github/mobile/login")
-          .replace(queryParameters: {'ui_redirect': _redirectUri});
+          .replace(queryParameters: query);
       if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
         throw Exception("Impossible d'ouvrir le navigateur");
       }
