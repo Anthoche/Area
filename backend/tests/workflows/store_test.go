@@ -55,6 +55,27 @@ func TestIntervalConfigFromJSON_Invalid(t *testing.T) {
 	}
 }
 
+func TestGithubCommitConfigFromJSON(t *testing.T) {
+	cfg, err := workflows.GithubCommitConfigFromJSON([]byte(`{"token_id":1,"repo":"o/r","branch":"main"}`))
+	if err != nil {
+		t.Fatalf("GithubCommitConfigFromJSON error: %v", err)
+	}
+	if cfg.TokenID != 1 || cfg.Repo != "o/r" || cfg.Branch != "main" {
+		t.Fatalf("unexpected config: %#v", cfg)
+	}
+}
+
+func TestWeatherTempConfigFromJSON(t *testing.T) {
+	cfg, err := workflows.WeatherTempConfigFromJSON([]byte(`{"city":"Paris","threshold":10,"direction":"above","interval_minutes":5}`))
+	if err != nil {
+		t.Fatalf("WeatherTempConfigFromJSON error: %v", err)
+	}
+	if cfg.City != "Paris" || cfg.Threshold != 10 || cfg.Direction != "above" || cfg.IntervalMin != 5 {
+		t.Fatalf("unexpected config: %#v", cfg)
+	}
+}
+
+
 func TestSetEnabled_EnableIntervalSetsNextRun(t *testing.T) {
 	store, mock, cleanup := setupMockStore(t)
 	defer cleanup()
