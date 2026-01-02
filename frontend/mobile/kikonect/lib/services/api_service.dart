@@ -90,4 +90,16 @@ class ApiService {
       throw Exception('Failed to trigger workflow: ${response.statusCode} ${response.body}');
     }
   }
+
+  /// Enables or disables a workflow.
+  Future<void> setWorkflowEnabled(int workflowId, bool enabled) async {
+    final action = enabled ? 'enable' : 'disable';
+    final url = Uri.parse('$_baseUrl/workflows/$workflowId/enabled?action=$action');
+    final headers = await _getHeaders();
+
+    final response = await http.post(url, headers: headers);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update workflow: ${response.statusCode} ${response.body}');
+    }
+  }
 }

@@ -231,42 +231,6 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
                 },
               ),
 
-              const SizedBox(height: 20),
-
-              // --- ADD NEW CONDITION (Bouton +) ---
-              Center(
-                child: InkWell(
-                  onTap: () {
-                    setState(() {
-                      actionsData.add(null);
-                    });
-                  },
-                  borderRadius: BorderRadius.circular(30),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: Colors.grey[400]!),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.add_circle_outline, color: Colors.black54),
-                        SizedBox(width: 8),
-                        Text(
-                          "Add New Condition",
-                          style: TextStyle(
-                            color: Colors.black54,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
               const SizedBox(height: 40),
 
               // --- BOUTON CONNECT ---

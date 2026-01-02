@@ -149,6 +149,7 @@ class ServiceSelectionPage extends StatelessWidget {
                             "service": service['name'],
                             "id": item['id'],
                             "name": item['name'],
+                            "action": item['name'],
                             "action_url": item['action_url'],
                             "fields": {},
                             "color": service['color'],
@@ -220,13 +221,16 @@ class ServiceSelectionPage extends StatelessWidget {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
+            final hasMissingRequired = _hasMissingRequiredFields(fields, values);
             if (!tokenPrefilled) {
               tokenPrefilled = true;
-              final serviceId = rawData['id']?.toString() ?? '';
+              final serviceId = rawData['id']?.toString().toLowerCase() ?? '';
+              final itemId = item['id']?.toString().toLowerCase() ?? '';
+              final hint = "$serviceId $itemId";
               if (values.containsKey('token_id')) {
-                final tokenKey = serviceId == 'github'
+                final tokenKey = hint.contains('github')
                     ? 'github_token_id'
-                    : serviceId == 'google'
+                    : (hint.contains('google') || hint.contains('gmail'))
                         ? 'google_token_id'
                         : '';
                 if (tokenKey.isNotEmpty) {
@@ -269,6 +273,15 @@ class ServiceSelectionPage extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
+                    if (hasMissingRequired)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 10),
+                        child: Text(
+                          "Please fill required fields.",
+                          style: TextStyle(color: Colors.red),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     Expanded(
                       child: ListView(
                         children: fields.map<Widget>((field) {
@@ -278,6 +291,22 @@ class ServiceSelectionPage extends StatelessWidget {
                           final description = field['description']?.toString() ?? '';
                           final example = field['example']?.toString() ?? '';
                           final currentValue = values[key];
+
+                          if (key == 'token_id') {
+                            final tokenOk = _isTokenIdValid(values[key]);
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Text(
+                                tokenOk
+                                    ? "Token linked."
+                                    : "Missing token id. Please login to this service.",
+                                style: TextStyle(
+                                  color: tokenOk ? Colors.green[700] : Colors.red,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          }
 
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
@@ -344,19 +373,22 @@ class ServiceSelectionPage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.pop(context, {
-                            "service_id": rawData['id'],
-                            "service": service['name'],
-                            "id": item['id'],
-                            "name": item['name'],
-                            "action_url": item['action_url'],
-                            "fields": values,
-                            "color": service['color'],
-                            "icon": service['icon'],
-                          });
-                        },
+                        onPressed: hasMissingRequired
+                            ? null
+                            : () {
+                                Navigator.pop(context);
+                                Navigator.pop(context, {
+                                  "service_id": rawData['id'],
+                                  "service": service['name'],
+                                  "id": item['id'],
+                                  "name": item['name'],
+                                  "action": item['name'],
+                                  "action_url": item['action_url'],
+                                  "fields": values,
+                                  "color": service['color'],
+                                  "icon": service['icon'],
+                                });
+                              },
                         child: const Text(
                           "Validate",
                           style: TextStyle(
@@ -375,6 +407,50 @@ class ServiceSelectionPage extends StatelessWidget {
         );
       },
     );
+  }
+
+  bool _hasMissingRequiredFields(List fields, Map<String, dynamic> values) {
+    for (final field in fields) {
+      if (field is! Map) continue;
+      if (_isMissingRequiredField(field, values)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _isMissingRequiredField(Map field, Map<String, dynamic> values) {
+    if (field['required'] != true) return false;
+    final key = field['key']?.toString() ?? '';
+    if (key.isEmpty) return true;
+    final type = field['type']?.toString() ?? 'string';
+    final value = values[key];
+
+    if (key == 'token_id') {
+      return !_isTokenIdValid(value);
+    }
+    if (type == 'number') {
+      final numVal = value is num ? value : num.tryParse(value?.toString() ?? '');
+      return numVal == null || numVal == 0;
+    }
+    if (type.startsWith('array')) {
+      if (value is List) return value.isEmpty;
+      if (value is String) return value.trim().isEmpty;
+      return true;
+    }
+    if (type == 'object') {
+      if (value is Map) return value.isEmpty;
+      if (value is String) return value.trim().isEmpty;
+      return true;
+    }
+    return value == null || value.toString().trim().isEmpty;
+  }
+
+  bool _isTokenIdValid(dynamic value) {
+    if (value == null) return false;
+    if (value is num) return value > 0;
+    final parsed = int.tryParse(value.toString());
+    return parsed != null && parsed > 0;
   }
 }
 

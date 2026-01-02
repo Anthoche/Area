@@ -95,7 +95,7 @@ class LogicBlockCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      data!['action'] ?? "",
+                      (data!['action'] ?? data!['name'] ?? "").toString(),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: contentColor.withOpacity(0.9),

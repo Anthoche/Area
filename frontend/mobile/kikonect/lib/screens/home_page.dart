@@ -21,6 +21,7 @@ class _HomepageState extends State<Homepage> {
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _activeFilters = {};
   final Set<int> _triggering = {};
+  final Set<int> _toggling = {};
   List<dynamic> _workflows = [];
   bool _loading = true;
   String? _error;
@@ -138,6 +139,118 @@ class _HomepageState extends State<Homepage> {
         setState(() => _triggering.remove(id));
       }
     }
+  }
+
+  void _showWorkflowControls(dynamic item) {
+    final triggerType = (item['trigger_type'] ?? '').toString();
+    final idValue = item['id'];
+    final id = idValue is int ? idValue : int.tryParse(idValue?.toString() ?? '');
+    if (id == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Invalid Konect id."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    final initialEnabled = item['enabled'] == true;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        var currentEnabled = initialEnabled;
+        var isBusy = false;
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.45,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Container(
+                      width: 50,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    (item['name'] ?? 'Konect').toString(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Trigger: $triggerType",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 20),
+                  SwitchListTile(
+                    title: Text(currentEnabled ? "Enabled" : "Disabled"),
+                    value: currentEnabled,
+                    onChanged: isBusy
+                        ? null
+                        : (value) async {
+                            final previous = currentEnabled;
+                            setSheetState(() {
+                              currentEnabled = value;
+                              isBusy = true;
+                            });
+                            setState(() => _toggling.add(id));
+                            try {
+                              await _apiService.setWorkflowEnabled(id, value);
+                              await _loadWorkflows();
+                            } catch (e) {
+                              setSheetState(() {
+                                currentEnabled = previous;
+                              });
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("Update failed: $e"),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            } finally {
+                              if (mounted) {
+                                setSheetState(() {
+                                  isBusy = false;
+                                });
+                                setState(() => _toggling.remove(id));
+                              }
+                            }
+                          },
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "This Konect runs automatically when the trigger happens.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Map<String, dynamic> _payloadFromWorkflow(dynamic item) {
@@ -321,10 +434,22 @@ class _HomepageState extends State<Homepage> {
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final item = workflows[index];
+                  final triggerType = (item['trigger_type'] ?? '').toString();
+                  final enabled = item['enabled'] == true;
+                  final isManual = triggerType == 'manual';
                   return ServiceCard(
                     title: (item['name'] ?? 'Konect #${item['id']}').toString(),
                     color: _getColor(index),
-                    onTap: () => _triggerManualWorkflow(item),
+                    subtitle: triggerType.isNotEmpty ? triggerType : null,
+                    badgeText: isManual ? "MANUAL" : (enabled ? "ON" : "OFF"),
+                    badgeColor: isManual ? Colors.black54 : (enabled ? Colors.green : Colors.red),
+                    onTap: () {
+                      if (isManual) {
+                        _triggerManualWorkflow(item);
+                      } else {
+                        _showWorkflowControls(item);
+                      }
+                    },
                   );
                 },
                 childCount: workflows.length,
