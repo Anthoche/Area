@@ -122,6 +122,7 @@ type redditPost struct {
 	CreatedUTC time.Time
 }
 
+// fetchNewPosts retrieves the latest posts from a subreddit.
 func fetchNewPosts(ctx context.Context, subreddit string, limit int) ([]redditPost, error) {
 	u := fmt.Sprintf("https://www.reddit.com/r/%s/new.json?limit=%d", strings.TrimSpace(subreddit), limit)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)

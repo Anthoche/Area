@@ -23,6 +23,7 @@ type Client struct {
 	httpClient   *http.Client
 }
 
+// NewClient builds a GitHub API client using environment credentials.
 func NewClient() *Client {
 	return &Client{
 		clientID:     mustEnv("GITHUB_OAUTH_CLIENT_ID"),
@@ -85,6 +86,7 @@ func (c *Client) ExchangeAndStore(ctx context.Context, code, redirectURI string,
 	return tokenID, resolved, email, login, nil
 }
 
+// Exchange a code for a token
 func (c *Client) exchangeCode(ctx context.Context, code, redirectURI string) (string, string, string, error) {
 	values := url.Values{}
 	values.Set("client_id", c.clientID)
@@ -124,8 +126,8 @@ func (c *Client) exchangeCode(ctx context.Context, code, redirectURI string) (st
 	return payload.AccessToken, payload.Scope, payload.TokenType, nil
 }
 
+// Fetch user identity
 func (c *Client) fetchIdentity(ctx context.Context, token string) (string, string, error) {
-	// First, fetch basic profile (login/name/email may be empty).
 	profileReq, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com/user", nil)
 	if err != nil {
 		return "", "", err
@@ -154,6 +156,7 @@ func (c *Client) fetchIdentity(ctx context.Context, token string) (string, strin
 	return email, profile.Login, nil
 }
 
+// Fetch the primary email address
 func (c *Client) fetchPrimaryEmail(ctx context.Context, token string) string {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com/user/emails", nil)
 	if err != nil {
@@ -344,6 +347,7 @@ func (c *Client) ListRecentCommits(ctx context.Context, userID *int64, tokenID i
 	return commits, nil
 }
 
+// ensureToken retrieves and verifies a GitHub token.
 func (c *Client) ensureToken(ctx context.Context, userID *int64, tokenID int64) (*database.GithubToken, error) {
 	if tokenID == 0 {
 		return nil, fmt.Errorf("missing github token id")

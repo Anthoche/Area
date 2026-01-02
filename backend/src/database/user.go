@@ -74,6 +74,7 @@ func UpdateUser(id int64, firstName string, lastName string, email string, passw
 	return nil
 }
 
+// UserExists reports whether a user exists for the given email.
 func UserExists(email string) bool {
 	var count int64
 
@@ -82,4 +83,16 @@ func UserExists(email string) bool {
 	}
 	Db.Model(&User{}).Where("email = ?", email).Count(&count)
 	return count > 0
+}
+
+// CountUsers returns the total number of users in the database.
+func CountUsers() (int64, error) {
+	var count int64
+	if Db == nil {
+		return 0, fmt.Errorf("countUsers: database not initialized")
+	}
+	if err := Db.Model(&User{}).Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("countUsers: %w", err)
+	}
+	return count, nil
 }

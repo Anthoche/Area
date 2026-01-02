@@ -13,6 +13,7 @@ type HTTPHandlers struct {
 	client *Client
 }
 
+// NewHTTPHandlers builds Discord HTTP handlers with a default client.
 func NewHTTPHandlers(client *Client) *HTTPHandlers {
 	if client == nil {
 		client = NewClient()
@@ -186,6 +187,7 @@ func (h *HTTPHandlers) React() http.Handler {
 	})
 }
 
+// parseColor parses a color from a JSON raw message
 func parseColor(raw json.RawMessage) (int, error) {
 	if len(raw) == 0 {
 		return 0, nil
@@ -211,6 +213,7 @@ func parseColor(raw json.RawMessage) (int, error) {
 	return int(val), nil
 }
 
+// writeJSON writes a JSON response
 func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

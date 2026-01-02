@@ -31,6 +31,7 @@ type Client struct {
 	httpClient   *http.Client
 }
 
+// NewClient builds a Google API client using environment credentials.
 func NewClient() *Client {
 	return &Client{
 		clientID:     mustEnv("GOOGLE_OAUTH_CLIENT_ID"),
@@ -347,6 +348,7 @@ func (c *Client) ListRecentMessages(ctx context.Context, userID *int64, tokenID 
 	return out, nil
 }
 
+// fetchMessage retrieves a single Gmail message by ID.
 func (c *Client) fetchMessage(ctx context.Context, accessToken, msgID string) (GmailMessage, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://www.googleapis.com/gmail/v1/users/me/messages/"+msgID+"?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date", nil)
 	if err != nil {

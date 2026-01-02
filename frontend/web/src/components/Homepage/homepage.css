@@ -459,6 +459,29 @@ margin-top: -25px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
+.hero-back {
+  position: absolute;
+  top: 20px;
+  left: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #1f2a44;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hero-back:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+}
+
 .panel-backdrop {
   position: fixed;
   inset: 0;
@@ -591,5 +614,14 @@ margin-top: -25px;
 
   .panel-body {
     padding: 16px 18px 120px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-back {
+    top: 16px;
+    left: 20px;
+    padding: 8px 12px;
+    font-size: 14px;
   }
 }

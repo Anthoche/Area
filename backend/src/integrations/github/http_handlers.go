@@ -16,6 +16,7 @@ type HTTPHandlers struct {
 	client *Client
 }
 
+// NewHTTPHandlers builds GitHub HTTP handlers with a default client.
 func NewHTTPHandlers(client *Client) *HTTPHandlers {
 	if client == nil {
 		client = NewClient()

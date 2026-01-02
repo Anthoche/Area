@@ -133,6 +133,27 @@ func TestServiceCreateWorkflow_InvalidInterval(t *testing.T) {
 	}
 }
 
+func TestServiceCreateWorkflow_InvalidGithubCommit(t *testing.T) {
+	svc := workflows.NewService(&workflows.Store{}, nil)
+	if _, err := svc.CreateWorkflow(context.Background(), "name", "github_commit", "https://example.com", []byte(`{"token_id":1,"repo":"o/r"}`)); err == nil {
+		t.Fatalf("expected error for invalid github_commit config")
+	}
+}
+
+func TestServiceCreateWorkflow_InvalidWeatherTemp(t *testing.T) {
+	svc := workflows.NewService(&workflows.Store{}, nil)
+	if _, err := svc.CreateWorkflow(context.Background(), "name", "weather_temp", "https://example.com", []byte(`{"city":"Paris","threshold":10}`)); err == nil {
+		t.Fatalf("expected error for invalid weather_temp config")
+	}
+}
+
+func TestServiceCreateWorkflow_InvalidWeatherReport(t *testing.T) {
+	svc := workflows.NewService(&workflows.Store{}, nil)
+	if _, err := svc.CreateWorkflow(context.Background(), "name", "weather_report", "https://example.com", []byte(`{"city":"Paris","interval_minutes":0}`)); err == nil {
+		t.Fatalf("expected error for invalid weather_report config")
+	}
+}
+
 func TestServiceCreateWorkflow_Unsupported(t *testing.T) {
 	svc := workflows.NewService(&workflows.Store{}, nil)
 	if _, err := svc.CreateWorkflow(context.Background(), "name", "unknown", "url", []byte(`{}`)); err == nil {

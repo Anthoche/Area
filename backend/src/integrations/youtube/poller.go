@@ -149,6 +149,7 @@ type youtubeVideo struct {
 	Published time.Time
 }
 
+// fetchNewVideos retrieves the latest videos from a YouTube channel's RSS feed.
 func fetchNewVideos(ctx context.Context, channelID string, limit int) ([]youtubeVideo, error) {
 	u := fmt.Sprintf("https://www.youtube.com/feeds/videos.xml?channel_id=%s", strings.TrimSpace(channelID))
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
@@ -187,6 +188,7 @@ func fetchNewVideos(ctx context.Context, channelID string, limit int) ([]youtube
 	return videos, nil
 }
 
+// parseTime tries to parse primary time string, falling back to fallback if needed.
 func parseTime(primary, fallback string) time.Time {
 	if primary != "" {
 		if t, err := time.Parse(time.RFC3339, primary); err == nil {
@@ -201,6 +203,7 @@ func parseTime(primary, fallback string) time.Time {
 	return time.Now()
 }
 
+// resolveChannelID resolves the YouTube channel ID from the workflow config.
 func resolveChannelID(ctx context.Context, cfg workflows.YouTubeNewVideoConfig) (string, error) {
 	id := strings.TrimSpace(cfg.ChannelID)
 	if id == "" {
@@ -215,6 +218,7 @@ func resolveChannelID(ctx context.Context, cfg workflows.YouTubeNewVideoConfig) 
 	return lookupChannelID(ctx, id)
 }
 
+// lookupChannelID resolves a YouTube channel ID from various inputs.
 func lookupChannelID(ctx context.Context, input string) (string, error) {
 	candidate := strings.TrimSpace(input)
 	if candidate == "" {
@@ -241,6 +245,7 @@ func lookupChannelID(ctx context.Context, input string) (string, error) {
 	return "", fmt.Errorf("unable to resolve channel id from %q", input)
 }
 
+// fetchChannelIDFromPage retrieves the channel ID by scraping the channel page.
 func fetchChannelIDFromPage(ctx context.Context, url string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -263,6 +268,7 @@ func fetchChannelIDFromPage(ctx context.Context, url string) (string, error) {
 	return id, nil
 }
 
+// findChannelID extracts the channel ID from the page body.
 func findChannelID(body string) string {
 	patterns := []string{
 		`"channelId":"(UC[a-zA-Z0-9_-]+)"`,

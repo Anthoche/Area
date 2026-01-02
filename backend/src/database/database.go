@@ -78,7 +78,6 @@ func GetDB() *gorm.DB {
 }
 
 // SetDBForTesting allows tests to inject a mock database instance.
-// This should only be used in test code.
 func SetDBForTesting(testDB *gorm.DB) {
 	Db = testDB
 }

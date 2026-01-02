@@ -11,6 +11,7 @@ type HTTPHandlers struct {
 	client *Client
 }
 
+// NewHTTPHandlers builds Slack HTTP handlers with a default client.
 func NewHTTPHandlers(client *Client) *HTTPHandlers {
 	if client == nil {
 		client = NewClient()
@@ -166,6 +167,7 @@ func (h *HTTPHandlers) React() http.Handler {
 	})
 }
 
+// writeJSON writes a JSON response
 func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

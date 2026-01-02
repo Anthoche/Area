@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,6 +16,7 @@ import (
 
 	"area/src/areas"
 	"area/src/auth"
+	"area/src/database"
 	"area/src/integrations/discord"
 	gh "area/src/integrations/github"
 	goog "area/src/integrations/google"
@@ -72,6 +74,7 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/actions/notion/blocks", notionHTTP.AppendBlocks())
 	mux.Handle("/actions/notion/database", notionHTTP.Database())
 	mux.Handle("/actions/notion/page/update", notionHTTP.UpdatePage())
+	mux.Handle("/about.json", server.about())
 	mux.Handle("/areas", server.listAreas())
 	mux.Handle("/resources/openapi.json", server.openAPISpec())
 	mux.Handle("/docs/", v5emb.New(
@@ -228,12 +231,40 @@ func (h *Handler) listAreas() http.Handler {
 			return
 		}
 		services := areas.List()
-		writeJSON(w, http.StatusOK, map[string]any{"services": services})
+		var userCount int64
+		if count, err := database.CountUsers(); err == nil {
+			userCount = count
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"services":   services,
+			"user_count": userCount,
+		})
 	})
 }
 
 type errorResponse struct {
 	Error string `json:"error"`
+}
+
+type aboutResponse struct {
+	Client struct {
+		Host string `json:"host"`
+	} `json:"client"`
+	Server struct {
+		CurrentTime int64          `json:"current_time"`
+		Services    []aboutService `json:"services"`
+	} `json:"server"`
+}
+
+type aboutService struct {
+	Name      string       `json:"name"`
+	Actions   []aboutEntry `json:"actions"`
+	Reactions []aboutEntry `json:"reactions"`
+}
+
+type aboutEntry struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 // writeJSON serializes a value to JSON with the given status code.
@@ -243,8 +274,47 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 	_ = json.NewEncoder(w).Encode(value)
 }
 
-// WithCORS adds permissive CORS headers so the web app (port 80) can call the API (port 8080).
-// In production, tighten Allowed-Origin to the actual frontend domain.
+// about returns the server capabilities for the client.
+func (h *Handler) about() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			host = r.RemoteAddr
+		}
+		services := areas.List()
+		out := aboutResponse{}
+		out.Client.Host = host
+		out.Server.CurrentTime = time.Now().Unix()
+		out.Server.Services = make([]aboutService, 0, len(services))
+		for _, svc := range services {
+			entry := aboutService{
+				Name:      svc.ID,
+				Actions:   make([]aboutEntry, 0, len(svc.Triggers)),
+				Reactions: make([]aboutEntry, 0, len(svc.Reactions)),
+			}
+			for _, act := range svc.Triggers {
+				entry.Actions = append(entry.Actions, aboutEntry{
+					Name:        act.ID,
+					Description: act.Description,
+				})
+			}
+			for _, react := range svc.Reactions {
+				entry.Reactions = append(entry.Reactions, aboutEntry{
+					Name:        react.ID,
+					Description: react.Description,
+				})
+			}
+			out.Server.Services = append(out.Server.Services, entry)
+		}
+		writeJSON(w, http.StatusOK, out)
+	})
+}
+
+// WithCORS adds permissive CORS headers for the API.
 func WithCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
