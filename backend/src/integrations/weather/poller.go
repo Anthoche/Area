@@ -198,6 +198,7 @@ func StartWeatherPoller(ctx context.Context, wfStore *workflows.Store, wfService
 	}()
 }
 
+// fetchCurrentTemp retrieves the current temperature for given latitude and longitude.
 func fetchCurrentTemp(ctx context.Context, lat, lon float64) (float64, error) {
 	u := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f&current=temperature_2m", lat, lon)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
@@ -224,6 +225,7 @@ func fetchCurrentTemp(ctx context.Context, lat, lon float64) (float64, error) {
 	return payload.Current.Temperature, nil
 }
 
+// geocodeCity retrieves the latitude and longitude for a given city name.
 func geocodeCity(ctx context.Context, city string) (float64, float64, error) {
 	u := fmt.Sprintf("https://geocoding-api.open-meteo.com/v1/search?name=%s&count=1&language=fr&format=json", url.QueryEscape(city))
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)

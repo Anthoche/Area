@@ -308,8 +308,7 @@ func (h *Handler) about() http.Handler {
 	})
 }
 
-// WithCORS adds permissive CORS headers so the web app (port 80) can call the API (port 8080).
-// In production, tighten Allowed-Origin to the actual frontend domain.
+// WithCORS adds permissive CORS headers for the API.
 func WithCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")

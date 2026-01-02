@@ -200,6 +200,7 @@ func (h *HTTPHandlers) CreateEvent() http.Handler {
 	})
 }
 
+// parseAttendees parses attendees from a JSON raw message
 func parseAttendees(raw json.RawMessage) ([]string, error) {
 	if len(raw) == 0 {
 		return nil, nil

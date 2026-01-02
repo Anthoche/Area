@@ -74,6 +74,7 @@ func UpdateUser(id int64, firstName string, lastName string, email string, passw
 	return nil
 }
 
+// UserExists reports whether a user exists for the given email.
 func UserExists(email string) bool {
 	var count int64
 

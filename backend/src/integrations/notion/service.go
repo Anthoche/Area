@@ -20,6 +20,7 @@ type Client struct {
 	client *http.Client
 }
 
+// NewClient builds a Notion API client.
 func NewClient() *Client {
 	return &Client{
 		token:  strings.TrimSpace(os.Getenv("NOTION_TOKEN")),
@@ -27,6 +28,7 @@ func NewClient() *Client {
 	}
 }
 
+// CreatePage creates a Notion page with optional blocks.
 func (c *Client) CreatePage(ctx context.Context, parentPageID, title, content string, blocks json.RawMessage) error {
 	if err := c.ensureToken(); err != nil {
 		return err
@@ -54,6 +56,7 @@ func (c *Client) CreatePage(ctx context.Context, parentPageID, title, content st
 	return c.doJSON(ctx, http.MethodPost, "/pages", payload)
 }
 
+// AppendBlocks appends blocks to a Notion block/page.
 func (c *Client) AppendBlocks(ctx context.Context, blockID string, blocks json.RawMessage) error {
 	if err := c.ensureToken(); err != nil {
 		return err
@@ -69,6 +72,7 @@ func (c *Client) AppendBlocks(ctx context.Context, blockID string, blocks json.R
 	return c.doJSON(ctx, http.MethodPatch, fmt.Sprintf("/blocks/%s/children", blockID), payload)
 }
 
+// CreateDatabaseRow creates a Notion database row.
 func (c *Client) CreateDatabaseRow(ctx context.Context, databaseID string, properties json.RawMessage, children json.RawMessage) error {
 	if err := c.ensureToken(); err != nil {
 		return err
@@ -95,6 +99,7 @@ func (c *Client) CreateDatabaseRow(ctx context.Context, databaseID string, prope
 	return c.doJSON(ctx, http.MethodPost, "/pages", payload)
 }
 
+// UpdatePage updates a Notion page properties.
 func (c *Client) UpdatePage(ctx context.Context, pageID string, properties json.RawMessage) error {
 	if err := c.ensureToken(); err != nil {
 		return err
@@ -107,6 +112,7 @@ func (c *Client) UpdatePage(ctx context.Context, pageID string, properties json.
 	return c.doJSON(ctx, http.MethodPatch, fmt.Sprintf("/pages/%s", pageID), payload)
 }
 
+// ensureToken checks that the Notion token is set.
 func (c *Client) ensureToken() error {
 	if c.token == "" {
 		return fmt.Errorf("missing NOTION_TOKEN")
@@ -114,6 +120,7 @@ func (c *Client) ensureToken() error {
 	return nil
 }
 
+// doJSON performs an HTTP request with JSON payload.
 func (c *Client) doJSON(ctx context.Context, method, path string, payload any) error {
 	raw, err := json.Marshal(payload)
 	if err != nil {
@@ -138,6 +145,7 @@ func (c *Client) doJSON(ctx context.Context, method, path string, payload any) e
 	return nil
 }
 
+// buildChildrenBlocks builds Notion blocks from content and raw JSON.
 func buildChildrenBlocks(content string, raw json.RawMessage) ([]map[string]any, error) {
 	var children []map[string]any
 	if strings.TrimSpace(content) != "" {
@@ -164,6 +172,7 @@ func buildChildrenBlocks(content string, raw json.RawMessage) ([]map[string]any,
 	return children, nil
 }
 
+// decodeBlocks decodes Notion blocks from raw JSON.
 func decodeBlocks(raw json.RawMessage) ([]map[string]any, error) {
 	if len(raw) == 0 {
 		return nil, nil
@@ -185,6 +194,7 @@ func decodeBlocks(raw json.RawMessage) ([]map[string]any, error) {
 	return blocks, nil
 }
 
+// decodeObject decodes a JSON object from raw JSON.
 func decodeObject(raw json.RawMessage, label string) (map[string]any, error) {
 	if len(raw) == 0 {
 		return nil, fmt.Errorf("%s is required", label)
@@ -203,6 +213,7 @@ func decodeObject(raw json.RawMessage, label string) (map[string]any, error) {
 	return obj, nil
 }
 
+// decodeJSONString decodes a JSON string from raw JSON.
 func decodeJSONString(raw json.RawMessage) (string, error) {
 	var str string
 	if err := json.Unmarshal(raw, &str); err != nil {

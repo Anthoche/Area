@@ -19,6 +19,7 @@ type Client struct {
 	client *http.Client
 }
 
+// NewClient builds a Slack API client.
 func NewClient() *Client {
 	return &Client{
 		token:  strings.TrimSpace(os.Getenv("SLACK_BOT_TOKEN")),
@@ -26,6 +27,7 @@ func NewClient() *Client {
 	}
 }
 
+// SendMessage posts a simple Slack message.
 func (c *Client) SendMessage(ctx context.Context, channelID, text string) error {
 	payload := map[string]any{
 		"channel": channelID,
@@ -34,6 +36,7 @@ func (c *Client) SendMessage(ctx context.Context, channelID, text string) error 
 	return c.post(ctx, "chat.postMessage", payload)
 }
 
+// SendBlocks posts a Slack message with blocks.
 func (c *Client) SendBlocks(ctx context.Context, channelID, text string, blocks json.RawMessage) error {
 	if len(blocks) == 0 {
 		return fmt.Errorf("blocks payload is required")
@@ -48,6 +51,7 @@ func (c *Client) SendBlocks(ctx context.Context, channelID, text string, blocks 
 	return c.post(ctx, "chat.postMessage", payload)
 }
 
+// UpdateMessage updates a Slack message.
 func (c *Client) UpdateMessage(ctx context.Context, channelID, messageTS, text string) error {
 	payload := map[string]any{
 		"channel": channelID,
@@ -57,6 +61,7 @@ func (c *Client) UpdateMessage(ctx context.Context, channelID, messageTS, text s
 	return c.post(ctx, "chat.update", payload)
 }
 
+// DeleteMessage deletes a Slack message.
 func (c *Client) DeleteMessage(ctx context.Context, channelID, messageTS string) error {
 	payload := map[string]any{
 		"channel": channelID,
@@ -65,6 +70,7 @@ func (c *Client) DeleteMessage(ctx context.Context, channelID, messageTS string)
 	return c.post(ctx, "chat.delete", payload)
 }
 
+// AddReaction reacts to a Slack message.
 func (c *Client) AddReaction(ctx context.Context, channelID, messageTS, emoji string) error {
 	payload := map[string]any{
 		"channel":   channelID,
@@ -74,6 +80,7 @@ func (c *Client) AddReaction(ctx context.Context, channelID, messageTS, emoji st
 	return c.post(ctx, "reactions.add", payload)
 }
 
+// post performs a POST request to the Slack API.
 func (c *Client) post(ctx context.Context, path string, payload any) error {
 	if c.token == "" {
 		return fmt.Errorf("missing SLACK_BOT_TOKEN")

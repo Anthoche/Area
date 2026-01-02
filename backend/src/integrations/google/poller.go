@@ -10,8 +10,7 @@ import (
 	"area/src/workflows"
 )
 
-// StartGmailPoller launches a background loop that polls Gmail for inbound messages
-// and triggers workflows of type "gmail_inbound".
+// StartGmailPoller polls Gmail for inbound messages and triggers workflows.
 func StartGmailPoller(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, client *Client) {
 	lastSeen := make(map[int64]string) // workflowID -> last message id (in-memory)
 	go func() {

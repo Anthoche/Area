@@ -20,6 +20,7 @@ type Client struct {
 	client *http.Client
 }
 
+// NewClient builds a Discord API client.
 func NewClient() *Client {
 	return &Client{
 		token:  strings.TrimSpace(os.Getenv("DISCORD_BOT_TOKEN")),
@@ -34,6 +35,7 @@ type Embed struct {
 	Color       int    `json:"color,omitempty"`
 }
 
+// SendMessage posts a message to a Discord channel.
 func (c *Client) SendMessage(ctx context.Context, channelID, content string, embeds []Embed) error {
 	if err := c.ensureToken(); err != nil {
 		return err
@@ -47,6 +49,7 @@ func (c *Client) SendMessage(ctx context.Context, channelID, content string, emb
 	return c.doJSON(ctx, http.MethodPost, fmt.Sprintf("%s/channels/%s/messages", apiBase, channelID), body)
 }
 
+// EditMessage updates a Discord message content.
 func (c *Client) EditMessage(ctx context.Context, channelID, messageID, content string) error {
 	if err := c.ensureToken(); err != nil {
 		return err
@@ -57,6 +60,7 @@ func (c *Client) EditMessage(ctx context.Context, channelID, messageID, content 
 	return c.doJSON(ctx, http.MethodPatch, fmt.Sprintf("%s/channels/%s/messages/%s", apiBase, channelID, messageID), body)
 }
 
+// DeleteMessage removes a Discord message.
 func (c *Client) DeleteMessage(ctx context.Context, channelID, messageID string) error {
 	if err := c.ensureToken(); err != nil {
 		return err
@@ -64,6 +68,7 @@ func (c *Client) DeleteMessage(ctx context.Context, channelID, messageID string)
 	return c.doJSON(ctx, http.MethodDelete, fmt.Sprintf("%s/channels/%s/messages/%s", apiBase, channelID, messageID), nil)
 }
 
+// AddReaction reacts to a Discord message.
 func (c *Client) AddReaction(ctx context.Context, channelID, messageID, emoji string) error {
 	if err := c.ensureToken(); err != nil {
 		return err
@@ -78,6 +83,7 @@ func (c *Client) AddReaction(ctx context.Context, channelID, messageID, emoji st
 	return c.doJSON(ctx, http.MethodPut, endpoint, nil)
 }
 
+/* ensureToken checks that the bot token is set */
 func (c *Client) ensureToken() error {
 	if c.token == "" {
 		return fmt.Errorf("missing DISCORD_BOT_TOKEN")
@@ -85,6 +91,7 @@ func (c *Client) ensureToken() error {
 	return nil
 }
 
+/* doJSON performs an HTTP request and decodes the JSON response */
 func (c *Client) doJSON(ctx context.Context, method, endpoint string, payload any) error {
 	var body io.Reader
 	if payload != nil {
