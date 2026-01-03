@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  db:
+  db: 
     image: "postgres:latest"
     restart: on-failure
     environment:
@@ -46,13 +46,16 @@ services:
       - GITHUB_OAUTH_CLIENT_ID=${GITHUB_OAUTH_CLIENT_ID}
       - GITHUB_OAUTH_CLIENT_SECRET=${GITHUB_OAUTH_CLIENT_SECRET}
       - GITHUB_OAUTH_REDIRECT_URI=${GITHUB_OAUTH_REDIRECT_URI}
+      - GITHUB_MOBILE_OAUTH_CLIENT_ID=${GITHUB_MOBILE_OAUTH_CLIENT_ID}
+      - GITHUB_MOBILE_OAUTH_CLIENT_SECRET=${GITHUB_MOBILE_OAUTH_CLIENT_SECRET}
+      - GITHUB_MOBILE_OAUTH_REDIRECT_URI=${GITHUB_MOBILE_OAUTH_REDIRECT_URI}
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
       - NOTION_TOKEN=${NOTION_TOKEN}
 
   client_mobile:
     build:
-      context: frontend/mobile
+      context: frontend/mobile/kikonect
     volumes:
       - shared_apk:/app/shared_output
     command: >

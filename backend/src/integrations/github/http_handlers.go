@@ -55,6 +55,45 @@ func (h *HTTPHandlers) Login() http.Handler {
 	})
 }
 
+// LoginMobile redirects to GitHub OAuth consent using the mobile OAuth app.
+func (h *HTTPHandlers) LoginMobile() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		state := randomState()
+		http.SetCookie(w, &http.Cookie{
+			Name:     "oauthstate",
+			Value:    state,
+			Path:     "/",
+			HttpOnly: true,
+		})
+	if uiRedirect := r.URL.Query().Get("ui_redirect"); uiRedirect != "" {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "oauthredirect",
+			Value:    url.QueryEscape(uiRedirect),
+			Path:     "/",
+			HttpOnly: true,
+		})
+	}
+	if userID := r.URL.Query().Get("user_id"); userID != "" {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "oauthuserid",
+			Value:    userID,
+			Path:     "/",
+			HttpOnly: true,
+		})
+	}
+	redirectURI := r.URL.Query().Get("redirect_uri")
+	if redirectURI == "" {
+		redirectURI = os.Getenv("GITHUB_MOBILE_OAUTH_REDIRECT_URI")
+	}
+		if redirectURI == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "redirect_uri is required"})
+			return
+		}
+		authURL := h.client.AuthURL(state, redirectURI)
+		http.Redirect(w, r, authURL, http.StatusFound)
+	})
+}
+
 // Callback exchanges code for token, stores it, and returns token_id/email/user_id/login.
 func (h *HTTPHandlers) Callback() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -72,6 +111,75 @@ func (h *HTTPHandlers) Callback() http.Handler {
 		redirectURI := r.URL.Query().Get("redirect_uri")
 		if redirectURI == "" {
 			redirectURI = os.Getenv("GITHUB_OAUTH_REDIRECT_URI")
+		}
+		if redirectURI == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "redirect_uri is required"})
+			return
+		}
+
+		tokenID, resolvedUserID, email, login, err := h.client.ExchangeAndStore(r.Context(), code, redirectURI, userID)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+		if uiCookie, _ := r.Cookie("oauthredirect"); uiCookie != nil && uiCookie.Value != "" {
+			if dest, err := url.QueryUnescape(uiCookie.Value); err == nil {
+				if redir, err := url.Parse(dest); err == nil && (redir.Scheme == "http" || redir.Scheme == "https") {
+					q := redir.Query()
+					q.Set("token_id", strconv.FormatInt(tokenID, 10))
+					if resolvedUserID > 0 {
+						q.Set("user_id", strconv.FormatInt(resolvedUserID, 10))
+					}
+					if email != "" {
+						q.Set("github_email", email)
+					}
+					if login != "" {
+						q.Set("github_login", login)
+					}
+					redir.RawQuery = q.Encode()
+					http.Redirect(w, r, redir.String(), http.StatusFound)
+					return
+				}
+			}
+		}
+		resp := map[string]any{
+			"token_id": tokenID,
+			"login":    login,
+		}
+		if resolvedUserID > 0 {
+			resp["user_id"] = resolvedUserID
+		}
+		if email != "" {
+			resp["email"] = email
+		}
+		writeJSON(w, http.StatusOK, resp)
+	})
+}
+
+// CallbackMobile exchanges code for token using the mobile OAuth app.
+func (h *HTTPHandlers) CallbackMobile() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		stateCookie, _ := r.Cookie("oauthstate")
+		if stateCookie == nil || r.URL.Query().Get("state") != stateCookie.Value {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid oauth state"})
+			return
+		}
+		userID := optionalUserID(r)
+		if userID == nil {
+			if userCookie, _ := r.Cookie("oauthuserid"); userCookie != nil {
+				if id, err := strconv.ParseInt(userCookie.Value, 10, 64); err == nil && id > 0 {
+					userID = &id
+				}
+			}
+		}
+		code := r.URL.Query().Get("code")
+		if code == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing code"})
+			return
+		}
+		redirectURI := r.URL.Query().Get("redirect_uri")
+		if redirectURI == "" {
+			redirectURI = os.Getenv("GITHUB_MOBILE_OAUTH_REDIRECT_URI")
 		}
 		if redirectURI == "" {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "redirect_uri is required"})

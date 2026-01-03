@@ -44,12 +44,18 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Prepare mobile env
+        run: |
+          if [ ! -f frontend/mobile/kikonect/.env ]; then
+            cp frontend/mobile/kikonect/.env.example frontend/mobile/kikonect/.env
+          fi
+
       - name: Install Flutter dependencies
         run: |
-          cd frontend/mobile
+          cd frontend/mobile/kikonect
           flutter pub get
 
       - name: Run Flutter unit tests
         run: |
-          cd frontend/mobile
+          cd frontend/mobile/kikonect
           flutter test --no-pub
