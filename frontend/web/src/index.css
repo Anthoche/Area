@@ -4,7 +4,30 @@
   box-sizing: border-box;
 }
 
+:root {
+    --accent-color: #48179c;
+    --text-primary: black;
+    --title-color: #111827;
+    --text-secondary: #4a5565;
+    --text-third: #718096;
+    --bg-color: white;
+    --card-bg-color: #f7fafc;
+    --card-border-color: #ebe6e7;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-primary: white;
+        --title-color: white;
+        --text-secondary: #a9b4c5;
+        --text-third: #808996;
+        --bg-color: #101828;
+        --card-bg-color: #18233a;
+        --card-border-color: #575a6e;
+    }
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
-  background: #ffffff;
+  background: var(--bg-color);
 }
