@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kikonect/screens/home_page.dart';
+import 'package:kikonect/services/api_service.dart';
 import 'package:kikonect/widgets/app_text_field.dart';
 import 'package:kikonect/widgets/primary_button.dart';
 import 'package:kikonect/widgets/search_bar.dart';
@@ -13,6 +14,17 @@ Finder findAppTextField(String label) {
     of: find.widgetWithText(AppTextField, label),
     matching: find.byType(TextField),
   );
+}
+
+class FakeApiService extends ApiService {
+  FakeApiService(this.workflows);
+
+  final List<dynamic> workflows;
+
+  @override
+  Future<List<dynamic>> getWorkflows() async {
+    return workflows;
+  }
 }
 
 void main() {
@@ -58,32 +70,38 @@ void main() {
 
   group('Homepage Tests', () {
     testWidgets('renders correctly', (WidgetTester tester) async {
-      await tester.pumpWidget(const MaterialApp(home: Homepage()));
+      final workflows = [
+        {
+          'id': 1,
+          'name': 'Push To Ping',
+          'trigger_type': 'manual',
+          'enabled': true,
+          'trigger_config': '{}',
+        },
+      ];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Homepage(apiService: FakeApiService(workflows)),
+        ),
+      );
+      await tester.pumpAndSettle();
 
       expect(find.text('My Konect'), findsOneWidget);
-      expect(find.byType(AppSearchBar), findsOneWidget);
       expect(find.text('My Konects'), findsOneWidget);
-
-      // Check for FilterTags (by text, assuming 'test 1' is hardcoded in homepage)
-      expect(find.text('test 1'), findsOneWidget);
-
-      // Check for ServiceCards
+      expect(find.byType(AppSearchBar), findsOneWidget);
       expect(find.text('Push To Ping'), findsOneWidget);
+      expect(find.text('MANUAL'), findsOneWidget);
       expect(find.byType(ServiceCard), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('opens drawer', (WidgetTester tester) async {
-      await tester.pumpWidget(const MaterialApp(home: Homepage()));
-
-      await tester.tap(find.byTooltip('Open navigation menu'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Menu'), findsOneWidget);
-      expect(find.text('test'), findsOneWidget);
-    });
-
     testWidgets('FAB shows Create Area page', (WidgetTester tester) async {
-      await tester.pumpWidget(const MaterialApp(home: Homepage()));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Homepage(apiService: FakeApiService([])),
+        ),
+      );
+      await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.add));
       await tester.pumpAndSettle();

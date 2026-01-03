@@ -12,14 +12,16 @@ import 'profile_page.dart';
 
 /// Displays the home screen with saved Konects and quick actions.
 class Homepage extends StatefulWidget {
-  const Homepage({super.key});
+  final ApiService? apiService;
+
+  const Homepage({super.key, this.apiService});
 
   @override
   State<Homepage> createState() => _HomepageState();
 }
 
 class _HomepageState extends State<Homepage> {
-  final ApiService _apiService = ApiService();
+  late final ApiService _apiService;
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _activeFilters = {};
   final Set<int> _triggering = {};
@@ -30,6 +32,7 @@ class _HomepageState extends State<Homepage> {
   @override
   void initState() {
     super.initState();
+    _apiService = widget.apiService ?? ApiService();
     _loadWorkflows();
   }
 
@@ -323,7 +326,7 @@ class _HomepageState extends State<Homepage> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Search_bar(
+              child: AppSearchBar(
                 controller: _searchController,
                 onChanged: (_) => setState(() {}),
               ),

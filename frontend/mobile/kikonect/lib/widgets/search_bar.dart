@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 /// Displays a lightweight search field used in the home screen header.
-class Search_bar extends StatelessWidget {
+class AppSearchBar extends StatelessWidget {
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
 
-  const Search_bar({super.key, this.controller, this.onChanged});
+  const AppSearchBar({super.key, this.controller, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
