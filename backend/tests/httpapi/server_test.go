@@ -96,6 +96,9 @@ func TestAbout_OK(t *testing.T) {
 		"GITHUB_OAUTH_CLIENT_ID":     "x",
 		"GITHUB_OAUTH_CLIENT_SECRET": "x",
 		"GITHUB_OAUTH_REDIRECT_URI":  "http://localhost/callback",
+		"GITHUB_MOBILE_OAUTH_CLIENT_ID":     "x",
+		"GITHUB_MOBILE_OAUTH_CLIENT_SECRET": "x",
+		"GITHUB_MOBILE_OAUTH_REDIRECT_URI":  "http://localhost/callback",
 	}
 	original := map[string]*string{}
 	for k, v := range envs {

@@ -46,10 +46,10 @@ jobs:
 
       - name: Install Flutter dependencies
         run: |
-          cd frontend/mobile
+          cd frontend/mobile/kikonect
           flutter pub get
 
       - name: Run Flutter unit tests
         run: |
-          cd frontend/mobile
+          cd frontend/mobile/kikonect
           flutter test --no-pub
