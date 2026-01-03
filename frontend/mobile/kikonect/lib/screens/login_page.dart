@@ -1,20 +1,24 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:async';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
+
 import 'package:app_links/app_links.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
 
-import 'register_middle_page.dart';
-import 'home_page.dart';
-
+import '../services/oauth_service.dart';
+import '../utils/ui_feedback.dart';
+import '../utils/validators.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
-import '../services/oauth_service.dart';
+import 'home_page.dart';
+import 'register_middle_page.dart';
 
+/// Displays the login screen and handles OAuth callbacks.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
@@ -42,7 +46,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // LISTEN TO OAUTH CALLBACK
+  // Listen for OAuth callbacks.
   Future<void> _initDeepLinks() async {
     _sub = _appLinks.uriLinkStream.listen((uri) {
       if (mounted && ModalRoute.of(context)?.isCurrent == true) {
@@ -65,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
       final githubLogin = uri.queryParameters['github_login'];
 
       if (error != null) {
-        _errorPopup('OAuth error: $error');
+        showErrorDialog(context, 'OAuth error: $error');
         return;
       }
 
@@ -97,8 +101,9 @@ class _LoginPageState extends State<LoginPage> {
         print('Code OAuth Google reçu: $code');
 
         try {
-          // Échanger le code contre un token via le backend
-          final result = await _authService.exchangeCodeForToken(code, state: state);
+          // Exchange the code for a token via the backend.
+          final result =
+              await _authService.exchangeCodeForToken(code, state: state);
           final token = result['token'];
           final email = result['email'] ?? '';
           final userId = result['user_id'];
@@ -106,7 +111,7 @@ class _LoginPageState extends State<LoginPage> {
 
           print('Token reçu: $token, Email: $email');
 
-          // Sauvegarder le token
+          // Save the token.
           if (token != null) {
             await _saveToken(token.toString());
           }
@@ -117,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
             await _saveGoogleTokenId(tokenId.toString());
           }
 
-          // Naviguer vers la home page
+          // Navigate to the home page.
           if (mounted) {
             Navigator.pushReplacement(
               context,
@@ -125,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
             );
           }
         } catch (e) {
-          _errorPopup('Erreur échange token: $e');
+          showErrorDialog(context, 'Erreur échange token: $e');
         }
       }
       return;
@@ -151,26 +156,6 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _saveGithubTokenId(String tokenId) async {
     await _storage.write(key: 'github_token_id', value: tokenId);
     print("GitHub token id saved securely");
-  }
-
-  void _errorPopup(String msg) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Error", style: TextStyle(color: Colors.red)),
-        content: Text(msg),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"))
-        ],
-      ),
-    );
-  }
-
-  bool _isValidEmail(String email) {
-    final regex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
-    return regex.hasMatch(email);
   }
 
   Future<void> _loginUser() async {
@@ -204,10 +189,10 @@ class _LoginPageState extends State<LoginPage> {
               context, MaterialPageRoute(builder: (_) => const Homepage()));
         }
       } else {
-        _errorPopup("Login failed (${res.statusCode})");
+        showErrorDialog(context, "Login failed (${res.statusCode})");
       }
     } catch (e) {
-      _errorPopup("Connection error: $e");
+      showErrorDialog(context, "Connection error: $e");
     }
   }
 
@@ -215,7 +200,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await _authService.signInWith(provider);
     } catch (e) {
-      _errorPopup("OAuth launch error: $e");
+      showErrorDialog(context, "OAuth launch error: $e");
     }
   }
 
@@ -242,9 +227,9 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: () {
                     if (emailController.text.isEmpty ||
                         passwordController.text.isEmpty) {
-                      _errorPopup("Please fill in all fields.");
-                    } else if (!_isValidEmail(emailController.text)) {
-                      _errorPopup("Invalid email.");
+                      showErrorDialog(context, "Please fill in all fields.");
+                    } else if (!isValidEmail(emailController.text)) {
+                      showErrorDialog(context, "Invalid email.");
                     } else {
                       _loginUser();
                     }
@@ -276,15 +261,18 @@ class _LoginPageState extends State<LoginPage> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const RegisterMiddlePage()),
+                          MaterialPageRoute(
+                              builder: (_) => const RegisterMiddlePage()),
                         );
                       },
-                      child: const Text("Sign up", style: TextStyle(decoration: TextDecoration.underline),
+                      child: const Text(
+                        "Sign up",
+                        style: TextStyle(decoration: TextDecoration.underline),
                       ),
                     ),
                   ],
                 ),
-                // BOUTON DE DEBUG POUR ACCES DIRECT
+                // Debug button for direct access.
                 const SizedBox(height: 20),
                 TextButton(
                   onPressed: () {
@@ -295,7 +283,8 @@ class _LoginPageState extends State<LoginPage> {
                   },
                   child: const Text(
                     "[DEV] Skip Login",
-                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.red, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],

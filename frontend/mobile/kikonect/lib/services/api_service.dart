@@ -1,10 +1,15 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
 
+/// Wraps calls to the backend API.
 class ApiService {
-  static final String _baseUrl = dotenv.env['API_URL'] ?? 'http://10.0.2.2:8080';
+  static final String _baseUrl =
+      dotenv.env['API_URL'] ?? 'http://10.0.2.2:8080';
+
+  /// Returns the backend base URL.
   static String get baseUrl => _baseUrl;
   final _storage = const FlutterSecureStorage();
 
@@ -32,7 +37,8 @@ class ApiService {
       }
       return [];
     } else {
-      throw Exception('Failed to load services: ${response.statusCode} ${response.body}');
+      throw Exception(
+          'Failed to load services: ${response.statusCode} ${response.body}');
     }
   }
 
@@ -55,7 +61,8 @@ class ApiService {
       }
       return [];
     } else {
-      throw Exception('Failed to load workflows: ${response.statusCode} ${response.body}');
+      throw Exception(
+          'Failed to load workflows: ${response.statusCode} ${response.body}');
     }
   }
 
@@ -71,12 +78,14 @@ class ApiService {
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Failed to create area: ${response.statusCode} ${response.body}');
+      throw Exception(
+          'Failed to create area: ${response.statusCode} ${response.body}');
     }
   }
 
   /// Triggers a manual workflow run.
-  Future<void> triggerWorkflow(int workflowId, Map<String, dynamic> payload) async {
+  Future<void> triggerWorkflow(
+      int workflowId, Map<String, dynamic> payload) async {
     final url = Uri.parse('$_baseUrl/workflows/$workflowId/trigger');
     final headers = await _getHeaders();
 
@@ -87,19 +96,22 @@ class ApiService {
     );
 
     if (response.statusCode != 202 && response.statusCode != 200) {
-      throw Exception('Failed to trigger workflow: ${response.statusCode} ${response.body}');
+      throw Exception(
+          'Failed to trigger workflow: ${response.statusCode} ${response.body}');
     }
   }
 
   /// Enables or disables a workflow.
   Future<void> setWorkflowEnabled(int workflowId, bool enabled) async {
     final action = enabled ? 'enable' : 'disable';
-    final url = Uri.parse('$_baseUrl/workflows/$workflowId/enabled?action=$action');
+    final url =
+        Uri.parse('$_baseUrl/workflows/$workflowId/enabled?action=$action');
     final headers = await _getHeaders();
 
     final response = await http.post(url, headers: headers);
     if (response.statusCode != 200) {
-      throw Exception('Failed to update workflow: ${response.statusCode} ${response.body}');
+      throw Exception(
+          'Failed to update workflow: ${response.statusCode} ${response.body}');
     }
   }
 }

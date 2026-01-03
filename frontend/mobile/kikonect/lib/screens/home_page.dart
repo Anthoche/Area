@@ -1,13 +1,16 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import '../widgets/filter_tag.dart';
-import '../widgets/service_card.dart';
-import '../widgets/search_bar.dart';
+
 import '../services/api_service.dart';
+import '../utils/ui_feedback.dart';
+import '../widgets/filter_tag.dart';
+import '../widgets/search_bar.dart';
+import '../widgets/service_card.dart';
 import 'create_area_page.dart';
 import 'profile_page.dart';
 
-/// Home screen showing saved Konects and quick actions.
+/// Displays the home screen with saved Konects and quick actions.
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
 
@@ -20,7 +23,6 @@ class _HomepageState extends State<Homepage> {
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _activeFilters = {};
   final Set<int> _triggering = {};
-  final Set<int> _toggling = {};
   List<dynamic> _workflows = [];
   bool _loading = true;
   String? _error;
@@ -91,24 +93,23 @@ class _HomepageState extends State<Homepage> {
     final triggerType = (item['trigger_type'] ?? '').toString();
     if (triggerType != 'manual') {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Only manual Konects can be triggered here."),
-          ),
+        showAppSnackBar(
+          context,
+          "Only manual Konects can be triggered here.",
         );
       }
       return;
     }
 
     final idValue = item['id'];
-    final id = idValue is int ? idValue : int.tryParse(idValue?.toString() ?? '');
+    final id =
+        idValue is int ? idValue : int.tryParse(idValue?.toString() ?? '');
     if (id == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Invalid Konect id."),
-            backgroundColor: Colors.red,
-          ),
+        showAppSnackBar(
+          context,
+          "Invalid Konect id.",
+          isError: true,
         );
       }
       return;
@@ -120,17 +121,14 @@ class _HomepageState extends State<Homepage> {
       final payload = _payloadFromWorkflow(item);
       await _apiService.triggerWorkflow(id, payload);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Konect triggered!")),
-        );
+        showAppSnackBar(context, "Konect triggered!");
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Trigger failed: $e"),
-            backgroundColor: Colors.red,
-          ),
+        showAppSnackBar(
+          context,
+          "Trigger failed: $e",
+          isError: true,
         );
       }
     } finally {
@@ -143,14 +141,14 @@ class _HomepageState extends State<Homepage> {
   void _showWorkflowControls(dynamic item) {
     final triggerType = (item['trigger_type'] ?? '').toString();
     final idValue = item['id'];
-    final id = idValue is int ? idValue : int.tryParse(idValue?.toString() ?? '');
+    final id =
+        idValue is int ? idValue : int.tryParse(idValue?.toString() ?? '');
     if (id == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Invalid Konect id."),
-            backgroundColor: Colors.red,
-          ),
+        showAppSnackBar(
+          context,
+          "Invalid Konect id.",
+          isError: true,
         );
       }
       return;
@@ -191,7 +189,8 @@ class _HomepageState extends State<Homepage> {
                   Text(
                     (item['name'] ?? 'Konect').toString(),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -211,7 +210,6 @@ class _HomepageState extends State<Homepage> {
                               currentEnabled = value;
                               isBusy = true;
                             });
-                            setState(() => _toggling.add(id));
                             try {
                               await _apiService.setWorkflowEnabled(id, value);
                               await _loadWorkflows();
@@ -220,11 +218,10 @@ class _HomepageState extends State<Homepage> {
                                 currentEnabled = previous;
                               });
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text("Update failed: $e"),
-                                    backgroundColor: Colors.red,
-                                  ),
+                                showAppSnackBar(
+                                  context,
+                                  "Update failed: $e",
+                                  isError: true,
                                 );
                               }
                             } finally {
@@ -232,7 +229,6 @@ class _HomepageState extends State<Homepage> {
                                 setSheetState(() {
                                   isBusy = false;
                                 });
-                                setState(() => _toggling.remove(id));
                               }
                             }
                           },
@@ -416,7 +412,9 @@ class _HomepageState extends State<Homepage> {
                     color: _getColor(index),
                     subtitle: triggerType.isNotEmpty ? triggerType : null,
                     badgeText: isManual ? "MANUAL" : (enabled ? "ON" : "OFF"),
-                    badgeColor: isManual ? Colors.black54 : (enabled ? Colors.green : Colors.red),
+                    badgeColor: isManual
+                        ? Colors.black54
+                        : (enabled ? Colors.green : Colors.red),
                     onTap: () {
                       if (isManual) {
                         _triggerManualWorkflow(item);
@@ -464,5 +462,4 @@ class _HomepageState extends State<Homepage> {
     ];
     return colors[index % colors.length];
   }
-
 }

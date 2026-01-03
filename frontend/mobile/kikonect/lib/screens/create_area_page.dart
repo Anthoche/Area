@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'service_selection_page.dart';
-import '../widgets/logic_block_card.dart';
-import '../services/api_service.dart';
 
+import '../services/api_service.dart';
+import '../utils/ui_feedback.dart';
+import '../widgets/logic_block_card.dart';
+import 'service_selection_page.dart';
+
+/// Displays the workflow creation screen.
 class CreateAreaPage extends StatefulWidget {
   const CreateAreaPage({super.key});
 
@@ -11,11 +14,11 @@ class CreateAreaPage extends StatefulWidget {
 }
 
 class _CreateAreaPageState extends State<CreateAreaPage> {
-  // Trigger
+  // Trigger configuration.
   Map<String, dynamic>? triggerData;
   Map<String, dynamic> triggerFieldValues = {};
 
-  // Actions (initialement une seule, mais extensible)
+  // Action blocks (initially one, but extensible).
   List<Map<String, dynamic>?> actionsData = [null];
 
   bool _isSubmitting = false;
@@ -27,11 +30,10 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Please enter a name for this Konect."),
-            backgroundColor: Colors.red,
-          ),
+        showAppSnackBar(
+          context,
+          "Please enter a name for this Konect.",
+          isError: true,
         );
       }
       return;
@@ -42,23 +44,24 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
     try {
       final apiService = ApiService();
 
-      final selectedAction = actionsData.firstWhere((a) => a != null, orElse: () => null);
+      final selectedAction =
+          actionsData.firstWhere((a) => a != null, orElse: () => null);
       if (selectedAction == null) return;
       final actionUrl = _buildActionUrl(selectedAction);
       if (actionUrl.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Missing action URL. Please fill required fields."),
-              backgroundColor: Colors.red,
-            ),
+          showAppSnackBar(
+            context,
+            "Missing action URL. Please fill required fields.",
+            isError: true,
           );
         }
         return;
       }
 
       final triggerType = triggerData!['id']?.toString() ?? '';
-      final actionFields = (selectedAction['fields'] as Map<String, dynamic>?) ?? {};
+      final actionFields =
+          (selectedAction['fields'] as Map<String, dynamic>?) ?? {};
       final triggerConfig = Map<String, dynamic>.from(triggerFieldValues);
       if (triggerType == 'interval') {
         triggerConfig['payload'] = actionFields;
@@ -76,11 +79,17 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
       await apiService.createArea(payload);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Area Created!")));
+        showAppSnackBar(context, "Area Created!");
         Navigator.pop(context, true);
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red));
+      if (mounted) {
+        showAppSnackBar(
+          context,
+          "Error: $e",
+          isError: true,
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -138,7 +147,7 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // --- IF THIS (Trigger) ---
+              // IF THIS (trigger).
               LogicBlockCard(
                 typeLabel: "IF THIS",
                 placeholder: "Add New Service",
@@ -147,7 +156,8 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ServiceSelectionPage(isTrigger: true),
+                      builder: (context) =>
+                          const ServiceSelectionPage(isTrigger: true),
                     ),
                   );
                   if (result != null) {
@@ -161,12 +171,13 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
               ),
 
               const SizedBox(height: 10),
-              
-              // Flèche vers le bas
+
+              // Down arrow.
               const Center(
-                child: Icon(Icons.arrow_downward_rounded, size: 32, color: Colors.grey),
+                child: Icon(Icons.arrow_downward_rounded,
+                    size: 32, color: Colors.grey),
               ),
-              
+
               const SizedBox(height: 10),
 
               TextField(
@@ -188,8 +199,8 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
               ),
 
               const SizedBox(height: 16),
-              
-              // --- THEN THAT (Actions) ---
+
+              // THEN THAT (actions).
               ListView.separated(
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
@@ -206,8 +217,8 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
                     typeLabel: index == 0 ? "THEN THAT" : "AND THAT",
                     placeholder: "Add New Service",
                     data: actionsData[index],
-                    // On active la suppression seulement si ce n'est pas le premier bloc
-                    onDelete: index > 0 
+                    // Enable deletion only for secondary blocks.
+                    onDelete: index > 0
                         ? () {
                             setState(() {
                               actionsData.removeAt(index);
@@ -218,7 +229,8 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const ServiceSelectionPage(isTrigger: false),
+                          builder: (context) =>
+                              const ServiceSelectionPage(isTrigger: false),
                         ),
                       );
                       if (result != null) {
@@ -233,7 +245,7 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
 
               const SizedBox(height: 40),
 
-              // --- BOUTON CONNECT ---
+              // Connect button.
               if (triggerData != null && actionsData.any((a) => a != null))
                 SizedBox(
                   height: 56,
@@ -246,19 +258,19 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
                       elevation: 5,
                     ),
                     onPressed: _isSubmitting ? null : _submitArea,
-                    child: _isSubmitting 
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                      "Connect",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                    child: _isSubmitting
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                            "Connect",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
-               const SizedBox(height: 40),
+              const SizedBox(height: 40),
             ],
           ),
         ),

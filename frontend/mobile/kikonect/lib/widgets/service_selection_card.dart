@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Displays a service card for selection in a grid.
 class ServiceSelectionCard extends StatelessWidget {
   final Map<String, dynamic> service;
   final VoidCallback onTap;
@@ -27,7 +28,7 @@ class ServiceSelectionCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icône ou Placeholder
+            // Icon or placeholder.
             Container(
               height: 60,
               width: 60,

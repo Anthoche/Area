@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'app.dart';
 
-/// Entry point of the Flutter app. Loads environment variables before bootstrapping
-/// the widget tree so API-dependent screens can access configuration safely.
+/// Starts the Flutter app after loading environment variables.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {

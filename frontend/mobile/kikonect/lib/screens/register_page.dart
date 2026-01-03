@@ -1,10 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
 
-// widgets
+import '../utils/ui_feedback.dart';
+import '../utils/validators.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 import 'home_page.dart';
@@ -66,7 +68,8 @@ class _RegisterPageState extends State<RegisterPage> {
       );
     } else {
       if (mounted) {
-        showErrorPopup('Something went wrong');
+        showErrorDialog(context, 'Something went wrong',
+            buttonColor: Colors.blue);
       }
     }
   }
@@ -76,12 +79,6 @@ class _RegisterPageState extends State<RegisterPage> {
     return passwordController.text == confirmPasswordController.text;
   }
 
-  /// Checks whether the email string matches a simple pattern.
-  bool isValidEmail(String email) {
-    final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
-    return emailRegex.hasMatch(email);
-  }
-
   /// Returns true if any required field is empty.
   bool isFieldsEmpty() {
     return firstNameController.text.isEmpty ||
@@ -89,34 +86,6 @@ class _RegisterPageState extends State<RegisterPage> {
         emailController.text.isEmpty ||
         passwordController.text.isEmpty ||
         confirmPasswordController.text.isEmpty;
-  }
-
-  /// Shows a one-off error dialog with the provided message.
-  void showErrorPopup(String message) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text(
-            "Error",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.red,
-            ),
-          ),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                "OK",
-                style: TextStyle(color: Colors.blue),
-              ),
-            )
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -154,11 +123,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 30),
                 AppTextField(label: "Email", controller: emailController),
                 const SizedBox(height: 30),
-                AppTextField(label: "Password",
+                AppTextField(
+                    label: "Password",
                     obscure: true,
                     controller: passwordController),
                 const SizedBox(height: 30),
-                AppTextField(label: "Confirm Password",
+                AppTextField(
+                    label: "Confirm Password",
                     obscure: true,
                     controller: confirmPasswordController),
                 const SizedBox(height: 30),
@@ -166,15 +137,21 @@ class _RegisterPageState extends State<RegisterPage> {
                   text: "Register",
                   onPressed: () async {
                     if (isFieldsEmpty()) {
-                      showErrorPopup("Please fill in all fields.");
+                      showErrorDialog(context, "Please fill in all fields.",
+                          buttonColor: Colors.blue);
                       return;
                     }
                     if (!isValidEmail(emailController.text)) {
-                      showErrorPopup("Please enter a valid email address.");
+                      showErrorDialog(
+                        context,
+                        "Please enter a valid email address.",
+                        buttonColor: Colors.blue,
+                      );
                       return;
                     }
                     if (!passwordMatch()) {
-                      showErrorPopup("Passwords do not match");
+                      showErrorDialog(context, "Passwords do not match",
+                          buttonColor: Colors.blue);
                       return;
                     }
                     await registerUser();

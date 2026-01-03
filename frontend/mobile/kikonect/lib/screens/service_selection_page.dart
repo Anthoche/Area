@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../widgets/service_selection_card.dart';
-import '../services/api_service.dart';
 
+import '../services/api_service.dart';
+import '../widgets/service_selection_card.dart';
+
+/// Displays a list of services to select a trigger or action.
 class ServiceSelectionPage extends StatelessWidget {
-  final bool isTrigger; // Pour savoir si on cherche un Trigger ou une Action
+  /// Whether the selection is for a trigger or an action.
+  final bool isTrigger;
 
   const ServiceSelectionPage({super.key, required this.isTrigger});
 
-  // Helper to parse hex color
+  /// Parses a hex color string.
   Color _parseColor(String? hexColor) {
     if (hexColor == null || hexColor.isEmpty) return Colors.grey;
     try {
@@ -34,7 +37,8 @@ class ServiceSelectionPage extends StatelessWidget {
         ),
         title: Text(
           isTrigger ? "Select Trigger" : "Select Action",
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style:
+              const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
       ),
       body: FutureBuilder<List<dynamic>>(
@@ -48,18 +52,22 @@ class ServiceSelectionPage extends StatelessWidget {
             return const Center(child: Text("No services available"));
           }
 
-          // Filter services that have at least one trigger (if isTrigger) or action (if !isTrigger)
+          // Filter services that expose at least one trigger or action.
           final services = snapshot.data!.where((s) {
             if (isTrigger) {
-              return s['triggers'] != null && (s['triggers'] as List).isNotEmpty;
+              return s['triggers'] != null &&
+                  (s['triggers'] as List).isNotEmpty;
             } else {
-              return s['reactions'] != null && (s['reactions'] as List).isNotEmpty;
+              return s['reactions'] != null &&
+                  (s['reactions'] as List).isNotEmpty;
             }
           }).toList();
 
           if (services.isEmpty) {
             return Center(
-              child: Text(isTrigger ? "No triggers available" : "No reactions available"),
+              child: Text(isTrigger
+                  ? "No triggers available"
+                  : "No reactions available"),
             );
           }
 
@@ -94,24 +102,26 @@ class ServiceSelectionPage extends StatelessWidget {
 
   void _showActionsModal(BuildContext context, Map<String, dynamic> service) {
     final rawData = service['raw'] as Map<String, dynamic>;
-    final List items = isTrigger 
-        ? (rawData['triggers'] as List? ?? []) 
+    final List items = isTrigger
+        ? (rawData['triggers'] as List? ?? [])
         : (rawData['reactions'] as List? ?? []);
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Permet de prendre plus de hauteur
+      // Allow the sheet to take more height.
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          height: MediaQuery.of(context).size.height * 0.7, // 70% de l'écran
+          // 70% of the screen height.
+          height: MediaQuery.of(context).size.height * 0.7,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
           ),
           child: Column(
             children: [
-              // Barre de "poignée"
+              // Drag handle.
               const SizedBox(height: 12),
               Container(
                 width: 50,
@@ -122,14 +132,15 @@ class ServiceSelectionPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               Text(
                 "${service['name']} ${isTrigger ? 'Triggers' : 'Actions'}",
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
 
-              // Liste des actions (Rectangles)
+              // Action list.
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -138,7 +149,7 @@ class ServiceSelectionPage extends StatelessWidget {
                     final item = items[index];
                     return InkWell(
                       onTap: () {
-                        // On ferme la modal
+                        // Close the modal.
                         Navigator.pop(context);
                         final fields = (item['fields'] as List? ?? []);
                         if (fields.isNotEmpty) {
@@ -172,12 +183,13 @@ class ServiceSelectionPage extends StatelessWidget {
                             Text(
                               item['name'] ?? "Unknown",
                               style: const TextStyle(
-                                fontSize: 16, 
+                                fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             const Spacer(),
-                            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                            const Icon(Icons.arrow_forward_ios,
+                                size: 16, color: Colors.grey),
                           ],
                         ),
                       ),
@@ -221,7 +233,8 @@ class ServiceSelectionPage extends StatelessWidget {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            final hasMissingRequired = _hasMissingRequiredFields(fields, values);
+            final hasMissingRequired =
+                _hasMissingRequiredFields(fields, values);
             if (!tokenPrefilled) {
               tokenPrefilled = true;
               final serviceId = rawData['id']?.toString().toLowerCase() ?? '';
@@ -269,7 +282,8 @@ class ServiceSelectionPage extends StatelessWidget {
                     const SizedBox(height: 20),
                     Text(
                       item['name']?.toString() ?? 'Parameters',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
@@ -288,7 +302,8 @@ class ServiceSelectionPage extends StatelessWidget {
                           final key = field['key']?.toString() ?? '';
                           final type = field['type']?.toString() ?? 'string';
                           final requiredField = field['required'] == true;
-                          final description = field['description']?.toString() ?? '';
+                          final description =
+                              field['description']?.toString() ?? '';
                           final example = field['example']?.toString() ?? '';
                           final currentValue = values[key];
 
@@ -301,7 +316,8 @@ class ServiceSelectionPage extends StatelessWidget {
                                     ? "Token linked."
                                     : "Missing token id. Please login to this service.",
                                 style: TextStyle(
-                                  color: tokenOk ? Colors.green[700] : Colors.red,
+                                  color:
+                                      tokenOk ? Colors.green[700] : Colors.red,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -328,8 +344,11 @@ class ServiceSelectionPage extends StatelessWidget {
                                       : TextInputType.text,
                                   initialValue: currentValue?.toString() ?? '',
                                   decoration: InputDecoration(
-                                    hintText: example.isNotEmpty ? example : description,
-                                    hintStyle: TextStyle(color: Colors.grey[500]),
+                                    hintText: example.isNotEmpty
+                                        ? example
+                                        : description,
+                                    hintStyle:
+                                        TextStyle(color: Colors.grey[500]),
                                     filled: true,
                                     fillColor: const Color(0xFFF3F6F8),
                                     border: OutlineInputBorder(
@@ -430,7 +449,8 @@ class ServiceSelectionPage extends StatelessWidget {
       return !_isTokenIdValid(value);
     }
     if (type == 'number') {
-      final numVal = value is num ? value : num.tryParse(value?.toString() ?? '');
+      final numVal =
+          value is num ? value : num.tryParse(value?.toString() ?? '');
       return numVal == null || numVal == 0;
     }
     if (type.startsWith('array')) {
@@ -453,4 +473,3 @@ class ServiceSelectionPage extends StatelessWidget {
     return parsed != null && parsed > 0;
   }
 }
-

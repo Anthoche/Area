@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Displays a tappable logic block for trigger or action selection.
 class LogicBlockCard extends StatelessWidget {
   final String typeLabel;
   final String placeholder;
@@ -42,13 +43,13 @@ class LogicBlockCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Contenu centré (Texte ou Service)
+            // Centered content (text or service).
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (!isFilled) ...[
-                    // État VIDE (Gris)
+                    // Empty state (gray).
                     Text(
                       typeLabel,
                       style: const TextStyle(
@@ -74,7 +75,7 @@ class LogicBlockCard extends StatelessWidget {
                       ),
                     ),
                   ] else ...[
-                    // État REMPLI (Couleur du service)
+                    // Filled state (service color).
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -116,7 +117,7 @@ class LogicBlockCard extends StatelessWidget {
               ),
             ),
 
-            // Bouton DELETE intégré (Coin supérieur droit)
+            // Delete button (top right).
             if (onDelete != null)
               Positioned(
                 top: -12,

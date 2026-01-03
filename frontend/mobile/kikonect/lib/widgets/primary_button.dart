@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Full-width button used across auth flows, optionally with a leading icon.
+/// Displays a full-width button used across auth flows, optionally with a leading icon.
 class PrimaryButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;

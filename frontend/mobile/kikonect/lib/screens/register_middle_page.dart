@@ -1,13 +1,16 @@
 import 'dart:async';
+
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 
 import '../services/oauth_service.dart';
+import '../utils/ui_feedback.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 import 'home_page.dart';
 import 'register_page.dart';
 
+/// Displays the entry screen for registration and OAuth sign-in.
 class RegisterMiddlePage extends StatefulWidget {
   const RegisterMiddlePage({super.key});
 
@@ -53,7 +56,7 @@ class _RegisterMiddlePageState extends State<RegisterMiddlePage> {
     final error = uri.queryParameters['error'];
 
     if (error != null) {
-      _showErrorPopup('OAuth error: $error');
+      showErrorDialog(context, 'OAuth error: $error', title: 'Erreur');
       return;
     }
 
@@ -62,12 +65,14 @@ class _RegisterMiddlePageState extends State<RegisterMiddlePage> {
     }
 
     try {
-      final result = await _authService.exchangeCodeForToken(code, state: state);
+      final result =
+          await _authService.exchangeCodeForToken(code, state: state);
       final token = result['token'];
       final email = result['email'] ?? '';
 
       if (token == null || (token is String && token.isEmpty)) {
-        _showErrorPopup("Token manquant dans la réponse");
+        showErrorDialog(context, "Token manquant dans la réponse",
+            title: 'Erreur');
         return;
       }
 
@@ -93,7 +98,7 @@ class _RegisterMiddlePageState extends State<RegisterMiddlePage> {
         );
       }
     } catch (e) {
-      _showErrorPopup('Erreur exchange token: $e');
+      showErrorDialog(context, 'Erreur exchange token: $e', title: 'Erreur');
     }
   }
 
@@ -105,26 +110,8 @@ class _RegisterMiddlePageState extends State<RegisterMiddlePage> {
     try {
       await _authService.signInWith(provider);
     } catch (e) {
-      _showErrorPopup("Erreur lancement OAuth: $e");
+      showErrorDialog(context, "Erreur lancement OAuth: $e", title: 'Erreur');
     }
-  }
-
-  void _showErrorPopup(String message) {
-    showDialog(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text("Erreur", style: TextStyle(color: Colors.red)),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -195,4 +182,3 @@ class _RegisterMiddlePageState extends State<RegisterMiddlePage> {
     );
   }
 }
-

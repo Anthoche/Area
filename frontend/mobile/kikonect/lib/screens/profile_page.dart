@@ -1,10 +1,14 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+
 import 'package:app_links/app_links.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import '../services/oauth_service.dart';
+import '../utils/ui_feedback.dart';
 import 'login_page.dart';
 
+/// Displays the profile screen and connected services.
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -57,7 +61,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _handleDeepLink(Uri uri) async {
     final error = uri.queryParameters['error'];
     if (error != null) {
-      _showSnack("OAuth error: $error", isError: true);
+      showAppSnackBar(context, "OAuth error: $error", isError: true);
       return;
     }
 
@@ -81,7 +85,8 @@ class _ProfilePageState extends State<ProfilePage> {
     final state = uri.queryParameters['state'];
     if (code != null && code.isNotEmpty) {
       try {
-        final result = await _oauthService.exchangeCodeForToken(code, state: state);
+        final result =
+            await _oauthService.exchangeCodeForToken(code, state: state);
         final token = result['token_id'] ?? result['token'];
         if (token != null) {
           await _storage.write(key: 'google_token_id', value: token.toString());
@@ -92,7 +97,7 @@ class _ProfilePageState extends State<ProfilePage> {
         }
         await _loadTokens();
       } catch (e) {
-        _showSnack("OAuth error: $e", isError: true);
+        showAppSnackBar(context, "OAuth error: $e", isError: true);
       }
     }
   }
@@ -103,7 +108,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       await _oauthService.signInWith(entry.id);
     } catch (e) {
-      _showSnack("Connection failed: $e", isError: true);
+      showAppSnackBar(context, "Connection failed: $e", isError: true);
     } finally {
       if (mounted) {
         setState(() => _busy.remove(entry.id));
@@ -122,16 +127,6 @@ class _ProfilePageState extends State<ProfilePage> {
         setState(() => _busy.remove(entry.id));
       }
     }
-  }
-
-  void _showSnack(String message, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : null,
-      ),
-    );
   }
 
   Future<void> _logout() async {
@@ -195,7 +190,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Row(
                       children: [
                         entry.iconPath != null
-                            ? Image.asset(entry.iconPath!, height: 36, width: 36)
+                            ? Image.asset(entry.iconPath!,
+                                height: 36, width: 36)
                             : const Icon(Icons.apps, size: 36),
                         const SizedBox(width: 12),
                         Expanded(
@@ -220,7 +216,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         const SizedBox(width: 12),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: connected ? Colors.red : Colors.black,
+                            backgroundColor:
+                                connected ? Colors.red : Colors.black,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),

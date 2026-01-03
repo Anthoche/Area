@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Reusable text field styled for authentication and onboarding forms.
+/// Displays a reusable text field styled for authentication and onboarding forms.
 class AppTextField extends StatelessWidget {
   final String label;
   final bool obscure;

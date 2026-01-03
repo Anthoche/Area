@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
 import 'screens/login_page.dart';
 
-/// Root widget that wires global theming and routes into the app.
+/// Builds the root widget that wires global theming and routes into the app.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

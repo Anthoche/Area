@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Capsule-styled button used to filter service lists.
+/// Displays a capsule-styled button used to filter service lists.
 class FilterTag extends StatelessWidget {
   final String label;
   final bool isSelected;

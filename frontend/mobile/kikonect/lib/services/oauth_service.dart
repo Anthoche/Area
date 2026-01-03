@@ -1,9 +1,11 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
+/// Handles OAuth login flows through the backend.
 class OAuthService {
   static String get _backendBaseUrl =>
       dotenv.env['API_URL'] ?? 'http://10.0.2.2:8080';
@@ -11,8 +13,11 @@ class OAuthService {
   static String get _redirectUri => dotenv.env['REDIRECT_URI'] ?? 'test';
   final _storage = const FlutterSecureStorage();
 
-  Future<Map<String, dynamic>> exchangeCodeForToken(String code,
-      {String? state}) async {
+  /// Exchanges an OAuth code for a backend token payload.
+  Future<Map<String, dynamic>> exchangeCodeForToken(
+    String code, {
+    String? state,
+  }) async {
     try {
       final url = Uri.parse("$_backendBaseUrl/oauth/google/exchange");
       final userId = await _storage.read(key: 'user_id');
@@ -42,6 +47,7 @@ class OAuthService {
     }
   }
 
+  /// Starts the OAuth flow for the requested provider.
   Future<void> signInWith(String provider) async {
     if (provider != 'google' && provider != 'github') {
       throw Exception("Provider non support': $provider");
@@ -59,7 +65,8 @@ class OAuthService {
 
         final response = await http.get(url);
         if (response.statusCode != 200) {
-          throw Exception("Backend error ${response.statusCode}: ${response.body}");
+          throw Exception(
+              "Backend error ${response.statusCode}: ${response.body}");
         }
 
         final data = jsonDecode(response.body);
