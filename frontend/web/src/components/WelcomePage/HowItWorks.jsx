@@ -1,7 +1,11 @@
 "use client";
 import "./welcomepage.css"
+import { Link } from "react-router-dom";
 
 export default function HowItWorks() {
+    const userId = Number(localStorage.getItem("user_id"));
+    const isLoggedIn = Number.isFinite(userId) && userId > 0;
+    
     return (
         <div className="welcome-page-section how-it-works" id="how-it-works">
             <h2 className="how-title">How it works</h2>
@@ -35,7 +39,12 @@ export default function HowItWorks() {
             <div className="how-cta">
                 <h3>Ready to automate your workflow?</h3>
                 <p>Join millions of users who save hours every week with automated workflows. Start for free, no credit card required.</p>
-                <a className="how-cta-btn" href="/login">Get Started for Free</a>
+                <Link
+                    className="how-cta-btn"
+                    to={isLoggedIn ? "/home" : "/login"}
+                >
+                    Get Started for Free
+                </Link>           
             </div>
         </div>
     );

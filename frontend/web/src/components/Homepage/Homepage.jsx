@@ -337,7 +337,7 @@ export default function Homepage() {
 
   const handleDelete = async () => {
     if (!selectedWorkflow) return;
-    if (!window.confirm("Supprimer ce Konnect ?")) return;
+    if (!window.confirm("Delete this Konect?")) return;
     const userId = getUserId();
     if (!userId) {
       alert("Merci de vous reconnecter (user id manquant)");
@@ -417,7 +417,7 @@ export default function Homepage() {
         <main className="main-content">
           <div className="konect-hero">
             <Link className="hero-back" to="/">
-              {"<"} Back to landing
+              {"<"} Back to Welcome Page
             </Link>
             <button
               className="profile-btn hero-profile"
