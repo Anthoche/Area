@@ -7,10 +7,11 @@ void showAppSnackBar(
   bool isError = false,
   Color? backgroundColor,
 }) {
+  final colorScheme = Theme.of(context).colorScheme;
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(message),
-      backgroundColor: backgroundColor ?? (isError ? Colors.red : null),
+      backgroundColor: backgroundColor ?? (isError ? colorScheme.error : null),
     ),
   );
 }
@@ -24,13 +25,14 @@ Future<void> showErrorDialog(
   Color? buttonColor,
   String buttonLabel = 'OK',
 }) {
+  final colorScheme = Theme.of(context).colorScheme;
   return showDialog<void>(
     context: context,
     builder: (_) => AlertDialog(
       title: Text(
         title,
         style: TextStyle(
-          color: titleColor ?? Colors.red,
+          color: titleColor ?? colorScheme.error,
           fontWeight: FontWeight.bold,
         ),
       ),

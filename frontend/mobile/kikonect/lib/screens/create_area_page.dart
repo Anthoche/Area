@@ -122,19 +122,20 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black, size: 30),
+          icon: Icon(Icons.close, color: colorScheme.onSurface, size: 30),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           "Create",
           style: TextStyle(
-            color: Colors.black,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.bold,
             fontSize: 24,
           ),
@@ -173,9 +174,12 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
               const SizedBox(height: 10),
 
               // Down arrow.
-              const Center(
-                child: Icon(Icons.arrow_downward_rounded,
-                    size: 32, color: Colors.grey),
+              Center(
+                child: Icon(
+                  Icons.arrow_downward_rounded,
+                  size: 32,
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
 
               const SizedBox(height: 10),
@@ -184,9 +188,10 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
                 controller: _nameController,
                 decoration: InputDecoration(
                   hintText: "Konect name",
-                  hintStyle: TextStyle(color: Colors.grey[500]),
+                  hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                   filled: true,
-                  fillColor: const Color(0xFFF3F6F8),
+                  fillColor: theme.inputDecorationTheme.fillColor ??
+                      colorScheme.surfaceVariant,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -205,11 +210,11 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
                 itemCount: actionsData.length,
-                separatorBuilder: (context, index) => const Column(
+                separatorBuilder: (context, index) => Column(
                   children: [
-                    SizedBox(height: 10),
-                    Icon(Icons.add, color: Colors.grey),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
+                    Icon(Icons.add, color: colorScheme.onSurfaceVariant),
+                    const SizedBox(height: 10),
                   ],
                 ),
                 itemBuilder: (context, index) {
@@ -251,7 +256,7 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
                   height: 56,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
+                      backgroundColor: colorScheme.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -259,13 +264,15 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
                     ),
                     onPressed: _isSubmitting ? null : _submitArea,
                     child: _isSubmitting
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
+                        ? CircularProgressIndicator(
+                            color: colorScheme.onPrimary,
+                          )
+                        : Text(
                             "Connect",
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: colorScheme.onPrimary,
                             ),
                           ),
                   ),

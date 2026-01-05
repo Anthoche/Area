@@ -206,6 +206,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: Center(
         child: SizedBox(
@@ -281,10 +282,12 @@ class _LoginPageState extends State<LoginPage> {
                       MaterialPageRoute(builder: (_) => const Homepage()),
                     );
                   },
-                  child: const Text(
+                  child: Text(
                     "[DEV] Skip Login",
                     style: TextStyle(
-                        color: Colors.red, fontWeight: FontWeight.bold),
+                      color: colorScheme.error,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
