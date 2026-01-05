@@ -59,6 +59,20 @@ export default function WelcomePage() {
 
     return (
         <div className="welcome-page-wrapper">
+            <div className="welcome-wave-bg">
+                <svg viewBox="0 0 1440 220" fill="none" 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="100%" height="220" preserveAspectRatio="none" style={{display: 'block'}}>
+                    <defs>
+                        <linearGradient id="waveGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#b3e0ff"/>
+                            <stop offset="100%" stopColor="#e3f0ff"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M0,120 C360,200 1080,40 1440,120 L1440,0 L0,0 Z" fill="url(#waveGradient)"/>
+                    <path d="M0,180 C400,100 1040,260 1440,180 L1440,0 L0,0 Z" fill="#e3f0ff" fillOpacity="0.7"/>
+                </svg>
+            </div>
             <Navbar />
             <div className="welcome-page-content">
                 <div className="welcome-page-section" id="features">
@@ -80,7 +94,6 @@ export default function WelcomePage() {
                             Connect your favorite apps and services to automate workflows. No code required.
                             Create powerful automations in minutes and boost your productivity.
                         </p>
-                        
                         <div className="welcome-page-section-pres-btns">
                             <Link
                                 className="how-cta-btn"
