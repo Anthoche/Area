@@ -163,14 +163,15 @@ class _HomepageState extends State<Homepage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
         var currentEnabled = initialEnabled;
         var isBusy = false;
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return Container(
               height: MediaQuery.of(context).size.height * 0.45,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
               ),
               padding: const EdgeInsets.all(20),
@@ -183,7 +184,7 @@ class _HomepageState extends State<Homepage> {
                       width: 50,
                       height: 5,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: colorScheme.outlineVariant,
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
@@ -199,7 +200,7 @@ class _HomepageState extends State<Homepage> {
                   Text(
                     "Trigger: $triggerType",
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 20),
                   SwitchListTile(
@@ -240,7 +241,10 @@ class _HomepageState extends State<Homepage> {
                   Text(
                     "This Konect runs automatically when the trigger happens.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -272,18 +276,20 @@ class _HomepageState extends State<Homepage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final workflows = _filteredWorkflows;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'My Konect',
-          style: TextStyle(
-            color: Colors.black,
+          style: textTheme.titleLarge?.copyWith(
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.bold,
             fontFamily: 'Serif',
             fontSize: 22,
@@ -291,7 +297,7 @@ class _HomepageState extends State<Homepage> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_outline, color: Colors.black),
+            icon: Icon(Icons.person_outline, color: colorScheme.onSurface),
             onPressed: () {
               Navigator.push(
                 context,
@@ -304,9 +310,9 @@ class _HomepageState extends State<Homepage> {
       ),
       body: CustomScrollView(
         slivers: [
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -315,10 +321,10 @@ class _HomepageState extends State<Homepage> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black54,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -380,7 +386,7 @@ class _HomepageState extends State<Homepage> {
                 child: Center(
                   child: Text(
                     _error!,
-                    style: const TextStyle(color: Colors.red),
+                    style: TextStyle(color: colorScheme.error),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -416,7 +422,7 @@ class _HomepageState extends State<Homepage> {
                     subtitle: triggerType.isNotEmpty ? triggerType : null,
                     badgeText: isManual ? "MANUAL" : (enabled ? "ON" : "OFF"),
                     badgeColor: isManual
-                        ? Colors.black54
+                        ? colorScheme.onSurfaceVariant
                         : (enabled ? Colors.green : Colors.red),
                     onTap: () {
                       if (isManual) {
@@ -435,8 +441,8 @@ class _HomepageState extends State<Homepage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF7209B7),
-        foregroundColor: Colors.white,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         shape: const CircleBorder(),
         elevation: 4,
         onPressed: () {
