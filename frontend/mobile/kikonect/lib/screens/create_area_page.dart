@@ -148,6 +148,25 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  hintText: "Konect name",
+                  hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                  filled: true,
+                  fillColor: theme.inputDecorationTheme.fillColor ??
+                      colorScheme.surfaceVariant,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               // IF THIS (trigger).
               LogicBlockCard(
                 typeLabel: "IF THIS",
@@ -183,27 +202,6 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
               ),
 
               const SizedBox(height: 10),
-
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  hintText: "Konect name",
-                  hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
-                  filled: true,
-                  fillColor: theme.inputDecorationTheme.fillColor ??
-                      colorScheme.surfaceVariant,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 12,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
 
               // THEN THAT (actions).
               ListView.separated(
