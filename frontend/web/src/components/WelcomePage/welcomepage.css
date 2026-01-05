@@ -55,10 +55,27 @@
     }
 }
 
-/* Page style */
 .welcome-page-wrapper {
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #e3f0ff 0%, #ffffff 100%);
+    position: relative;
+    overflow-x: hidden;
+}
+
+.welcome-wave-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.welcome-page-content {
+    position: relative;
+    z-index: 1;
 }
 
 .welcome-page-content {

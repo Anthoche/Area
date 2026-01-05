@@ -7,36 +7,48 @@ import ServiceCard from "./ServiceCard";
 import user from "../../../lib/assets/user.png";
 
 const API_BASE =
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.API_URL ||
-  `${window.location.protocol}//${window.location.hostname}:8080`;
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.API_URL ||
+    `${window.location.protocol}//${window.location.hostname}:8080`;
 
 export default function Homepage() {
-  const [workflows, setWorkflows] = useState([]);
-  const [areas, setAreas] = useState([]);
-  const [triggers, setTriggers] = useState([]);
-  const [reactions, setReactions] = useState([]);
-  const [selectedReaction, setSelectedReaction] = useState("");
-  const [selectedWorkflow, setSelectedWorkflow] = useState(null);
-  const [payloadPreview, setPayloadPreview] = useState("{}");
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [showCreate, setShowCreate] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [triggering, setTriggering] = useState(false);
-  const [togglingTimer, setTogglingTimer] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const getUserId = () => Number(localStorage.getItem("user_id") || "");
-  const userEmail = localStorage.getItem("user_email") || "user@example.com";
-  const [form, setForm] = useState({
-    name: "Mon Konect",
-    triggerType: "",
-    triggerValues: {},
-    values: {},
+    const [workflows, setWorkflows] = useState([]);
+    const [areas, setAreas] = useState([]);
+    const [triggers, setTriggers] = useState([]);
+    const [reactions, setReactions] = useState([]);
+    const [selectedReaction, setSelectedReaction] = useState("");
+    const [selectedWorkflow, setSelectedWorkflow] = useState(null);
+    const [payloadPreview, setPayloadPreview] = useState("{}");
+    const [panelOpen, setPanelOpen] = useState(false);
+    const [showCreate, setShowCreate] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [creating, setCreating] = useState(false);
+    const [triggering, setTriggering] = useState(false);
+    const [togglingTimer, setTogglingTimer] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [showProfile, setShowProfile] = useState(false);
+    const getUserId = () => Number(localStorage.getItem("user_id") || "");
+    const userEmail = localStorage.getItem("user_email") || "user@example.com";
+    const [form, setForm] = useState({
+        name: "Mon Konect",
+        triggerType: "",
+        triggerValues: {},
+        values: {},
+    });
+    const [activeFilters, setActiveFilters] = useState([]);
+    const [existingIds, setExistingIds] = useState([]);
+
+  const cards = workflows.map((wf) => {
+    const isNew = !existingIds.includes(wf.id) && !loading;
+    return { ...wf, created: isNew };
   });
-  const [activeFilters, setActiveFilters] = useState([]);
+
+   useEffect(() => {
+    const ids = workflows.map((wf) => wf.id);
+    setExistingIds(ids);
+  }, [workflows]);
+
 
   const selectedReactionDef = useMemo(
     () => reactions.find((r) => r.id === selectedReaction),
@@ -114,6 +126,22 @@ export default function Homepage() {
       );
     }
   }, [selectedWorkflow, form, selectedReaction]);
+
+  useEffect(() => {
+    const colorOptions = [
+      "linear-gradient(135deg, #00d0ffc1 0%, #b2f1ffe4 100%)",
+      "linear-gradient(135deg, #FF4081 0%, rgba(255, 144, 144, 1) 100%)",
+      "linear-gradient(135deg, #00E676 0%, #86ffc4ff 100%)",
+      "linear-gradient(135deg, #D500F9 0%, #cfa8d6ff 100%)",
+    ];
+
+    setWorkflows((prev) =>
+      prev.map((wf, idx) => ({
+        ...wf,
+        cardColor: wf.cardColor || colorOptions[idx % 4],
+      }))
+    );
+  }, [workflows]);
 
   useEffect(() => {
     if (!form.triggerType && triggers.length) {
@@ -337,7 +365,7 @@ export default function Homepage() {
 
   const handleDelete = async () => {
     if (!selectedWorkflow) return;
-    if (!window.confirm("Supprimer ce Konnect ?")) return;
+    if (!window.confirm("Delete this Konect?")) return;
     const userId = getUserId();
     if (!userId) {
       alert("Merci de vous reconnecter (user id manquant)");
@@ -417,7 +445,7 @@ export default function Homepage() {
         <main className="main-content">
           <div className="konect-hero">
             <Link className="hero-back" to="/">
-              {"<"} Back to landing
+              {"<"} Back to Welcome Page
             </Link>
             <button
               className="profile-btn hero-profile"
@@ -497,24 +525,26 @@ export default function Homepage() {
               {workflows
                 .filter(matchesFilters)
                 .filter((wf) =>
-                  (wf.name || "")
-                    .toLowerCase()
-                    .includes(searchTerm.trim().toLowerCase())
+                  (wf.name || "").toLowerCase().includes(searchTerm.trim().toLowerCase())
                 )
-                .map((wf, idx) => (
-                  <ServiceCard
-                    key={wf.id}
-                    title={wf.name}
-                    color={
-                      ["#00D2FF", "#FF4081", "#00E676", "#D500F9"][idx % 4]
-                    }
-                    onClick={() => {
-                      setSelectedWorkflow(wf);
-                      setPanelOpen(true);
-                      setShowCreate(false);
-                    }}
-                  />
-                ))}
+                .map((wf) => {
+                  const created = !existingIds.includes(wf.id) && !loading;
+                  const deleted = deleting && selectedWorkflow && selectedWorkflow.id === wf.id;
+                  return (
+                    <ServiceCard
+                      key={wf.id}
+                      title={wf.name}
+                      color={wf.cardColor}
+                      created={created}
+                      deleted={deleted}
+                      onClick={() => {
+                        setSelectedWorkflow(wf);
+                        setPanelOpen(true);
+                        setShowCreate(false);
+                      }}
+                    />
+                  );
+                })}
               {!workflows.length && (
                 <div className="muted">No Konect created yet. Create the first one!</div>
               )}
@@ -840,9 +870,4 @@ export default function Homepage() {
       </div>
     </div>
   );
-}
-
-function getColor(i) {
-  const colors = ["#00d0ff93", "#ff40809c", "#ff40807f", "#00e677b0", "#d400f99a"];
-  return colors[i % colors.length];
 }
