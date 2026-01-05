@@ -19,9 +19,13 @@ class LogicBlockCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final bool isFilled = data != null;
-    final Color bgColor = isFilled ? (data!['color'] as Color) : Colors.grey[300]!;
-    final Color contentColor = isFilled ? Colors.white : Colors.black54;
+    final Color bgColor =
+        isFilled ? (data!['color'] as Color) : colorScheme.surfaceVariant;
+    final Color contentColor =
+        isFilled ? Colors.white : colorScheme.onSurfaceVariant;
 
     return InkWell(
       onTap: onTap,
@@ -35,7 +39,7 @@ class LogicBlockCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: theme.shadowColor.withOpacity(0.12),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -52,8 +56,8 @@ class LogicBlockCard extends StatelessWidget {
                     // Empty state (gray).
                     Text(
                       typeLabel,
-                      style: const TextStyle(
-                        color: Colors.black87,
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
                         fontSize: 28,
                         fontWeight: FontWeight.w900,
                       ),
@@ -62,13 +66,13 @@ class LogicBlockCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.black,
+                        color: colorScheme.primary,
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: Text(
                         placeholder,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: colorScheme.onPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
@@ -125,7 +129,9 @@ class LogicBlockCard extends StatelessWidget {
                 child: IconButton(
                   icon: Icon(
                     Icons.cancel,
-                    color: isFilled ? Colors.white.withOpacity(0.8) : Colors.grey[600],
+                    color: isFilled
+                        ? Colors.white.withOpacity(0.8)
+                        : colorScheme.onSurfaceVariant,
                     size: 28,
                   ),
                   onPressed: onDelete,

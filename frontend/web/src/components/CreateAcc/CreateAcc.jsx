@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./createacc.css";
-import logo from "../../../lib/assets/Kikonect_logo.png";
+import logo from "../../../lib/assets/Kikonect_logo_no_text.png";
 import logoGoogle from "../../../lib/assets/G_logo.png";
 import logoGithub from "../../../lib/assets/github_logo.png";
 
@@ -25,8 +25,20 @@ export default function CreateAcc() {
             return;
         }
 
-        navigate("/register", { state: { email } });
-    };
+  return (
+    <div className="reg-page">
+      <div className="reg-card">
+          <div className="logo-container">
+              <img src={logo} alt="KiKoNect logo" className="logo-img" />
+              <h1>KiKoNect</h1>
+          </div>
+        <h2 className="title">Create an account</h2>
+        <p className="sub-text">Enter your email to sign up for this app</p>
+        {error && (
+          <div className="error-popup">
+            <strong>Error:</strong> {error}
+          </div>
+        )}
 
     const handleGoogleLogin = () => {
         const id = Number(localStorage.getItem("user_id"));

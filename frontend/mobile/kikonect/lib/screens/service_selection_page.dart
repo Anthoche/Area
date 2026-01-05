@@ -24,21 +24,23 @@ class ServiceSelectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final apiService = ApiService();
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: Icon(Icons.close, color: colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           isTrigger ? "Select Trigger" : "Select Action",
-          style:
-              const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: FutureBuilder<List<dynamic>>(
@@ -112,11 +114,12 @@ class ServiceSelectionPage extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
         return Container(
           // 70% of the screen height.
           height: MediaQuery.of(context).size.height * 0.7,
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
           ),
           child: Column(
@@ -127,7 +130,7 @@ class ServiceSelectionPage extends StatelessWidget {
                 width: 50,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -135,8 +138,11 @@ class ServiceSelectionPage extends StatelessWidget {
 
               Text(
                 "${service['name']} ${isTrigger ? 'Triggers' : 'Actions'}",
-                style:
-                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -172,9 +178,9 @@ class ServiceSelectionPage extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 16),
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
+                          color: colorScheme.surfaceVariant,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: colorScheme.outlineVariant),
                         ),
                         child: Row(
                           children: [
@@ -182,14 +188,18 @@ class ServiceSelectionPage extends StatelessWidget {
                             const SizedBox(width: 16),
                             Text(
                               item['name'] ?? "Unknown",
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface,
                               ),
                             ),
                             const Spacer(),
-                            const Icon(Icons.arrow_forward_ios,
-                                size: 16, color: Colors.grey),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                           ],
                         ),
                       ),
@@ -233,6 +243,8 @@ class ServiceSelectionPage extends StatelessWidget {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
+            final theme = Theme.of(context);
+            final colorScheme = theme.colorScheme;
             final hasMissingRequired =
                 _hasMissingRequiredFields(fields, values);
             if (!tokenPrefilled) {
@@ -259,8 +271,8 @@ class ServiceSelectionPage extends StatelessWidget {
             }
             return Container(
               height: MediaQuery.of(context).size.height * 0.7,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
               ),
               child: Padding(
@@ -274,7 +286,7 @@ class ServiceSelectionPage extends StatelessWidget {
                         width: 50,
                         height: 5,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: colorScheme.outlineVariant,
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
@@ -282,17 +294,20 @@ class ServiceSelectionPage extends StatelessWidget {
                     const SizedBox(height: 20),
                     Text(
                       item['name']?.toString() ?? 'Parameters',
-                      style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
                     if (hasMissingRequired)
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.only(bottom: 10),
                         child: Text(
                           "Please fill required fields.",
-                          style: TextStyle(color: Colors.red),
+                          style: TextStyle(color: colorScheme.error),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -316,8 +331,9 @@ class ServiceSelectionPage extends StatelessWidget {
                                     ? "Token linked."
                                     : "Missing token id. Please login to this service.",
                                 style: TextStyle(
-                                  color:
-                                      tokenOk ? Colors.green[700] : Colors.red,
+                                  color: tokenOk
+                                      ? colorScheme.secondary
+                                      : colorScheme.error,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -331,10 +347,10 @@ class ServiceSelectionPage extends StatelessWidget {
                               children: [
                                 Text(
                                   requiredField ? "$key *" : key,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
+                                    color: colorScheme.onSurface,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -347,10 +363,13 @@ class ServiceSelectionPage extends StatelessWidget {
                                     hintText: example.isNotEmpty
                                         ? example
                                         : description,
-                                    hintStyle:
-                                        TextStyle(color: Colors.grey[500]),
+                                    hintStyle: TextStyle(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
                                     filled: true,
-                                    fillColor: const Color(0xFFF3F6F8),
+                                    fillColor: theme
+                                            .inputDecorationTheme.fillColor ??
+                                        colorScheme.surfaceVariant,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide: BorderSide.none,
@@ -387,7 +406,7 @@ class ServiceSelectionPage extends StatelessWidget {
                       height: 48,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
+                          backgroundColor: colorScheme.primary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -413,7 +432,6 @@ class ServiceSelectionPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
                           ),
                         ),
                       ),

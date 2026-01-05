@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./register.css";
-import logo from "../../../lib/assets/Kikonect_logo.png";
+import logo from "../../../lib/assets/Kikonect_logo_no_text.png";
 
 const API_BASE =
     import.meta.env.VITE_API_URL ||
@@ -86,7 +86,10 @@ export default function Register() {
     return (
         <div className="reg-page">
             <div className="reg-card">
-                <img src={logo} alt="KiKoNect logo" className="logoR-img" />
+                <div className="logo-container">
+                    <img src={logo} alt="KiKoNect logo" className="logo-img" />
+                    <h1>KiKoNect</h1>
+                </div>
                 <h2 className="title">Create an account</h2>
                                 {formError && (
                                     <div

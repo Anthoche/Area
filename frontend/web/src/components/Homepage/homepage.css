@@ -1,3 +1,5 @@
+@import "../../index.css";
+
 .menu-btn {
     font-size: 25px;
     background: none;
@@ -82,7 +84,6 @@
 }
 
 
-
 .sidebar-title {
     margin-top: 20px;
     font-size: 17.5px;
@@ -142,7 +143,7 @@
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     padding: 16px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
     z-index: 20;
     min-width: 200px;
 }
@@ -165,8 +166,9 @@
     margin-top: -25px;
     font-size: 25px;
     font-weight: 700;
-    color: #2c2b2b;
+    color: var(--title-color);
 }
+
 .section-header.centered {
     text-align: left;
 }
@@ -338,7 +340,7 @@
 }
 
 .muted {
-    color: #6b7280;
+    color: var(--text-third);
     font-size: 15px;
     margin-left: 5px;
 }
@@ -352,6 +354,7 @@
     background-color: #4a067f;
     transform: scale(0.95);
 }
+
 .panel-scroll {
     height: 100%;
     overflow-y: auto;

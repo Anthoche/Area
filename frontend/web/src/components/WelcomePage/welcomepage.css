@@ -13,8 +13,6 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --navbar-text-color: var(--text-secondary);
-        --navbar-text-color-hovered: #ffffff;
         --step-example-text-color: #124bc4;
         --step-example-bg-color: var(--card-bg-color);
     }
