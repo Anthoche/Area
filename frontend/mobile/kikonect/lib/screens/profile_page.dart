@@ -184,21 +184,52 @@ class _ProfilePageState extends State<ProfilePage> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: colorScheme.outlineVariant),
                   ),
-                  child: SwitchListTile(
-                    title: Text(
-                      "Dark mode",
-                      style: TextStyle(color: colorScheme.onSurface),
-                    ),
-                    subtitle: Text(
-                      "Reduce glare for low light",
-                      style: TextStyle(color: colorScheme.onSurfaceVariant),
-                    ),
-                    value: themeController.isDark,
-                    onChanged: (value) {
-                      themeController.setMode(
-                        value ? ThemeMode.dark : ThemeMode.light,
-                      );
-                    },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      Text(
+                        "Theme",
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SegmentedButton<ThemeMode>(
+                        segments: const [
+                          ButtonSegment(
+                            value: ThemeMode.light,
+                            label: Text("Light"),
+                            icon: Icon(Icons.light_mode),
+                          ),
+                          ButtonSegment(
+                            value: ThemeMode.system,
+                            label: Text("Auto"),
+                            icon: Icon(Icons.brightness_auto),
+                          ),
+                          ButtonSegment(
+                            value: ThemeMode.dark,
+                            label: Text("Dark"),
+                            icon: Icon(Icons.dark_mode),
+                          ),
+                        ],
+                        selected: {themeController.mode},
+                        onSelectionChanged: (selection) {
+                          if (selection.isEmpty) return;
+                          themeController.setMode(selection.first);
+                        },
+                        showSelectedIcon: false,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Auto follows your system setting.",
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 24),

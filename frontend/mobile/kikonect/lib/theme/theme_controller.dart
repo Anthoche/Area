@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class ThemeController extends ChangeNotifier {
   ThemeController(
     this._storage, {
-    ThemeMode initialMode = ThemeMode.light,
+    ThemeMode initialMode = ThemeMode.system,
   }) : _mode = initialMode;
 
   static const String _storageKey = 'theme_mode';
@@ -22,7 +22,9 @@ class ThemeController extends ChangeNotifier {
           ? ThemeMode.dark
           : stored == 'light'
               ? ThemeMode.light
-              : _mode;
+              : stored == 'system'
+                  ? ThemeMode.system
+                  : _mode;
       if (loaded != _mode) {
         _mode = loaded;
         notifyListeners();
@@ -37,7 +39,11 @@ class ThemeController extends ChangeNotifier {
     try {
       await _storage.write(
         key: _storageKey,
-        value: mode == ThemeMode.dark ? 'dark' : 'light',
+        value: mode == ThemeMode.dark
+            ? 'dark'
+            : mode == ThemeMode.light
+                ? 'light'
+                : 'system',
       );
     } catch (_) {}
   }
