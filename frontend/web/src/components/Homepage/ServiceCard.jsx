@@ -1,10 +1,23 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-export default function ServiceCard({ title, color = "#ddd", icons = [], onClick, ghost }) {
+export default function ServiceCard({ title, color = "#ddd", icons = [], onClick, ghost, created, deleted, onAnimationEnd }) {
     const safeIcons = Array.isArray(icons) ? icons : [];
+    const [animate, setAnimate] = useState(false);
+    const [exit, setExit] = useState(false);
+    const cardRef = useRef(null);
+
+    useEffect(() => {
+        if (created) {
+            setAnimate(true);
+            const timeout = setTimeout(() => setAnimate(false), 700);
+            return () => clearTimeout(timeout);
+        }
+    }, [created]);
+
     return (
         <div
-            className={`service-card ${ghost ? "ghost-card" : ""}`}
+            ref={cardRef}
+            className={`service-card ${ghost ? "ghost-card" : ""} ${animate ? "service-card-appear" : ""} ${exit ? "service-card-exit" : ""}`}
             style={{ background: color, cursor: "pointer" }}
             onClick={onClick}
         >

@@ -37,6 +37,18 @@ export default function Homepage() {
         values: {},
     });
     const [activeFilters, setActiveFilters] = useState([]);
+    const [existingIds, setExistingIds] = useState([]);
+
+  const cards = workflows.map((wf) => {
+    const isNew = !existingIds.includes(wf.id) && !loading;
+    return { ...wf, created: isNew };
+  });
+
+   useEffect(() => {
+    const ids = workflows.map((wf) => wf.id);
+    setExistingIds(ids);
+  }, [workflows]);
+
 
   const selectedReactionDef = useMemo(
     () => reactions.find((r) => r.id === selectedReaction),
@@ -114,6 +126,22 @@ export default function Homepage() {
       );
     }
   }, [selectedWorkflow, form, selectedReaction]);
+
+  useEffect(() => {
+    const colorOptions = [
+      "linear-gradient(135deg, #00d0ffc1 0%, #b2f1ffe4 100%)",
+      "linear-gradient(135deg, #FF4081 0%, rgba(255, 144, 144, 1) 100%)",
+      "linear-gradient(135deg, #00E676 0%, #86ffc4ff 100%)",
+      "linear-gradient(135deg, #D500F9 0%, #cfa8d6ff 100%)",
+    ];
+
+    setWorkflows((prev) =>
+      prev.map((wf, idx) => ({
+        ...wf,
+        cardColor: wf.cardColor || colorOptions[idx % 4],
+      }))
+    );
+  }, [workflows]);
 
   useEffect(() => {
     if (!form.triggerType && triggers.length) {
@@ -497,27 +525,26 @@ export default function Homepage() {
               {workflows
                 .filter(matchesFilters)
                 .filter((wf) =>
-                  (wf.name || "")
-                    .toLowerCase()
-                    .includes(searchTerm.trim().toLowerCase())
+                  (wf.name || "").toLowerCase().includes(searchTerm.trim().toLowerCase())
                 )
-                .map((wf, idx) => (
-                  <ServiceCard
-                    key={wf.id}
-                    title={wf.name}
-                    color={[
-                      "linear-gradient(135deg, #00d0ffc1 0%, #b2f1ffe4  100%)",
-                      "linear-gradient(135deg, #FF4081 0%, rgba(255, 144, 144, 1) 100%)",
-                      "linear-gradient(135deg, #00E676 0%, #86ffc4ff 100%)",
-                      "linear-gradient(135deg, #D500F9 0%, #cfa8d6ff 100%)",
-                    ][idx % 4]}
-                    onClick={() => {
-                      setSelectedWorkflow(wf);
-                      setPanelOpen(true);
-                      setShowCreate(false);
-                    }}
-                  />
-                ))}
+                .map((wf) => {
+                  const created = !existingIds.includes(wf.id) && !loading;
+                  const deleted = deleting && selectedWorkflow && selectedWorkflow.id === wf.id;
+                  return (
+                    <ServiceCard
+                      key={wf.id}
+                      title={wf.name}
+                      color={wf.cardColor}
+                      created={created}
+                      deleted={deleted}
+                      onClick={() => {
+                        setSelectedWorkflow(wf);
+                        setPanelOpen(true);
+                        setShowCreate(false);
+                      }}
+                    />
+                  );
+                })}
               {!workflows.length && (
                 <div className="muted">No Konect created yet. Create the first one!</div>
               )}
