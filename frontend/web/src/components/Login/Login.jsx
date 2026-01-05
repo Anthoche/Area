@@ -48,7 +48,6 @@ export default function Login() {
       }
       const data = await res.json();
       console.log("Login success:", data);
-       // persist the user id for later OAuth calls
       if (data?.id) {
         setUserId(data.id);
         localStorage.setItem("user_id", data.id);

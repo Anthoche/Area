@@ -7,36 +7,36 @@ import ServiceCard from "./ServiceCard";
 import user from "../../../lib/assets/user.png";
 
 const API_BASE =
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.API_URL ||
-  `${window.location.protocol}//${window.location.hostname}:8080`;
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.API_URL ||
+    `${window.location.protocol}//${window.location.hostname}:8080`;
 
 export default function Homepage() {
-  const [workflows, setWorkflows] = useState([]);
-  const [areas, setAreas] = useState([]);
-  const [triggers, setTriggers] = useState([]);
-  const [reactions, setReactions] = useState([]);
-  const [selectedReaction, setSelectedReaction] = useState("");
-  const [selectedWorkflow, setSelectedWorkflow] = useState(null);
-  const [payloadPreview, setPayloadPreview] = useState("{}");
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [showCreate, setShowCreate] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [triggering, setTriggering] = useState(false);
-  const [togglingTimer, setTogglingTimer] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const getUserId = () => Number(localStorage.getItem("user_id") || "");
-  const userEmail = localStorage.getItem("user_email") || "user@example.com";
-  const [form, setForm] = useState({
-    name: "Mon Konect",
-    triggerType: "",
-    triggerValues: {},
-    values: {},
-  });
-  const [activeFilters, setActiveFilters] = useState([]);
+    const [workflows, setWorkflows] = useState([]);
+    const [areas, setAreas] = useState([]);
+    const [triggers, setTriggers] = useState([]);
+    const [reactions, setReactions] = useState([]);
+    const [selectedReaction, setSelectedReaction] = useState("");
+    const [selectedWorkflow, setSelectedWorkflow] = useState(null);
+    const [payloadPreview, setPayloadPreview] = useState("{}");
+    const [panelOpen, setPanelOpen] = useState(false);
+    const [showCreate, setShowCreate] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [creating, setCreating] = useState(false);
+    const [triggering, setTriggering] = useState(false);
+    const [togglingTimer, setTogglingTimer] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [showProfile, setShowProfile] = useState(false);
+    const getUserId = () => Number(localStorage.getItem("user_id") || "");
+    const userEmail = localStorage.getItem("user_email") || "user@example.com";
+    const [form, setForm] = useState({
+        name: "Mon Konect",
+        triggerType: "",
+        triggerValues: {},
+        values: {},
+    });
+    const [activeFilters, setActiveFilters] = useState([]);
 
   const selectedReactionDef = useMemo(
     () => reactions.find((r) => r.id === selectedReaction),
@@ -505,9 +505,12 @@ export default function Homepage() {
                   <ServiceCard
                     key={wf.id}
                     title={wf.name}
-                    color={
-                      ["#00D2FF", "#FF4081", "#00E676", "#D500F9"][idx % 4]
-                    }
+                    color={[
+                      "linear-gradient(135deg, #00d0ffc1 0%, #b2f1ffe4  100%)",
+                      "linear-gradient(135deg, #FF4081 0%, rgba(255, 144, 144, 1) 100%)",
+                      "linear-gradient(135deg, #00E676 0%, #86ffc4ff 100%)",
+                      "linear-gradient(135deg, #D500F9 0%, #cfa8d6ff 100%)",
+                    ][idx % 4]}
                     onClick={() => {
                       setSelectedWorkflow(wf);
                       setPanelOpen(true);
@@ -840,9 +843,4 @@ export default function Homepage() {
       </div>
     </div>
   );
-}
-
-function getColor(i) {
-  const colors = ["#00d0ff93", "#ff40809c", "#ff40807f", "#00e677b0", "#d400f99a"];
-  return colors[i % colors.length];
 }
