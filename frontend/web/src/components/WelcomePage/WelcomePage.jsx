@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import "./welcomepage.css";
+import "./hero-animations.css";
 import Navbar from "./Navbar.jsx";
 import Footer from "./Footer.jsx";
 import HowItWorks from "./HowItWorks.jsx";
@@ -10,6 +11,18 @@ import WhyUs from "./WhyUs.jsx";
 import { Link } from "react-router-dom";
 
 export default function WelcomePage() {
+    const heroRef = useRef(null);
+    const heroIconRef = useRef(null);
+    const heroStatsRef = useRef(null);
+    const [heroVisible, setHeroVisible] = useState(false);
+    const [iconVisible, setIconVisible] = useState(false);
+    const [statsVisible, setStatsVisible] = useState(false);
+
+    useEffect(() => {
+        setTimeout(() => setHeroVisible(true), 100);
+        setTimeout(() => setIconVisible(true), 400);
+        setTimeout(() => setStatsVisible(true), 700);
+    }, []);
     const userId = Number(localStorage.getItem("user_id"));
     const isLoggedIn = Number.isFinite(userId) && userId > 0;
     const [stats, setStats] = useState({
@@ -76,8 +89,14 @@ export default function WelcomePage() {
             <Navbar />
             <div className="welcome-page-content">
                 <div className="welcome-page-section" id="features">
-                    <div className="welcome-page-section-pres">
-                        <div className="welcome-page-section-pres-icon">
+                    <div
+                        className={`welcome-page-section-pres hero-animate${heroVisible ? ' visible' : ''}`}
+                        ref={heroRef}
+                    >
+                        <div
+                            className={`welcome-page-section-pres-icon hero-shape-animate${iconVisible ? ' visible' : ''}`}
+                            ref={heroIconRef}
+                        >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                                  className="lucide lucide-sparkles" aria-hidden="true">
@@ -89,12 +108,16 @@ export default function WelcomePage() {
                             </svg>
                             <span>Connect your apps and automate workflows</span>
                         </div>
-                        <h1>Make your apps work together seamlessly</h1>
-                        <p>
+                        <h1 className={`hero-animate${heroVisible ? ' visible' : ''}`}>Make your apps work together seamlessly</h1>
+                        <p className={`hero-animate${heroVisible ? ' visible' : ''}`}
+                            style={{ transitionDelay: '0.2s' }}
+                        >
                             Connect your favorite apps and services to automate workflows. No code required.
                             Create powerful automations in minutes and boost your productivity.
                         </p>
-                        <div className="welcome-page-section-pres-btns">
+                        <div className={`welcome-page-section-pres-btns hero-animate${heroVisible ? ' visible' : ''}`}
+                            style={{ transitionDelay: '0.3s' }}
+                        >
                             <Link
                                 className="how-cta-btn"
                                 to={isLoggedIn ? "/home" : "/login"}
@@ -110,7 +133,11 @@ export default function WelcomePage() {
                             </Link>
                         </div>
                     </div>
-                    <div className="welcome-page-section-stats">
+                    <div
+                        className={`welcome-page-section-stats hero-shape-animate-right${statsVisible ? ' visible' : ''}`}
+                        ref={heroStatsRef}
+                        style={{ transitionDelay: statsVisible ? '0.5s' : '0s' }}
+                    >
                         <ul>
                             <li>
                                 <h1>{stats.userCount ?? "…"}</h1>
