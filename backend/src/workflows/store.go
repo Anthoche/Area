@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"area/src/database"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -23,6 +26,7 @@ const (
 	RunStatusFailed    = "failed"
 )
 
+// Workflow API Response Types (keep existing for API compatibility)
 type Workflow struct {
 	ID            int64           `json:"id"`
 	UserID        int64           `json:"user_id"`
@@ -63,12 +67,64 @@ type IntervalConfig struct {
 	Payload         map[string]interface{} `json:"payload,omitempty"`
 }
 
+type GithubCommitConfig struct {
+	TokenID         int64                  `json:"token_id"`
+	Repo            string                 `json:"repo"`
+	Branch          string                 `json:"branch"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type GithubPullRequestConfig struct {
+	TokenID         int64                  `json:"token_id"`
+	Repo            string                 `json:"repo"`
+	Actions         []string               `json:"actions,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type GithubIssueConfig struct {
+	TokenID         int64                  `json:"token_id"`
+	Repo            string                 `json:"repo"`
+	Actions         []string               `json:"actions,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type WeatherTempConfig struct {
+	City            string                 `json:"city,omitempty"`
+	Lat             float64                `json:"lat"`
+	Lon             float64                `json:"lon"`
+	Threshold       float64                `json:"threshold"`
+	Direction       string                 `json:"direction"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type WeatherReportConfig struct {
+	City            string                 `json:"city,omitempty"`
+	Lat             float64                `json:"lat"`
+	Lon             float64                `json:"lon"`
+	IntervalMin     int                    `json:"interval_minutes"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type RedditNewPostConfig struct {
+	Subreddit       string                 `json:"subreddit"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type YouTubeNewVideoConfig struct {
+	ChannelID       string                 `json:"channel_id"`
+	Channel         string                 `json:"channel"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
 type Store struct {
-	db *sql.DB
+	db *gorm.DB
 }
 
 // NewStore builds a Store backed by the provided database handle.
-func NewStore(db *sql.DB) *Store {
+func NewStore(db *gorm.DB) *Store {
 	return &Store{db: db}
 }
 
@@ -77,127 +133,178 @@ func NewDefaultStore() *Store {
 	return &Store{db: database.GetDB()}
 }
 
+// Helper functions to convert between models and API types
+func workflowModelToAPI(model database.Workflow) Workflow {
+	return Workflow{
+		ID:            int64(model.ID),
+		UserID:        int64(model.UserID),
+		Name:          model.Name,
+		TriggerType:   model.TriggerType,
+		TriggerConfig: model.TriggerConfig,
+		ActionURL:     model.ActionURL,
+		Enabled:       model.Enabled,
+		NextRunAt:     model.NextRunAt,
+		CreatedAt:     model.CreatedAt,
+	}
+}
+
+// runModelToAPI converts a database.Run model to the API Run type.
+func runModelToAPI(model database.Run) Run {
+	return Run{
+		ID:         int64(model.ID),
+		WorkflowID: int64(model.WorkflowID),
+		Status:     model.Status,
+		CreatedAt:  model.CreatedAt,
+		StartedAt:  model.StartedAt,
+		EndedAt:    model.EndedAt,
+		Error:      model.Error,
+	}
+}
+
+// jobModelToAPI converts a database.Job model to the API Job type.
+func jobModelToAPI(model database.Job) Job {
+	return Job{
+		ID:         int64(model.ID),
+		WorkflowID: int64(model.WorkflowID),
+		RunID:      int64(model.RunID),
+		Payload:    model.Payload,
+		Status:     model.Status,
+		Error:      model.Error,
+		CreatedAt:  model.CreatedAt,
+		UpdatedAt:  model.UpdatedAt,
+		StartedAt:  model.StartedAt,
+		EndedAt:    model.EndedAt,
+	}
+}
+
 // CreateWorkflow persists a new workflow with its trigger configuration.
 func (s *Store) CreateWorkflow(ctx context.Context, userID int64, name, triggerType, actionURL string, triggerConfig json.RawMessage) (*Workflow, error) {
-	var id int64
-	var nextRun sql.NullTime
 	initialEnabled := triggerType == "manual"
-	err := s.db.QueryRowContext(ctx, `
-		INSERT INTO workflows (user_id, name, trigger_type, trigger_config, action_url, enabled, next_run_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id`,
-		userID, name, triggerType, triggerConfig, actionURL, initialEnabled, nextRun,
-	).Scan(&id)
-	if err != nil {
+
+	model := database.Workflow{
+		UserID:        uint(userID),
+		Name:          name,
+		TriggerType:   triggerType,
+		TriggerConfig: triggerConfig,
+		ActionURL:     actionURL,
+		Enabled:       initialEnabled,
+	}
+
+	if err := s.db.WithContext(ctx).Create(&model).Error; err != nil {
 		return nil, fmt.Errorf("create workflow: %w", err)
 	}
-	return s.GetWorkflow(ctx, id)
+
+	workflow := workflowModelToAPI(model)
+	return &workflow, nil
 }
 
 // ListWorkflows returns all workflows for a user ordered by creation date.
 func (s *Store) ListWorkflows(ctx context.Context, userID int64) ([]Workflow, error) {
-	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, user_id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at
-		FROM workflows
-		WHERE user_id = $1
-		ORDER BY created_at DESC`, userID)
-	if err != nil {
+	var models []database.Workflow
+	if err := s.db.WithContext(ctx).Where("user_id = ?", userID).Order("created_at DESC").Find(&models).Error; err != nil {
 		return nil, fmt.Errorf("list workflows: %w", err)
 	}
-	defer rows.Close()
 
-	var out []Workflow
-	for rows.Next() {
-		var wf Workflow
-		var nextRun sql.NullTime
-		if err := rows.Scan(&wf.ID, &wf.UserID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &wf.Enabled, &nextRun, &wf.CreatedAt); err != nil {
-			return nil, fmt.Errorf("list workflows: %w", err)
+	workflows := make([]Workflow, len(models))
+	for i, model := range models {
+		workflows[i] = workflowModelToAPI(model)
+		// Apply business logic: disable interval workflows without a next_run_at
+		if workflows[i].TriggerType == "interval" && workflows[i].Enabled && workflows[i].NextRunAt == nil {
+			workflows[i].Enabled = false
 		}
-		if nextRun.Valid {
-			wf.NextRunAt = &nextRun.Time
-		}
-		if wf.TriggerType != "manual" && wf.Enabled && wf.NextRunAt == nil {
-			wf.Enabled = false
-		}
-		out = append(out, wf)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("list workflows: %w", err)
+
+	return workflows, nil
+}
+
+// ListWorkflowsByTrigger returns workflows filtered by trigger type (all users).
+func (s *Store) ListWorkflowsByTrigger(ctx context.Context, triggerType string) ([]Workflow, error) {
+	var models []database.Workflow
+
+	if err := s.db.WithContext(ctx).
+		Where("trigger_type = ?", triggerType).
+		Order("created_at DESC").
+		Find(&models).Error; err != nil {
+		return nil, fmt.Errorf("list workflows by trigger: %w", err)
 	}
-	return out, nil
+
+	workflows := make([]Workflow, len(models))
+	for i, model := range models {
+		workflows[i] = workflowModelToAPI(model)
+
+		// Apply business logic: disable invalid interval workflows
+		if workflows[i].TriggerType == "interval" &&
+			workflows[i].Enabled &&
+			workflows[i].NextRunAt == nil {
+			workflows[i].Enabled = false
+		}
+	}
+	return workflows, nil
 }
 
 // GetWorkflow fetches a workflow by ID (no user check).
 func (s *Store) GetWorkflow(ctx context.Context, id int64) (*Workflow, error) {
-	var wf Workflow
-	row := s.db.QueryRowContext(ctx, `
-		SELECT id, user_id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at
-		FROM workflows
-		WHERE id = $1`,
-		id,
-	)
-	var nextRun sql.NullTime
-	if err := row.Scan(&wf.ID, &wf.UserID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &wf.Enabled, &nextRun, &wf.CreatedAt); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, sql.ErrNoRows
+	var model database.Workflow
+	if err := s.db.WithContext(ctx).First(&model, uint(id)).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
 		}
 		return nil, fmt.Errorf("get workflow: %w", err)
 	}
-	if nextRun.Valid {
-		wf.NextRunAt = &nextRun.Time
+
+	workflow := workflowModelToAPI(model)
+
+	if workflow.TriggerType == "interval" && workflow.Enabled && workflow.NextRunAt == nil {
+		workflow.Enabled = false
 	}
-	if wf.TriggerType != "manual" && wf.Enabled && wf.NextRunAt == nil {
-		wf.Enabled = false
-	}
-	return &wf, nil
+	return &workflow, nil
 }
 
 // DeleteWorkflow removes a workflow (cascades to runs/jobs via FK).
 func (s *Store) DeleteWorkflow(ctx context.Context, id int64) error {
-	res, err := s.db.ExecContext(ctx, `DELETE FROM workflows WHERE id = $1`, id)
-	if err != nil {
-		return fmt.Errorf("delete workflow: %w", err)
+	result := s.db.WithContext(ctx).Delete(&database.Workflow{}, uint(id))
+	if result.Error != nil {
+		return fmt.Errorf("delete workflow: %w", result.Error)
 	}
-	n, _ := res.RowsAffected()
-	if n == 0 {
-		return sql.ErrNoRows
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
 	}
 	return nil
 }
 
 // GetWorkflowForUser fetches a workflow by ID constrained to the owner.
 func (s *Store) GetWorkflowForUser(ctx context.Context, id int64, userID int64) (*Workflow, error) {
-	var wf Workflow
-	row := s.db.QueryRowContext(ctx, `
-		SELECT id, user_id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at
-		FROM workflows
-		WHERE id = $1 AND user_id = $2`,
-		id, userID,
-	)
-	var nextRun sql.NullTime
-	if err := row.Scan(&wf.ID, &wf.UserID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &wf.Enabled, &nextRun, &wf.CreatedAt); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+	var model database.Workflow
+
+	if err := s.db.WithContext(ctx).
+		Where("id = ? AND user_id = ?", id, userID).
+		First(&model).Error; err != nil {
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, sql.ErrNoRows
 		}
 		return nil, fmt.Errorf("get workflow: %w", err)
 	}
-	if nextRun.Valid {
-		wf.NextRunAt = &nextRun.Time
+
+	workflow := workflowModelToAPI(model)
+
+	// Apply business logic
+	if workflow.TriggerType == "interval" &&
+		workflow.Enabled &&
+		workflow.NextRunAt == nil {
+		workflow.Enabled = false
 	}
-	if wf.TriggerType != "manual" && wf.Enabled && wf.NextRunAt == nil {
-		wf.Enabled = false
-	}
-	return &wf, nil
+	return &workflow, nil
 }
 
 // DeleteWorkflowForUser deletes a workflow if it belongs to the user.
 func (s *Store) DeleteWorkflowForUser(ctx context.Context, id int64, userID int64) error {
-	res, err := s.db.ExecContext(ctx, `DELETE FROM workflows WHERE id = $1 AND user_id = $2`, id, userID)
-	if err != nil {
-		return fmt.Errorf("delete workflow: %w", err)
+	res := s.db.WithContext(ctx).Where("id = ? AND user_id = ?", id, userID).Delete(&database.Workflow{})
+
+	if res.Error != nil {
+		return fmt.Errorf("delete workflow: %w", res.Error)
 	}
-	n, _ := res.RowsAffected()
-	if n == 0 {
+	if res.RowsAffected == 0 {
 		return sql.ErrNoRows
 	}
 	return nil
@@ -210,61 +317,57 @@ func (s *Store) SetEnabledForUser(ctx context.Context, id int64, userID int64, e
 		if err != nil {
 			return err
 		}
-		var next sql.NullTime
+
+		updates := map[string]interface{}{
+			"enabled": true,
+		}
+
 		if wf.TriggerType == "interval" {
 			cfg, err := intervalConfigFromJSON(wf.TriggerConfig)
 			if err != nil || cfg.IntervalMinutes <= 0 {
 				return fmt.Errorf("invalid interval config")
 			}
-			next = sql.NullTime{Time: now.Add(time.Duration(cfg.IntervalMinutes) * time.Minute), Valid: true}
+			nextRun := now.Add(time.Duration(cfg.IntervalMinutes) * time.Minute)
+			updates["next_run_at"] = nextRun
 		}
-		res, err := s.db.ExecContext(ctx, `
-			UPDATE workflows
-			SET enabled = TRUE, next_run_at = $1
-			WHERE id = $2 AND user_id = $3`,
-			next, id, userID,
-		)
-		if err != nil {
-			return fmt.Errorf("enable workflow: %w", err)
+
+		result := s.db.WithContext(ctx).Model(&database.Workflow{}).Where("id = ? AND user_id = ?", uint(id), userID).Updates(updates)
+		if result.Error != nil {
+			return fmt.Errorf("enable workflow: %w", result.Error)
 		}
-		if rows, _ := res.RowsAffected(); rows == 0 {
-			return sql.ErrNoRows
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
 		}
 		return nil
 	}
-	res, err := s.db.ExecContext(ctx, `
-		UPDATE workflows
-		SET enabled = FALSE, next_run_at = NULL
-		WHERE id = $1 AND user_id = $2`,
-		id, userID,
-	)
-	if err != nil {
-		return fmt.Errorf("disable workflow: %w", err)
+
+	// Disable workflow
+	result := s.db.WithContext(ctx).Model(&database.Workflow{}).Where("id = ? AND user_id = ?", uint(id), userID).Updates(map[string]interface{}{
+		"enabled":     false,
+		"next_run_at": nil,
+	})
+	if result.Error != nil {
+		return fmt.Errorf("disable workflow: %w", result.Error)
 	}
-	if rows, _ := res.RowsAffected(); rows == 0 {
-		return sql.ErrNoRows
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
 	}
 	return nil
 }
 
 // CreateRun creates a new pending run for a workflow.
 func (s *Store) CreateRun(ctx context.Context, workflowID int64) (*Run, error) {
-	var id int64
-	if err := s.db.QueryRowContext(ctx, `
-		INSERT INTO workflow_runs (workflow_id)
-		VALUES ($1)
-		RETURNING id`,
-		workflowID,
-	).Scan(&id); err != nil {
+	model := database.Run{
+		WorkflowID: uint(workflowID),
+		Status:     RunStatusPending,
+	}
+
+	if err := s.db.WithContext(ctx).Create(&model).Error; err != nil {
 		return nil, fmt.Errorf("create run: %w", err)
 	}
-	now := time.Now()
-	return &Run{
-		ID:         id,
-		WorkflowID: workflowID,
-		Status:     RunStatusPending,
-		CreatedAt:  now,
-	}, nil
+
+	run := runModelToAPI(model)
+	return &run, nil
 }
 
 type RunUpdate struct {
@@ -276,16 +379,22 @@ type RunUpdate struct {
 
 // UpdateRun updates run metadata such as status or timestamps.
 func (s *Store) UpdateRun(ctx context.Context, runID int64, upd RunUpdate) error {
-	_, err := s.db.ExecContext(ctx, `
-		UPDATE workflow_runs
-		SET status = COALESCE(NULLIF($1, ''), status),
-		    started_at = COALESCE($2, started_at),
-		    ended_at = COALESCE($3, ended_at),
-		    error = COALESCE($4, error)
-		WHERE id = $5`,
-		upd.Status, nullableTime(upd.StartedAt), nullableTime(upd.EndedAt), nullableString(upd.Error), runID,
-	)
-	if err != nil {
+	updates := make(map[string]interface{})
+
+	if upd.Status != "" {
+		updates["status"] = upd.Status
+	}
+	if upd.StartedAt != nil {
+		updates["started_at"] = *upd.StartedAt
+	}
+	if upd.EndedAt != nil {
+		updates["ended_at"] = *upd.EndedAt
+	}
+	if upd.Error != nil {
+		updates["error"] = *upd.Error
+	}
+
+	if err := s.db.WithContext(ctx).Model(&database.Run{}).Where("id = ?", uint(runID)).Updates(updates).Error; err != nil {
 		return fmt.Errorf("update run: %w", err)
 	}
 	return nil
@@ -293,94 +402,76 @@ func (s *Store) UpdateRun(ctx context.Context, runID int64, upd RunUpdate) error
 
 // CreateJob inserts a pending job belonging to a workflow run.
 func (s *Store) CreateJob(ctx context.Context, workflowID, runID int64, payload json.RawMessage) (*Job, error) {
-	var id int64
-	var createdAt, updatedAt time.Time
-	err := s.db.QueryRowContext(ctx, `
-		INSERT INTO jobs (workflow_id, run_id, payload)
-		VALUES ($1, $2, $3)
-		RETURNING id, created_at, updated_at`,
-		workflowID, runID, payload,
-	).Scan(&id, &createdAt, &updatedAt)
-	if err != nil {
-		return nil, fmt.Errorf("create job: %w", err)
-	}
-	return &Job{
-		ID:         id,
-		WorkflowID: workflowID,
-		RunID:      runID,
+	model := database.Job{
+		WorkflowID: uint(workflowID),
+		RunID:      uint(runID),
 		Payload:    payload,
 		Status:     JobStatusPending,
-		CreatedAt:  createdAt,
-		UpdatedAt:  updatedAt,
-	}, nil
+	}
+
+	if err := s.db.WithContext(ctx).Create(&model).Error; err != nil {
+		return nil, fmt.Errorf("create job: %w", err)
+	}
+
+	job := jobModelToAPI(model)
+	return &job, nil
 }
 
 // FetchNextPendingJob locks and returns the oldest pending job.
 func (s *Store) FetchNextPendingJob(ctx context.Context) (*Job, error) {
-	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("begin tx: %w", err)
+	tx := s.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return nil, fmt.Errorf("begin tx: %w", tx.Error)
 	}
 	defer tx.Rollback()
 
-	row := tx.QueryRowContext(ctx, `
-		SELECT id, workflow_id, run_id, payload, status, error, created_at, updated_at, started_at, ended_at
-		FROM jobs
-		WHERE status = $1
-		ORDER BY created_at
-		FOR UPDATE SKIP LOCKED
-		LIMIT 1`,
-		JobStatusPending,
-	)
+	var model database.Job
+	result := tx.Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).
+		Where("status = ?", JobStatusPending).
+		Order("created_at, id").
+		Limit(1).
+		Find(&model)
 
-	var job Job
-	var errMsg sql.NullString
-	var started, ended sql.NullTime
-	if err := row.Scan(&job.ID, &job.WorkflowID, &job.RunID, &job.Payload, &job.Status, &errMsg, &job.CreatedAt, &job.UpdatedAt, &started, &ended); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, sql.ErrNoRows
-		}
-		return nil, fmt.Errorf("scan job: %w", err)
+	if result.Error != nil {
+		return nil, fmt.Errorf("scan job: %w", result.Error)
 	}
-	if errMsg.Valid {
-		job.Error = errMsg.String
-	}
-	if started.Valid {
-		job.StartedAt = &started.Time
-	}
-	if ended.Valid {
-		job.EndedAt = &ended.Time
+	if result.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	now := time.Now()
-	if _, err := tx.ExecContext(ctx, `
-		UPDATE jobs
-		SET status = $1, started_at = $2, updated_at = $2
-		WHERE id = $3`,
-		JobStatusProcessing, now, job.ID,
-	); err != nil {
+	if err := tx.Model(&model).Updates(map[string]interface{}{
+		"status":     JobStatusProcessing,
+		"started_at": now,
+		"updated_at": now,
+	}).Error; err != nil {
 		return nil, fmt.Errorf("mark processing: %w", err)
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err := tx.Commit().Error; err != nil {
 		return nil, fmt.Errorf("commit job lock: %w", err)
 	}
-	job.Status = JobStatusProcessing
-	job.StartedAt = &now
-	job.UpdatedAt = now
+
+	// Update the model with the new values
+	model.Status = JobStatusProcessing
+	model.StartedAt = &now
+	model.UpdatedAt = now
+
+	job := jobModelToAPI(model)
 	return &job, nil
 }
 
 // MarkJobSuccess marks a job as succeeded and closes its timestamps.
 func (s *Store) MarkJobSuccess(ctx context.Context, jobID int64) error {
 	now := time.Now()
-	_, err := s.db.ExecContext(ctx, `
-		UPDATE jobs
-		SET status = $1, updated_at = $2, ended_at = $2, error = NULL
-		WHERE id = $3`,
-		JobStatusSucceeded, now, jobID,
-	)
-	if err != nil {
+	updates := map[string]interface{}{
+		"status":     JobStatusSucceeded,
+		"updated_at": now,
+		"ended_at":   now,
+		"error":      "",
+	}
+
+	if err := s.db.WithContext(ctx).Model(&database.Job{}).Where("id = ?", uint(jobID)).Updates(updates).Error; err != nil {
 		return fmt.Errorf("mark job success: %w", err)
 	}
 	return nil
@@ -389,13 +480,14 @@ func (s *Store) MarkJobSuccess(ctx context.Context, jobID int64) error {
 // MarkJobFailed marks a job as failed with the provided reason.
 func (s *Store) MarkJobFailed(ctx context.Context, jobID int64, reason string) error {
 	now := time.Now()
-	_, err := s.db.ExecContext(ctx, `
-		UPDATE jobs
-		SET status = $1, updated_at = $2, ended_at = $2, error = $3
-		WHERE id = $4`,
-		JobStatusFailed, now, reason, jobID,
-	)
-	if err != nil {
+	updates := map[string]interface{}{
+		"status":     JobStatusFailed,
+		"updated_at": now,
+		"ended_at":   now,
+		"error":      reason,
+	}
+
+	if err := s.db.WithContext(ctx).Model(&database.Job{}).Where("id = ?", uint(jobID)).Updates(updates).Error; err != nil {
 		return fmt.Errorf("mark job failed: %w", err)
 	}
 	return nil
@@ -403,98 +495,60 @@ func (s *Store) MarkJobFailed(ctx context.Context, jobID int64, reason string) e
 
 // ClaimDueIntervalWorkflows locks and returns interval workflows whose next_run_at <= now, and advances next_run_at.
 func (s *Store) ClaimDueIntervalWorkflows(ctx context.Context, now time.Time) ([]Workflow, error) {
-	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("begin tx: %w", err)
+	tx := s.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return nil, fmt.Errorf("begin tx: %w", tx.Error)
 	}
 	defer tx.Rollback()
 
-	rows, err := tx.QueryContext(ctx, `
-		SELECT id, user_id, name, trigger_type, trigger_config, action_url, next_run_at, created_at
-		FROM workflows
-		WHERE trigger_type = 'interval'
-		  AND enabled = TRUE
-		  AND next_run_at IS NOT NULL
-		  AND next_run_at <= $1
-		FOR UPDATE SKIP LOCKED`,
-		now,
-	)
+	var models []database.Workflow
+	err := tx.Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).
+		Where("trigger_type = ? AND enabled = ? AND next_run_at IS NOT NULL AND next_run_at <= ?",
+			"interval", true, now).
+		Find(&models).Error
+
 	if err != nil {
 		return nil, fmt.Errorf("claim due interval: %w", err)
 	}
-	defer rows.Close()
 
-	var due []Workflow
-	for rows.Next() {
-		var wf Workflow
-		var nextRun sql.NullTime
-		if err := rows.Scan(&wf.ID, &wf.UserID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &nextRun, &wf.CreatedAt); err != nil {
-			return nil, fmt.Errorf("scan interval wf: %w", err)
-		}
-		if nextRun.Valid {
-			wf.NextRunAt = &nextRun.Time
-		}
-		due = append(due, wf)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows interval: %w", err)
-	}
-
-	for _, wf := range due {
-		cfg, err := intervalConfigFromJSON(wf.TriggerConfig)
+	var workflows []Workflow
+	for _, model := range models {
+		cfg, err := intervalConfigFromJSON(model.TriggerConfig)
 		if err != nil || cfg.IntervalMinutes <= 0 {
 			continue
 		}
-		next := now.Add(time.Duration(cfg.IntervalMinutes) * time.Minute)
-		if _, err := tx.ExecContext(ctx, `
-			UPDATE workflows SET next_run_at = $1 WHERE id = $2`, next, wf.ID); err != nil {
+
+		nextRun := now.Add(time.Duration(cfg.IntervalMinutes) * time.Minute)
+		if err := tx.Model(&model).Update("next_run_at", nextRun).Error; err != nil {
 			return nil, fmt.Errorf("update next_run_at: %w", err)
 		}
+
+		workflows = append(workflows, workflowModelToAPI(model))
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err := tx.Commit().Error; err != nil {
 		return nil, fmt.Errorf("commit interval claim: %w", err)
 	}
-	return due, nil
+
+	return workflows, nil
 }
 
 // FindWorkflowByToken returns a webhook workflow matching the token stored in trigger_config.
 func (s *Store) FindWorkflowByToken(ctx context.Context, token string) (*Workflow, error) {
-	var wf Workflow
-	var nextRun sql.NullTime
-	err := s.db.QueryRowContext(ctx, `
-		SELECT id, user_id, name, trigger_type, trigger_config, action_url, enabled, next_run_at, created_at
-		FROM workflows
-		WHERE trigger_type = 'webhook' AND enabled = TRUE AND trigger_config->>'token' = $1
-		LIMIT 1`,
-		token,
-	).Scan(&wf.ID, &wf.UserID, &wf.Name, &wf.TriggerType, &wf.TriggerConfig, &wf.ActionURL, &wf.Enabled, &nextRun, &wf.CreatedAt)
+	var model database.Workflow
+	err := s.db.WithContext(ctx).
+		Where("trigger_type = ? AND enabled = ? AND trigger_config->>'token' = ?", "webhook", true, token).
+		First(&model).Error
+
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, sql.ErrNoRows
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
 		}
 		return nil, fmt.Errorf("find workflow token: %w", err)
 	}
-	if nextRun.Valid {
-		wf.NextRunAt = &nextRun.Time
-	}
-	return &wf, nil
-}
 
-// nullableTime converts a pointer time to a value usable in SQL queries.
-func nullableTime(t *time.Time) any {
-	if t == nil {
-		return nil
-	}
-	return sql.NullTime{Time: *t, Valid: true}
-}
-
-// nullableString converts a string pointer to a SQL-compatible nullable value.
-func nullableString(s *string) any {
-	if s == nil {
-		return nil
-	}
-	return sql.NullString{String: *s, Valid: true}
+	workflow := workflowModelToAPI(model)
+	return &workflow, nil
 }
 
 // intervalConfigFromJSON parses an IntervalConfig from raw JSON.
@@ -505,6 +559,86 @@ func intervalConfigFromJSON(raw json.RawMessage) (IntervalConfig, error) {
 	var cfg IntervalConfig
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return IntervalConfig{}, err
+	}
+	return cfg, nil
+}
+
+// githubCommitConfigFromJSON parses GitHub commit trigger config.
+func githubCommitConfigFromJSON(raw json.RawMessage) (GithubCommitConfig, error) {
+	if len(raw) == 0 {
+		return GithubCommitConfig{}, errors.New("empty config")
+	}
+	var cfg GithubCommitConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return GithubCommitConfig{}, err
+	}
+	return cfg, nil
+}
+
+// githubPRConfigFromJSON parses GitHub pull request trigger config.
+func githubPRConfigFromJSON(raw json.RawMessage) (GithubPullRequestConfig, error) {
+	if len(raw) == 0 {
+		return GithubPullRequestConfig{}, errors.New("empty config")
+	}
+	var cfg GithubPullRequestConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return GithubPullRequestConfig{}, err
+	}
+	return cfg, nil
+}
+
+// githubIssueConfigFromJSON parses GitHub issue trigger config.
+func githubIssueConfigFromJSON(raw json.RawMessage) (GithubIssueConfig, error) {
+	if len(raw) == 0 {
+		return GithubIssueConfig{}, errors.New("empty config")
+	}
+	var cfg GithubIssueConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return GithubIssueConfig{}, err
+	}
+	return cfg, nil
+}
+
+func weatherTempConfigFromJSON(raw json.RawMessage) (WeatherTempConfig, error) {
+	if len(raw) == 0 {
+		return WeatherTempConfig{}, errors.New("empty config")
+	}
+	var cfg WeatherTempConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return WeatherTempConfig{}, err
+	}
+	return cfg, nil
+}
+
+func weatherReportConfigFromJSON(raw json.RawMessage) (WeatherReportConfig, error) {
+	if len(raw) == 0 {
+		return WeatherReportConfig{}, errors.New("empty config")
+	}
+	var cfg WeatherReportConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return WeatherReportConfig{}, err
+	}
+	return cfg, nil
+}
+
+func redditNewPostConfigFromJSON(raw json.RawMessage) (RedditNewPostConfig, error) {
+	if len(raw) == 0 {
+		return RedditNewPostConfig{}, errors.New("empty config")
+	}
+	var cfg RedditNewPostConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return RedditNewPostConfig{}, err
+	}
+	return cfg, nil
+}
+
+func youtubeNewVideoConfigFromJSON(raw json.RawMessage) (YouTubeNewVideoConfig, error) {
+	if len(raw) == 0 {
+		return YouTubeNewVideoConfig{}, errors.New("empty config")
+	}
+	var cfg YouTubeNewVideoConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return YouTubeNewVideoConfig{}, err
 	}
 	return cfg, nil
 }

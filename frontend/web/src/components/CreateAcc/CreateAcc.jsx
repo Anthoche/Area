@@ -1,9 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./createacc.css";
-import logo from "../../../lib/assets/Kikonect_logo.png";
+import logo from "../../../lib/assets/Kikonect_logo_no_text.png";
 import logoGoogle from "../../../lib/assets/G_logo.png";
 import logoGithub from "../../../lib/assets/github_logo.png";
+
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:8080`;
 
 export default function CreateAcc() {
   const navigate = useNavigate();
@@ -21,13 +26,28 @@ export default function CreateAcc() {
     navigate("/register", { state: { email } });
   };
 
-  const handleGoogleLogin = () => alert("Google login clicked");
-  const handleGithubLogin = () => alert("Github login clicked");
+  const handleGoogleLogin = () => {
+    const id = Number(localStorage.getItem("user_id"));
+    const uiRedirect = encodeURIComponent("http://localhost:8081/home");
+    const baseUrl = `${API_BASE}/oauth/google/login?ui_redirect=${uiRedirect}`;
+    const url = id && id > 0 ? `${baseUrl}&user_id=${id}` : baseUrl;
+    window.location.href = url;
+  };
+  const handleGithubLogin = () => {
+    const id = Number(localStorage.getItem("user_id"));
+    const uiRedirect = encodeURIComponent("http://localhost:8081/home");
+    const baseUrl = `${API_BASE}/oauth/github/login?ui_redirect=${uiRedirect}`;
+    const url = id && id > 0 ? `${baseUrl}&user_id=${id}` : baseUrl;
+    window.location.href = url;
+  };
 
   return (
     <div className="reg-page">
       <div className="reg-card">
-        <img src={logo} alt="KiKoNect logo" className="logoR-img" />
+          <div className="logo-container">
+              <img src={logo} alt="KiKoNect logo" className="logo-img" />
+              <h1>KiKoNect</h1>
+          </div>
         <h2 className="title">Create an account</h2>
         <p className="sub-text">Enter your email to sign up for this app</p>
         {error && (

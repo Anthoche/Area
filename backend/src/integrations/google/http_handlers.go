@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -53,6 +54,27 @@ func (h *HTTPHandlers) Login() http.Handler {
 		}
 		authURL := h.client.AuthURL(state, redirectURI)
 		http.Redirect(w, r, authURL, http.StatusFound)
+	})
+}
+
+// Start returns an auth_url for clients that want a JSON response.
+func (h *HTTPHandlers) Start() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		state := randomState()
+		redirectURI := r.URL.Query().Get("redirect_uri")
+		if redirectURI == "" {
+			redirectURI = os.Getenv("GOOGLE_OAUTH_REDIRECT_URI")
+		}
+		if redirectURI == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "redirect_uri is required"})
+			return
+		}
+		authURL := h.client.AuthURL(state, redirectURI)
+		writeJSON(w, http.StatusOK, map[string]string{"auth_url": authURL, "state": state})
 	})
 }
 
@@ -111,6 +133,64 @@ func (h *HTTPHandlers) Callback() http.Handler {
 	})
 }
 
+// Exchange handles JSON exchanges from mobile clients.
+func (h *HTTPHandlers) Exchange() http.Handler {
+	type payload struct {
+		Code        string `json:"code"`
+		State       string `json:"state"`
+		RedirectURI string `json:"redirect_uri"`
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		var p payload
+		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
+		if err := decoder.Decode(&p); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON payload"})
+			return
+		}
+		if err := ensureNoTrailingData(decoder); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unexpected data in payload"})
+			return
+		}
+		if p.Code == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing code"})
+			return
+		}
+		if stateCookie, _ := r.Cookie("oauthstate"); stateCookie != nil && p.State != "" && p.State != stateCookie.Value {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid oauth state"})
+			return
+		}
+		redirectURI := p.RedirectURI
+		if redirectURI == "" {
+			redirectURI = os.Getenv("GOOGLE_OAUTH_REDIRECT_URI")
+		}
+		if redirectURI == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "redirect_uri is required"})
+			return
+		}
+		userID := optionalUserID(r)
+		tokenID, resolvedUserID, email, err := h.client.ExchangeAndStore(r.Context(), p.Code, redirectURI, userID)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+		resp := map[string]any{
+			"token":    tokenID,
+			"token_id": tokenID,
+		}
+		if resolvedUserID > 0 {
+			resp["user_id"] = resolvedUserID
+		}
+		if email != "" {
+			resp["email"] = email
+		}
+		writeJSON(w, http.StatusOK, resp)
+	})
+}
+
 // SendEmail handles POST /actions/google/email
 func (h *HTTPHandlers) SendEmail() http.Handler {
 	type payload struct {
@@ -127,7 +207,6 @@ func (h *HTTPHandlers) SendEmail() http.Handler {
 		userID := optionalUserID(r)
 		var p payload
 		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
-		decoder.DisallowUnknownFields()
 		if err := decoder.Decode(&p); err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON payload"})
 			return
@@ -136,8 +215,8 @@ func (h *HTTPHandlers) SendEmail() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unexpected data in payload"})
 			return
 		}
-		if p.TokenID == 0 || p.To == "" || p.Subject == "" {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "token_id, to and subject are required"})
+		if p.To == "" || p.Subject == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "to and subject are required"})
 			return
 		}
 		if err := h.client.SendEmail(r.Context(), userID, p.TokenID, p.To, p.Subject, p.Body); err != nil {
@@ -151,11 +230,11 @@ func (h *HTTPHandlers) SendEmail() http.Handler {
 // CreateEvent handles POST /actions/google/calendar
 func (h *HTTPHandlers) CreateEvent() http.Handler {
 	type payload struct {
-		TokenID  int64    `json:"token_id"`
-		Summary  string   `json:"summary"`
-		Start    string   `json:"start"`
-		End      string   `json:"end"`
-		Attendee []string `json:"attendees"`
+		TokenID   int64           `json:"token_id"`
+		Summary   string          `json:"summary"`
+		Start     string          `json:"start"`
+		End       string          `json:"end"`
+		Attendees json.RawMessage `json:"attendees"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -165,7 +244,6 @@ func (h *HTTPHandlers) CreateEvent() http.Handler {
 		userID := optionalUserID(r)
 		var p payload
 		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20))
-		decoder.DisallowUnknownFields()
 		if err := decoder.Decode(&p); err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON payload"})
 			return
@@ -174,8 +252,8 @@ func (h *HTTPHandlers) CreateEvent() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unexpected data in payload"})
 			return
 		}
-		if p.TokenID == 0 || p.Summary == "" || p.Start == "" || p.End == "" {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "token_id, summary, start, end are required"})
+		if p.Summary == "" || p.Start == "" || p.End == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "summary, start, end are required"})
 			return
 		}
 		start, err := time.Parse(time.RFC3339, p.Start)
@@ -188,12 +266,44 @@ func (h *HTTPHandlers) CreateEvent() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid end datetime"})
 			return
 		}
-		if err := h.client.CreateCalendarEvent(r.Context(), userID, p.TokenID, p.Summary, start, end, p.Attendee); err != nil {
+		attendees, err := parseAttendees(p.Attendees)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+		if err := h.client.CreateCalendarEvent(r.Context(), userID, p.TokenID, p.Summary, start, end, attendees); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"status": "created"})
 	})
+}
+
+// parseAttendees parses attendees from a JSON raw message
+func parseAttendees(raw json.RawMessage) ([]string, error) {
+	if len(raw) == 0 {
+		return nil, nil
+	}
+	var list []string
+	if err := json.Unmarshal(raw, &list); err == nil {
+		return list, nil
+	}
+	var single string
+	if err := json.Unmarshal(raw, &single); err == nil {
+		single = strings.TrimSpace(single)
+		if single == "" {
+			return nil, nil
+		}
+		parts := strings.Split(single, ",")
+		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			if p != "" {
+				list = append(list, p)
+			}
+		}
+		return list, nil
+	}
+	return nil, fmt.Errorf("invalid attendees format")
 }
 
 // Helpers duplicated locally to keep httpapi clean.

@@ -1,989 +1,1824 @@
-
 {
-    "openapi": "3.0.3",
-    "info": {
-        "title": "KiKonect API",
-        "description": "KiKonect workflow automation API for managing workflows, authentication, and integrations.",
-        "version": "1.0.0",
-        "contact": {
-            "name": "KiKonect Team"
-        },
-        "license": {
-            "name": "MIT"
-        }
+  "openapi": "3.0.3",
+  "info": {
+    "title": "KiKonect API",
+    "description": "KiKonect workflow automation API for managing workflows, authentication, and integrations.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "KiKonect Team"
     },
-    "servers": [
-        {
-            "url": "http://localhost:8080",
-            "description": "Development server"
-        }
-    ],
-    "tags": [
-        {
-            "name": "Authentication",
-            "description": "User authentication and registration"
-        },
-        {
-            "name": "Workflows",
-            "description": "Workflow management operations"
-        },
-        {
-            "name": "Webhooks",
-            "description": "External webhook triggers"
-        },
-        {
-            "name": "OAuth",
-            "description": "OAuth integration endpoints"
-        },
-        {
-            "name": "Google Actions",
-            "description": "Google service actions"
-        },
-        {
-            "name": "System",
-            "description": "System health and monitoring"
-        }
-    ],
-    "paths": {
-        "/login": {
-            "post": {
-                "tags": ["Authentication"],
-                "summary": "User login",
-                "description": "Authenticate user with email and password",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/LoginRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Login successful",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/User"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/register": {
-            "post": {
-                "tags": ["Authentication"],
-                "summary": "User registration",
-                "description": "Create a new user account",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/RegisterRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "User created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/User"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "User already exists",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/healthz": {
-            "get": {
-                "tags": ["System"],
-                "summary": "Health check",
-                "description": "Check API health status",
-                "responses": {
-                    "200": {
-                        "description": "Service is healthy",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "ok"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/workflows": {
-            "get": {
-                "tags": ["Workflows"],
-                "summary": "List workflows",
-                "description": "Get all workflows for the current user",
-                "responses": {
-                    "200": {
-                        "description": "List of workflows",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Workflow"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "tags": ["Workflows"],
-                "summary": "Create workflow",
-                "description": "Create a new workflow",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/WorkflowRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Workflow created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Workflow"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/workflows/{id}/trigger": {
-            "post": {
-                "tags": ["Workflows"],
-                "summary": "Trigger workflow",
-                "description": "Manually trigger a workflow execution",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "description": "Workflow ID",
-                        "schema": {
-                            "type": "integer",
-                            "format": "int64"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "additionalProperties": true,
-                                "description": "Payload data for workflow execution"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "202": {
-                        "description": "Workflow triggered successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/WorkflowRun"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Workflow not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/hooks/{token}": {
-            "post": {
-                "tags": ["Webhooks"],
-                "summary": "Webhook trigger",
-                "description": "Trigger a workflow via webhook",
-                "parameters": [
-                    {
-                        "name": "token",
-                        "in": "path",
-                        "required": true,
-                        "description": "Webhook token",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "additionalProperties": true,
-                                "description": "Webhook payload data"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "202": {
-                        "description": "Webhook processed successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/WorkflowRun"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Webhook not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/oauth/google/login": {
-            "get": {
-                "tags": ["OAuth"],
-                "summary": "Google OAuth login",
-                "description": "Initiate Google OAuth login flow",
-                "parameters": [
-                    {
-                        "name": "redirect_uri",
-                        "in": "query",
-                        "description": "OAuth redirect URI",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "ui_redirect",
-                        "in": "query",
-                        "description": "UI redirect URL after OAuth completion",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "302": {
-                        "description": "Redirect to Google OAuth consent page"
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/oauth/google/callback": {
-            "get": {
-                "tags": ["OAuth"],
-                "summary": "Google OAuth callback",
-                "description": "Handle Google OAuth callback",
-                "parameters": [
-                    {
-                        "name": "code",
-                        "in": "query",
-                        "required": true,
-                        "description": "Authorization code from Google",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "state",
-                        "in": "query",
-                        "required": true,
-                        "description": "OAuth state parameter",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "redirect_uri",
-                        "in": "query",
-                        "description": "OAuth redirect URI",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OAuth callback processed successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "token_id": {
-                                            "type": "integer",
-                                            "format": "int64"
-                                        },
-                                        "email": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "302": {
-                        "description": "Redirect to UI application"
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/oauth/google/exchange": {
-            "post": {
-                "tags": ["OAuth"],
-                "summary": "Exchange Google OAuth code",
-                "description": "Exchange Google OAuth authorization code for user data",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "code": {
-                                        "type": "string",
-                                        "description": "Authorization code from Google"
-                                    },
-                                    "state": {
-                                        "type": "string",
-                                        "description": "OAuth state parameter"
-                                    }
-                                },
-                                "required": ["code", "state"]
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "202": {
-                        "description": "Code exchange successful",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string",
-                                            "description": "User data from Google"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/oauth/github/exchange": {
-            "post": {
-                "tags": ["OAuth"],
-                "summary": "Exchange GitHub OAuth code",
-                "description": "Exchange GitHub OAuth authorization code for user data",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "code": {
-                                        "type": "string",
-                                        "description": "Authorization code from GitHub"
-                                    },
-                                    "state": {
-                                        "type": "string",
-                                        "description": "OAuth state parameter"
-                                    }
-                                },
-                                "required": ["code", "state"]
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "202": {
-                        "description": "Code exchange successful",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string",
-                                            "description": "User data from GitHub"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/actions/google/email": {
-            "post": {
-                "tags": ["Google Actions"],
-                "summary": "Send email via Gmail",
-                "description": "Send an email using Google Gmail API",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/SendEmailRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Email sent successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "sent"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/actions/google/calendar": {
-            "post": {
-                "tags": ["Google Actions"],
-                "summary": "Create calendar event",
-                "description": "Create an event in Google Calendar",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/CreateCalendarEventRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Calendar event created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "created"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    },
-    "components": {
-        "schemas": {
-            "LoginRequest": {
-                "type": "object",
-                "required": ["email", "password"],
-                "properties": {
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "example": "user@example.com"
-                    },
-                    "password": {
-                        "type": "string",
-                        "example": "password123"
-                    }
-                }
-            },
-            "RegisterRequest": {
-                "type": "object",
-                "required": ["email", "password", "firstname", "lastname"],
-                "properties": {
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "example": "user@example.com"
-                    },
-                    "password": {
-                        "type": "string",
-                        "example": "password123"
-                    },
-                    "firstname": {
-                        "type": "string",
-                        "example": "John"
-                    },
-                    "lastname": {
-                        "type": "string",
-                        "example": "Doe"
-                    }
-                }
-            },
-            "User": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "format": "int64",
-                        "example": 1
-                    },
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "example": "user@example.com"
-                    },
-                    "firstname": {
-                        "type": "string",
-                        "example": "John"
-                    },
-                    "lastname": {
-                        "type": "string",
-                        "example": "Doe"
-                    }
-                }
-            },
-            "WorkflowRequest": {
-                "type": "object",
-                "required": ["name", "trigger_type", "action_url"],
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "example": "My Workflow"
-                    },
-                    "trigger_type": {
-                        "type": "string",
-                        "enum": ["manual", "webhook", "interval"],
-                        "example": "manual"
-                    },
-                    "action_url": {
-                        "type": "string",
-                        "format": "uri",
-                        "example": "https://api.example.com/webhook"
-                    },
-                    "trigger_config": {
-                        "type": "object",
-                        "additionalProperties": true,
-                        "example": {"token": "abc123"}
-                    },
-                    "interval_minutes": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "example": 60,
-                        "description": "Required for interval triggers"
-                    }
-                }
-            },
-            "Workflow": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "format": "int64",
-                        "example": 1
-                    },
-                    "name": {
-                        "type": "string",
-                        "example": "My Workflow"
-                    },
-                    "trigger_type": {
-                        "type": "string",
-                        "enum": ["manual", "webhook", "interval"],
-                        "example": "manual"
-                    },
-                    "trigger_config": {
-                        "type": "object",
-                        "additionalProperties": true,
-                        "example": {"token": "abc123"}
-                    },
-                    "action_url": {
-                        "type": "string",
-                        "format": "uri",
-                        "example": "https://api.example.com/webhook"
-                    },
-                    "next_run_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true,
-                        "example": "2023-12-09T14:30:00Z"
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2023-12-09T10:00:00Z"
-                    }
-                }
-            },
-            "WorkflowRun": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "format": "int64",
-                        "example": 1
-                    },
-                    "workflow_id": {
-                        "type": "integer",
-                        "format": "int64",
-                        "example": 1
-                    },
-                    "status": {
-                        "type": "string",
-                        "enum": ["pending", "running", "succeeded", "failed"],
-                        "example": "pending"
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2023-12-09T14:30:00Z"
-                    },
-                    "started_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true,
-                        "example": "2023-12-09T14:30:05Z"
-                    },
-                    "ended_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true,
-                        "example": "2023-12-09T14:30:10Z"
-                    },
-                    "error": {
-                        "type": "string",
-                        "nullable": true,
-                        "example": "Connection timeout"
-                    }
-                }
-            },
-            "SendEmailRequest": {
-                "type": "object",
-                "required": ["token_id", "to", "subject"],
-                "properties": {
-                    "token_id": {
-                        "type": "integer",
-                        "format": "int64",
-                        "example": 1
-                    },
-                    "to": {
-                        "type": "string",
-                        "format": "email",
-                        "example": "recipient@example.com"
-                    },
-                    "subject": {
-                        "type": "string",
-                        "example": "Hello from KiKonect"
-                    },
-                    "body": {
-                        "type": "string",
-                        "example": "This is the email body content."
-                    }
-                }
-            },
-            "CreateCalendarEventRequest": {
-                "type": "object",
-                "required": ["token_id", "summary", "start", "end"],
-                "properties": {
-                    "token_id": {
-                        "type": "integer",
-                        "format": "int64",
-                        "example": 1
-                    },
-                    "summary": {
-                        "type": "string",
-                        "example": "Team Meeting"
-                    },
-                    "start": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2023-12-09T14:00:00Z"
-                    },
-                    "end": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2023-12-09T15:00:00Z"
-                    },
-                    "attendees": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "format": "email"
-                        },
-                        "example": ["attendee1@example.com", "attendee2@example.com"]
-                    }
-                }
-            },
-            "ErrorResponse": {
-                "type": "object",
-                "properties": {
-                    "error": {
-                        "type": "string",
-                        "example": "Invalid request"
-                    }
-                }
-            }
-        }
+    "license": {
+      "name": "MIT"
     }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User authentication and registration"
+    },
+    {
+      "name": "Workflows",
+      "description": "Workflow management operations"
+    },
+    {
+      "name": "Webhooks",
+      "description": "External webhook triggers"
+    },
+    {
+      "name": "OAuth",
+      "description": "OAuth integration endpoints"
+    },
+    {
+      "name": "Google Actions",
+      "description": "Google service actions"
+    },
+    {
+      "name": "System",
+      "description": "System health and monitoring"
+    },
+    {
+      "name": "GitHub Actions"
+    },
+    {
+      "name": "Discord Actions"
+    },
+    {
+      "name": "Slack Actions"
+    },
+    {
+      "name": "Notion Actions"
+    }
+  ],
+  "paths": {
+    "/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "User login",
+        "description": "Authenticate user with email and password",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "User registration",
+        "description": "Create a new user account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "User already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health check",
+        "description": "Check API health status",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workflows": {
+      "get": {
+        "tags": [
+          "Workflows"
+        ],
+        "summary": "List workflows",
+        "description": "Get all workflows for the current user",
+        "responses": {
+          "200": {
+            "description": "List of workflows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Workflow"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Workflows"
+        ],
+        "summary": "Create workflow",
+        "description": "Create a new workflow",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Workflow created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Workflow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/{id}/trigger": {
+      "post": {
+        "tags": [
+          "Workflows"
+        ],
+        "summary": "Trigger workflow",
+        "description": "Manually trigger a workflow execution",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Workflow ID",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Payload data for workflow execution"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Workflow triggered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowRun"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workflow not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hooks/{token}": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Webhook trigger",
+        "description": "Trigger a workflow via webhook",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "description": "Webhook token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Webhook payload data"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Webhook processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowRun"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Webhook not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth/google/login": {
+      "get": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "Google OAuth login",
+        "description": "Initiate Google OAuth login flow",
+        "parameters": [
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "description": "OAuth redirect URI",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ui_redirect",
+            "in": "query",
+            "description": "UI redirect URL after OAuth completion",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to Google OAuth consent page"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth/google/callback": {
+      "get": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "Google OAuth callback",
+        "description": "Handle Google OAuth callback",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "description": "Authorization code from Google",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "description": "OAuth state parameter",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "description": "OAuth redirect URI",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OAuth callback processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token_id": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "email": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Redirect to UI application"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth/google/exchange": {
+      "post": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "Exchange Google OAuth code",
+        "description": "Exchange Google OAuth authorization code for user data",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "description": "Authorization code from Google"
+                  },
+                  "state": {
+                    "type": "string",
+                    "description": "OAuth state parameter"
+                  }
+                },
+                "required": [
+                  "code",
+                  "state"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Code exchange successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "string",
+                      "description": "User data from Google"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth/github/exchange": {
+      "post": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "Exchange GitHub OAuth code",
+        "description": "Exchange GitHub OAuth authorization code for user data",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "description": "Authorization code from GitHub"
+                  },
+                  "state": {
+                    "type": "string",
+                    "description": "OAuth state parameter"
+                  }
+                },
+                "required": [
+                  "code",
+                  "state"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Code exchange successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "string",
+                      "description": "User data from GitHub"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actions/google/email": {
+      "post": {
+        "tags": [
+          "Google Actions"
+        ],
+        "summary": "Send email via Gmail",
+        "description": "Send an email using Google Gmail API",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendEmailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "sent"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actions/google/calendar": {
+      "post": {
+        "tags": [
+          "Google Actions"
+        ],
+        "summary": "Create calendar event",
+        "description": "Create an event in Google Calendar",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCalendarEventRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Calendar event created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "created"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/about.json": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "About server",
+        "description": "Returns client host, server time and supported services",
+        "responses": {
+          "200": {
+            "description": "About response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "client": {
+                      "type": "object",
+                      "properties": {
+                        "host": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "host"
+                      ]
+                    },
+                    "server": {
+                      "type": "object",
+                      "properties": {
+                        "current_time": {
+                          "type": "integer"
+                        },
+                        "services": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "actions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "description": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "description"
+                                  ]
+                                }
+                              },
+                              "reactions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "description": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "description"
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "actions",
+                              "reactions"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "current_time",
+                        "services"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "client",
+                    "server"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/areas": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "List services",
+        "description": "Get supported services, triggers and reactions",
+        "responses": {
+          "200": {
+            "description": "Services list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/{id}": {
+      "delete": {
+        "tags": [
+          "Workflows"
+        ],
+        "summary": "Delete workflow",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/workflows/{id}/enabled": {
+      "post": {
+        "tags": [
+          "Workflows"
+        ],
+        "summary": "Enable/disable workflow",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "enable",
+                "disable"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/oauth/github/login": {
+      "get": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "GitHub OAuth login",
+        "responses": {
+          "302": {
+            "description": "Redirect to GitHub"
+          }
+        }
+      }
+    },
+    "/oauth/github/callback": {
+      "get": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "GitHub OAuth callback",
+        "responses": {
+          "200": {
+            "description": "OAuth result"
+          }
+        }
+      }
+    },
+    "/actions/github/issue": {
+      "post": {
+        "tags": [
+          "GitHub Actions"
+        ],
+        "summary": "Create GitHub issue",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token_id",
+                  "repo",
+                  "title"
+                ],
+                "properties": {
+                  "token_id": {
+                    "type": "integer"
+                  },
+                  "repo": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "labels": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/github/pr": {
+      "post": {
+        "tags": [
+          "GitHub Actions"
+        ],
+        "summary": "Create GitHub pull request",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token_id",
+                  "repo",
+                  "title",
+                  "head",
+                  "base"
+                ],
+                "properties": {
+                  "token_id": {
+                    "type": "integer"
+                  },
+                  "repo": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "head": {
+                    "type": "string"
+                  },
+                  "base": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/discord/message": {
+      "post": {
+        "tags": [
+          "Discord Actions"
+        ],
+        "summary": "Send Discord message",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/discord/embed": {
+      "post": {
+        "tags": [
+          "Discord Actions"
+        ],
+        "summary": "Send Discord embed",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/discord/message/edit": {
+      "post": {
+        "tags": [
+          "Discord Actions"
+        ],
+        "summary": "Edit Discord message",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/discord/message/delete": {
+      "post": {
+        "tags": [
+          "Discord Actions"
+        ],
+        "summary": "Delete Discord message",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/discord/message/react": {
+      "post": {
+        "tags": [
+          "Discord Actions"
+        ],
+        "summary": "React to Discord message",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/slack/message": {
+      "post": {
+        "tags": [
+          "Slack Actions"
+        ],
+        "summary": "Send Slack message",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/slack/blocks": {
+      "post": {
+        "tags": [
+          "Slack Actions"
+        ],
+        "summary": "Send Slack blocks message",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/slack/message/update": {
+      "post": {
+        "tags": [
+          "Slack Actions"
+        ],
+        "summary": "Update Slack message",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/slack/message/delete": {
+      "post": {
+        "tags": [
+          "Slack Actions"
+        ],
+        "summary": "Delete Slack message",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/slack/message/react": {
+      "post": {
+        "tags": [
+          "Slack Actions"
+        ],
+        "summary": "React to Slack message",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/notion/page": {
+      "post": {
+        "tags": [
+          "Notion Actions"
+        ],
+        "summary": "Create Notion page",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/notion/blocks": {
+      "post": {
+        "tags": [
+          "Notion Actions"
+        ],
+        "summary": "Append Notion blocks",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/notion/database": {
+      "post": {
+        "tags": [
+          "Notion Actions"
+        ],
+        "summary": "Create Notion database",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/notion/page/update": {
+      "post": {
+        "tags": [
+          "Notion Actions"
+        ],
+        "summary": "Update Notion page",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/resources/openapi.json": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "OpenAPI spec",
+        "responses": {
+          "200": {
+            "description": "Spec"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "firstname",
+          "lastname"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          },
+          "firstname": {
+            "type": "string",
+            "example": "John"
+          },
+          "lastname": {
+            "type": "string",
+            "example": "Doe"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "firstname": {
+            "type": "string",
+            "example": "John"
+          },
+          "lastname": {
+            "type": "string",
+            "example": "Doe"
+          }
+        }
+      },
+      "WorkflowRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "trigger_type",
+          "action_url"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "My Workflow"
+          },
+          "trigger_type": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "webhook",
+              "interval"
+            ],
+            "example": "manual"
+          },
+          "action_url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://api.example.com/webhook"
+          },
+          "trigger_config": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "token": "abc123"
+            }
+          },
+          "interval_minutes": {
+            "type": "integer",
+            "minimum": 1,
+            "example": 60,
+            "description": "Required for interval triggers"
+          }
+        }
+      },
+      "Workflow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "My Workflow"
+          },
+          "trigger_type": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "webhook",
+              "interval"
+            ],
+            "example": "manual"
+          },
+          "trigger_config": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "token": "abc123"
+            }
+          },
+          "action_url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://api.example.com/webhook"
+          },
+          "next_run_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2023-12-09T14:30:00Z"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-12-09T10:00:00Z"
+          }
+        }
+      },
+      "WorkflowRun": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1
+          },
+          "workflow_id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "example": "pending"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-12-09T14:30:00Z"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2023-12-09T14:30:05Z"
+          },
+          "ended_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2023-12-09T14:30:10Z"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "example": "Connection timeout"
+          }
+        }
+      },
+      "SendEmailRequest": {
+        "type": "object",
+        "required": [
+          "token_id",
+          "to",
+          "subject"
+        ],
+        "properties": {
+          "token_id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1
+          },
+          "to": {
+            "type": "string",
+            "format": "email",
+            "example": "recipient@example.com"
+          },
+          "subject": {
+            "type": "string",
+            "example": "Hello from KiKonect"
+          },
+          "body": {
+            "type": "string",
+            "example": "This is the email body content."
+          }
+        }
+      },
+      "CreateCalendarEventRequest": {
+        "type": "object",
+        "required": [
+          "token_id",
+          "summary",
+          "start",
+          "end"
+        ],
+        "properties": {
+          "token_id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1
+          },
+          "summary": {
+            "type": "string",
+            "example": "Team Meeting"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-12-09T14:00:00Z"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-12-09T15:00:00Z"
+          },
+          "attendees": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            },
+            "example": [
+              "attendee1@example.com",
+              "attendee2@example.com"
+            ]
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Invalid request"
+          }
+        }
+      }
+    }
+  }
 }

@@ -15,6 +15,11 @@ import (
 	"area/src/auth"
 	"area/src/database"
 	"area/src/httpapi"
+	"area/src/integrations/github"
+	"area/src/integrations/google"
+	"area/src/integrations/reddit"
+	"area/src/integrations/weather"
+	"area/src/integrations/youtube"
 	"area/src/workflows"
 
 	"github.com/joho/godotenv"
@@ -68,6 +73,8 @@ func main() {
 	wfStore := workflows.NewDefaultStore()
 	triggerer := workflows.NewTriggerer(wfStore)
 	wfService := workflows.NewService(wfStore, triggerer)
+	googleClient := google.NewClient()
+	githubClient := github.NewClient()
 
 	// Start a simple executor loop in background for outgoing webhooks.
 	sender := newHTTPSender()
@@ -101,6 +108,17 @@ func main() {
 			}
 		}
 	}()
+
+	// Gmail inbound poller (simple polling of new messages).
+	google.StartGmailPoller(context.Background(), wfStore, wfService, googleClient)
+	// GitHub commits poller (new commits on watched branches).
+	github.StartGithubPoller(context.Background(), wfStore, wfService, githubClient)
+	// Weather poller (Open-Meteo thresholds).
+	weather.StartWeatherPoller(context.Background(), wfStore, wfService)
+	// Reddit poller (new posts in subreddits).
+	reddit.StartRedditPoller(context.Background(), wfStore, wfService)
+	// YouTube poller (new videos from channel feed).
+	youtube.StartYouTubePoller(context.Background(), wfStore, wfService)
 
 	server := &http.Server{
 		Addr:              ":" + port,

@@ -58,8 +58,8 @@ func CheckPassword(hashed, password string) error {
 
 // UserStore defines the storage operations needed for auth.
 type UserStore interface {
-	Create(ctx context.Context, user *User, passwordHash string) error
-	GetByEmail(ctx context.Context, email string) (*User, string, error)
+	Create(user *User, passwordHash string) error
+	GetByEmail(email string) (*User, string, error)
 }
 
 // Service handles authentication and user creation against a user store.
@@ -73,13 +73,15 @@ func NewService(store UserStore) *Service {
 }
 
 // Authenticate verifies email/password against the stored hash.
-func (s *Service) Authenticate(ctx context.Context, email, password string) (*User, error) {
-	user, hashed, err := s.store.GetByEmail(ctx, email)
+func (s *Service) Authenticate(email, password string) (*User, error) {
+	user, hashed, err := s.store.GetByEmail(email)
 	switch {
 	case errors.Is(err, ErrInvalidCredentials):
 		return nil, ErrInvalidCredentials
 	case err != nil:
 		return nil, err
+	case user == nil:
+		return nil, ErrInvalidCredentials
 	}
 	if err := CheckPassword(hashed, password); err != nil {
 		return nil, ErrInvalidCredentials
@@ -88,7 +90,7 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (*Us
 }
 
 // Register creates a new user with a hashed password in the store.
-func (s *Service) Register(ctx context.Context, email, password, firstName, lastName string) (*User, error) {
+func (s *Service) Register(email, password, firstName, lastName string) (*User, error) {
 	hashed, err := HashPassword(password)
 	if err != nil {
 		return nil, err
@@ -98,7 +100,10 @@ func (s *Service) Register(ctx context.Context, email, password, firstName, last
 		FirstName: firstName,
 		LastName:  lastName,
 	}
-	if err := s.store.Create(ctx, user, hashed); err != nil {
+	if err := s.store.Create(user, hashed); err != nil {
+		if errors.Is(err, ErrUserExists) {
+			return nil, ErrUserExists
+		}
 		return nil, err
 	}
 	return user, nil

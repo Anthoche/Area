@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,43 +14,79 @@ import (
 
 	"github.com/swaggest/swgui/v5emb"
 
+	"area/src/areas"
 	"area/src/auth"
+	"area/src/database"
+	"area/src/integrations/discord"
+	gh "area/src/integrations/github"
 	goog "area/src/integrations/google"
+	"area/src/integrations/notion"
+	"area/src/integrations/slack"
 	"area/src/workflows"
 )
 
 // NewMux wires HTTP routes that the frontend can call.
 func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handler {
-	server := &handler{
-		auth:      authService,
+	server := &Handler{
+		Auth:      authService,
 		workflows: wfService,
 	}
 
 	googleHTTP := goog.NewHTTPHandlers(nil)
+	githubHTTP := gh.NewHTTPHandlers(nil)
+	githubMobileHTTP := gh.NewHTTPHandlers(gh.NewMobileClient())
+	discordHTTP := discord.NewHTTPHandlers(nil)
+	slackHTTP := slack.NewHTTPHandlers(nil)
+	notionHTTP := notion.NewHTTPHandlers(nil)
 	mux := http.NewServeMux()
-	mux.Handle("/login", server.login())
-	mux.Handle("/register", server.register())
-	mux.Handle("/healthz", server.health())
+	mux.Handle("/login", server.Login())
+	mux.Handle("/register", server.Register())
+	mux.Handle("/healthz", server.Health())
 	mux.Handle("/workflows", server.workflowsHandler())
 	mux.Handle("/workflows/", server.workflowResource())
 	mux.Handle("/hooks/", server.webhook())
-	mux.Handle("/oauth/google/exchange", server.exchangeGoogleToken())
+	mux.Handle("/oauth/google/start", googleHTTP.Start())
+	mux.Handle("/oauth/google/exchange", googleHTTP.Exchange())
 	mux.Handle("/oauth/github/exchange", server.exchangeGithubToken())
 	mux.Handle("/oauth/google/login", googleHTTP.Login())
 	mux.Handle("/oauth/google/callback", googleHTTP.Callback())
+	mux.Handle("/oauth/google/mobile/login", googleHTTP.Login())
+	mux.Handle("/oauth/google/mobile/callback", googleHTTP.Callback())
+	mux.Handle("/oauth/github/login", githubHTTP.Login())
+	mux.Handle("/oauth/github/callback", githubHTTP.Callback())
+	mux.Handle("/oauth/github/mobile/login", githubMobileHTTP.LoginMobile())
+	mux.Handle("/oauth/github/mobile/callback", githubMobileHTTP.CallbackMobile())
+	mux.Handle("/actions/github/issue", githubHTTP.Issue())
+	mux.Handle("/actions/github/pr", githubHTTP.PullRequest())
 	mux.Handle("/actions/google/email", googleHTTP.SendEmail())
 	mux.Handle("/actions/google/calendar", googleHTTP.CreateEvent())
+	mux.Handle("/actions/discord/message", discordHTTP.Message())
+	mux.Handle("/actions/discord/embed", discordHTTP.Embed())
+	mux.Handle("/actions/discord/message/edit", discordHTTP.Edit())
+	mux.Handle("/actions/discord/message/delete", discordHTTP.Delete())
+	mux.Handle("/actions/discord/message/react", discordHTTP.React())
+	mux.Handle("/actions/slack/message", slackHTTP.Message())
+	mux.Handle("/actions/slack/blocks", slackHTTP.Blocks())
+	mux.Handle("/actions/slack/message/update", slackHTTP.Update())
+	mux.Handle("/actions/slack/message/delete", slackHTTP.Delete())
+	mux.Handle("/actions/slack/message/react", slackHTTP.React())
+	mux.Handle("/actions/notion/page", notionHTTP.Page())
+	mux.Handle("/actions/notion/blocks", notionHTTP.AppendBlocks())
+	mux.Handle("/actions/notion/database", notionHTTP.Database())
+	mux.Handle("/actions/notion/page/update", notionHTTP.UpdatePage())
+	mux.Handle("/about.json", server.about())
+	mux.Handle("/areas", server.listAreas())
 	mux.Handle("/resources/openapi.json", server.openAPISpec())
 	mux.Handle("/docs/", v5emb.New(
 		"KiKonect API Reference",
 		"/resources/openapi.json",
 		"/docs/",
 	))
-	return withCORS(mux)
+	return WithCORS(mux)
 }
 
-type handler struct {
-	auth      *auth.Service
+type Handler struct {
+	Auth      *auth.Service
 	workflows *workflows.Service
 }
 
@@ -93,8 +130,8 @@ func userContext(r *http.Request) (context.Context, error) {
 	return workflows.WithUserID(r.Context(), id), nil
 }
 
-// login handles POST /login authentication requests.
-func (h *handler) login() http.Handler {
+// Login handles POST /login authentication requests.
+func (h *Handler) Login() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -108,7 +145,7 @@ func (h *handler) login() http.Handler {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid JSON payload"})
 			return
 		}
-		if err := ensureNoTrailingData(decoder); err != nil {
+		if err := EnsureNoTrailingData(decoder); err != nil {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "unexpected data in payload"})
 			return
 		}
@@ -119,7 +156,7 @@ func (h *handler) login() http.Handler {
 			return
 		}
 
-		user, err := h.auth.Authenticate(r.Context(), payload.Email, payload.Password)
+		user, err := h.Auth.Authenticate(payload.Email, payload.Password)
 		switch {
 		case errors.Is(err, auth.ErrInvalidCredentials):
 			writeJSON(w, http.StatusUnauthorized, errorResponse{Error: "invalid email or password"})
@@ -133,8 +170,8 @@ func (h *handler) login() http.Handler {
 	})
 }
 
-// register handles POST /register user creation requests.
-func (h *handler) register() http.Handler {
+// Register handles POST /register user creation requests.
+func (h *Handler) Register() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -148,7 +185,7 @@ func (h *handler) register() http.Handler {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid JSON payload"})
 			return
 		}
-		if err := ensureNoTrailingData(decoder); err != nil {
+		if err := EnsureNoTrailingData(decoder); err != nil {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "unexpected data in payload"})
 			return
 		}
@@ -161,7 +198,7 @@ func (h *handler) register() http.Handler {
 			return
 		}
 
-		user, err := h.auth.Register(r.Context(), payload.Email, payload.Password, payload.FirstName, payload.LastName)
+		user, err := h.Auth.Register(payload.Email, payload.Password, payload.FirstName, payload.LastName)
 		switch {
 		case errors.Is(err, auth.ErrUserExists):
 			writeJSON(w, http.StatusConflict, errorResponse{Error: "user already exists"})
@@ -175,8 +212,8 @@ func (h *handler) register() http.Handler {
 	})
 }
 
-// health serves a simple health-check endpoint.
-func (h *handler) health() http.Handler {
+// Health serves a simple Health-check endpoint.
+func (h *Handler) Health() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -186,8 +223,48 @@ func (h *handler) health() http.Handler {
 	})
 }
 
+// listAreas exposes the catalog of available services/triggers/reactions for the clients.
+func (h *Handler) listAreas() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		services := areas.List()
+		var userCount int64
+		if count, err := database.CountUsers(); err == nil {
+			userCount = count
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"services":   services,
+			"user_count": userCount,
+		})
+	})
+}
+
 type errorResponse struct {
 	Error string `json:"error"`
+}
+
+type aboutResponse struct {
+	Client struct {
+		Host string `json:"host"`
+	} `json:"client"`
+	Server struct {
+		CurrentTime int64          `json:"current_time"`
+		Services    []aboutService `json:"services"`
+	} `json:"server"`
+}
+
+type aboutService struct {
+	Name      string       `json:"name"`
+	Actions   []aboutEntry `json:"actions"`
+	Reactions []aboutEntry `json:"reactions"`
+}
+
+type aboutEntry struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 // writeJSON serializes a value to JSON with the given status code.
@@ -197,9 +274,48 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 	_ = json.NewEncoder(w).Encode(value)
 }
 
-// withCORS adds permissive CORS headers so the web app (port 80) can call the API (port 8080).
-// In production, tighten Allowed-Origin to the actual frontend domain.
-func withCORS(next http.Handler) http.Handler {
+// about returns the server capabilities for the client.
+func (h *Handler) about() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			host = r.RemoteAddr
+		}
+		services := areas.List()
+		out := aboutResponse{}
+		out.Client.Host = host
+		out.Server.CurrentTime = time.Now().Unix()
+		out.Server.Services = make([]aboutService, 0, len(services))
+		for _, svc := range services {
+			entry := aboutService{
+				Name:      svc.ID,
+				Actions:   make([]aboutEntry, 0, len(svc.Triggers)),
+				Reactions: make([]aboutEntry, 0, len(svc.Reactions)),
+			}
+			for _, act := range svc.Triggers {
+				entry.Actions = append(entry.Actions, aboutEntry{
+					Name:        act.ID,
+					Description: act.Description,
+				})
+			}
+			for _, react := range svc.Reactions {
+				entry.Reactions = append(entry.Reactions, aboutEntry{
+					Name:        react.ID,
+					Description: react.Description,
+				})
+			}
+			out.Server.Services = append(out.Server.Services, entry)
+		}
+		writeJSON(w, http.StatusOK, out)
+	})
+}
+
+// WithCORS adds permissive CORS headers for the API.
+func WithCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,OPTIONS,DELETE")
@@ -214,8 +330,8 @@ func withCORS(next http.Handler) http.Handler {
 	})
 }
 
-// ensureNoTrailingData rejects payloads that contain multiple JSON objects.
-func ensureNoTrailingData(decoder *json.Decoder) error {
+// EnsureNoTrailingData rejects payloads that contain multiple JSON objects.
+func EnsureNoTrailingData(decoder *json.Decoder) error {
 	if decoder.More() {
 		return errors.New("unexpected extra data")
 	}
@@ -226,7 +342,7 @@ func ensureNoTrailingData(decoder *json.Decoder) error {
 }
 
 // workflowsHandler routes workflow listing and creation requests.
-func (h *handler) workflowsHandler() http.Handler {
+func (h *Handler) workflowsHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
@@ -240,7 +356,7 @@ func (h *handler) workflowsHandler() http.Handler {
 }
 
 // createWorkflow validates input and persists a new workflow.
-func (h *handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	if h.workflows == nil {
 		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "workflows not configured"})
 		return
@@ -258,7 +374,7 @@ func (h *handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid JSON payload"})
 		return
 	}
-	if err := ensureNoTrailingData(decoder); err != nil {
+	if err := EnsureNoTrailingData(decoder); err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "unexpected data in payload"})
 		return
 	}
@@ -276,7 +392,7 @@ func (h *handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 }
 
 // listWorkflows responds with all workflows for the current user/session.
-func (h *handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	if h.workflows == nil {
 		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "workflows not configured"})
 		return
@@ -297,7 +413,7 @@ func (h *handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 // workflowResource handles:
 // - POST /workflows/{id}/trigger to enqueue a run
 // - DELETE /workflows/{id} to delete a workflow
-func (h *handler) workflowResource() http.Handler {
+func (h *Handler) workflowResource() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if h.workflows == nil {
 			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "workflows not configured"})
@@ -383,7 +499,7 @@ func (h *handler) workflowResource() http.Handler {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid JSON payload"})
 			return
 		}
-		if err := ensureNoTrailingData(decoder); err != nil {
+		if err := EnsureNoTrailingData(decoder); err != nil {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "unexpected data in payload"})
 			return
 		}
@@ -405,7 +521,7 @@ func (h *handler) workflowResource() http.Handler {
 }
 
 // webhook handles external POST /hooks/{token} to trigger a webhook workflow.
-func (h *handler) webhook() http.Handler {
+func (h *Handler) webhook() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -433,7 +549,7 @@ func (h *handler) webhook() http.Handler {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid JSON payload"})
 			return
 		}
-		if err := ensureNoTrailingData(decoder); err != nil {
+		if err := EnsureNoTrailingData(decoder); err != nil {
 			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "unexpected data in payload"})
 			return
 		}
@@ -451,8 +567,8 @@ func (h *handler) webhook() http.Handler {
 	})
 }
 
-// exchangeGoogleToken handles POST /oauth/google/exchange to exchange an auth code for user data.
-func (h *handler) exchangeGoogleToken() http.Handler {
+// exchangeGoogleToken handles POST /oauth/google/exchange to exchange an Auth code for user data.
+func (h *Handler) exchangeGoogleToken() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -474,7 +590,7 @@ func (h *handler) exchangeGoogleToken() http.Handler {
 	})
 }
 
-func (h *handler) exchangeGithubToken() http.Handler {
+func (h *Handler) exchangeGithubToken() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -497,7 +613,7 @@ func (h *handler) exchangeGithubToken() http.Handler {
 }
 
 // openAPISpec serves the OpenAPI specification JSON file
-func (h *handler) openAPISpec() http.Handler {
+func (h *Handler) openAPISpec() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)

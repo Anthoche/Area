@@ -61,10 +61,49 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 		if err != nil || cfg.IntervalMinutes <= 0 {
 			return nil, errors.New("interval_minutes must be > 0 for interval trigger")
 		}
-	case "webhook", "manual":
-		// no-op, but ensure valid JSON
+	case "webhook", "manual", "gmail_inbound":
 		if len(triggerConfig) == 0 {
 			triggerConfig = []byte(`{}`)
+		}
+	case "github_commit":
+		cfg, err := githubCommitConfigFromJSON(triggerConfig)
+		if err != nil || cfg.TokenID <= 0 || cfg.Repo == "" || cfg.Branch == "" {
+			return nil, errors.New("github_commit requires token_id, repo and branch")
+		}
+	case "github_pull_request":
+		cfg, err := githubPRConfigFromJSON(triggerConfig)
+		if err != nil || cfg.TokenID <= 0 || cfg.Repo == "" {
+			return nil, errors.New("github_pull_request requires token_id and repo")
+		}
+	case "github_issue":
+		cfg, err := githubIssueConfigFromJSON(triggerConfig)
+		if err != nil || cfg.TokenID <= 0 || cfg.Repo == "" {
+			return nil, errors.New("github_issue requires token_id and repo")
+		}
+	case "weather_temp":
+		cfg, err := weatherTempConfigFromJSON(triggerConfig)
+		if err != nil || cfg.Direction == "" || cfg.Threshold == 0 || cfg.City == "" {
+			return nil, errors.New("weather_temp requires city, threshold and direction")
+		}
+		switch strings.ToLower(cfg.Direction) {
+		case "above", "below":
+		default:
+			return nil, errors.New("weather_temp direction must be above or below")
+		}
+	case "weather_report":
+		cfg, err := weatherReportConfigFromJSON(triggerConfig)
+		if err != nil || cfg.IntervalMin <= 0 || cfg.City == "" {
+			return nil, errors.New("weather_report requires city and interval_minutes")
+		}
+	case "reddit_new_post":
+		cfg, err := redditNewPostConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.Subreddit) == "" {
+			return nil, errors.New("reddit_new_post requires subreddit")
+		}
+	case "youtube_new_video":
+		cfg, err := youtubeNewVideoConfigFromJSON(triggerConfig)
+		if err != nil || (strings.TrimSpace(cfg.ChannelID) == "" && strings.TrimSpace(cfg.Channel) == "") {
+			return nil, errors.New("youtube_new_video requires channel")
 		}
 	default:
 		return nil, fmt.Errorf("unsupported trigger_type %s", triggerType)
@@ -144,6 +183,36 @@ func (s *Service) TriggerWebhook(ctx context.Context, token string, payload map[
 // IntervalConfigFromJSON exposes interval config parsing to callers (e.g., scheduler).
 func IntervalConfigFromJSON(raw json.RawMessage) (IntervalConfig, error) {
 	return intervalConfigFromJSON(raw)
+}
+
+// GithubCommitConfigFromJSON exposes parsing for github_commit trigger config.
+func GithubCommitConfigFromJSON(raw json.RawMessage) (GithubCommitConfig, error) {
+	return githubCommitConfigFromJSON(raw)
+}
+
+// GithubPRConfigFromJSON exposes parsing for github_pull_request trigger config.
+func GithubPRConfigFromJSON(raw json.RawMessage) (GithubPullRequestConfig, error) {
+	return githubPRConfigFromJSON(raw)
+}
+
+// GithubIssueConfigFromJSON exposes parsing for github_issue trigger config.
+func GithubIssueConfigFromJSON(raw json.RawMessage) (GithubIssueConfig, error) {
+	return githubIssueConfigFromJSON(raw)
+}
+
+// WeatherTempConfigFromJSON exposes parsing for weather_temp trigger config.
+func WeatherTempConfigFromJSON(raw json.RawMessage) (WeatherTempConfig, error) {
+	return weatherTempConfigFromJSON(raw)
+}
+
+// RedditNewPostConfigFromJSON exposes parsing for reddit_new_post trigger config.
+func RedditNewPostConfigFromJSON(raw json.RawMessage) (RedditNewPostConfig, error) {
+	return redditNewPostConfigFromJSON(raw)
+}
+
+// YouTubeNewVideoConfigFromJSON exposes parsing for youtube_new_video trigger config.
+func YouTubeNewVideoConfigFromJSON(raw json.RawMessage) (YouTubeNewVideoConfig, error) {
+	return youtubeNewVideoConfigFromJSON(raw)
 }
 
 type ctxUserIDKey struct{}

@@ -1,93 +1,106 @@
+@import "../../index.css";
+
 .reg-page {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #ffffff;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--bg-color);
 }
 
 .reg-card {
-  width: 350px;
-  padding: 28px;
-  border-radius: 18px;
-  background: white;
-  text-align: center;
+    width: 350px;
+    padding: 28px;
+    border-radius: 18px;
+    background: var(--bg-color);
+    border: var(--card-border-color) 1px solid;
+    box-shadow: var(--card-shadow);
+    text-align: center;
 }
 
-.logoR-img {
-  display: block;
-  margin: auto;
-  margin-bottom: -25px;
-  height: 250px;
-  object-fit: contain;
+.logo-img {
+    display: block;
+    height: 100px;
+    object-fit: contain;
+}
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.logo-container > h1 {
+    color: var(--text-primary);
+    font-size: 28px;
+    letter-spacing: .08rem;
 }
 
 .title {
-  font-size: 20px;
-  font-weight: 700;
-  margin-top: 0px;
-  margin-bottom: 15px;
-  color: #2d2d2d;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 15px 0;
+    color: var(--title-color);
 }
 
 .floating-input {
-  position: relative;
-  width: 100%;
-  margin-top: 20px;
+    position: relative;
+    width: 100%;
+    margin-top: 20px;
 }
 
 .floating-input input {
-  width: 100%;
-  padding: 12px;
-  font-size: 14px;
-  border: 1px solid #d4cdd8;
-  border-radius: 5px;
-  outline: none;
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    border: 1px solid #d4cdd8;
+    border-radius: 5px;
+    outline: none;
 }
 
 .floating-input input:focus {
-  border-color: #a788ff;
-  box-shadow: 0 0 4px rgba(167, 136, 255, 0.5);
+    border-color: #a788ff;
+    box-shadow: 0 0 4px rgba(167, 136, 255, 0.5);
 }
 
 .floating-input label {
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  transform: translateY(-50%);
-  background: white;
-  padding: 0 4px;
-  color: #777;
-  transition: 0.2s ease;
-  pointer-events: none;
-  font-size: 14px;
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    background: white;
+    padding: 0 4px;
+    color: #777;
+    transition: 0.2s ease;
+    pointer-events: none;
+    font-size: 14px;
 }
 
 .floating-input input:focus + label,
 .floating-input label.filled {
-  top: -8px;
-  font-size: 12px;
-  color: #5a2bb3;
+    top: -8px;
+    font-size: 12px;
+    color: #5a2bb3;
 }
 
 .reg-btn {
-  width: 100%;
-  margin-top: 20px;
-  padding: 12px;
-  border: none;
-  border-radius: 25px;
-  font-weight: 600;
-  font-size: 15px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-  background: #48179c;
-  color: #ffffff;
+    width: 100%;
+    margin-top: 20px;
+    padding: 12px;
+    border: none;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    background: #48179c;
+    color: #ffffff;
 }
 
 .reg-btn:hover {
-  background: #d9c7ff;
+    background: #d9c7ff;
 }
-
