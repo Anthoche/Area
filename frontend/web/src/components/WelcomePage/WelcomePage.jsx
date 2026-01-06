@@ -82,8 +82,8 @@ export default function WelcomePage() {
                             <stop offset="100%" stopColor="#e3f0ff"/>
                         </linearGradient>
                     </defs>
-                    <path d="M0,120 C360,200 1080,40 1440,120 L1440,0 L0,0 Z" fill="url(#waveGradient)"/>
-                    <path d="M0,180 C400,100 1040,260 1440,180 L1440,0 L0,0 Z" fill="#e3f0ff" fillOpacity="0.7"/>
+                    <path d="M0,120 C360,200 1080,40 1440,120 L1440,0 L0,0 Z" fill="url(#waveGradient)" fillOpacity="0.4"/>
+                    <path d="M0,180 C400,100 1040,260 1440,180 L1440,0 L0,0 Z" fill="#e3f0ff" fillOpacity="0.2"/>
                 </svg>
             </div>
             <Navbar />
@@ -119,16 +119,16 @@ export default function WelcomePage() {
                             style={{ transitionDelay: '0.3s' }}
                         >
                             <Link
-                                className="how-cta-btn"
+                                className="how-cta-btn pres-btn-get-started pres-btn"
                                 to={isLoggedIn ? "/home" : "/login"}
                             >
-                                Get Started
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="" viewBox="0 -5 24 24" fill="none"
-                                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                                    className="lucide lucide-arrow-right group-hover:translate-x-1 transition-transform"
-                                    aria-hidden="true">
-                                <path d="M5 12h14"></path>
-                                <path d="m12 5 7 7-7 7"></path>
+                                <span>Get Started</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                     className="lucide lucide-arrow-right group-hover:translate-x-1 transition-transform"
+                                     aria-hidden="true">
+                                    <path d="M5 12h14"></path>
+                                    <path d="m12 5 7 7-7 7"></path>
                                 </svg>
                             </Link>
                         </div>
@@ -136,7 +136,7 @@ export default function WelcomePage() {
                     <div
                         className={`welcome-page-section-stats hero-shape-animate-right${statsVisible ? ' visible' : ''}`}
                         ref={heroStatsRef}
-                        style={{ transitionDelay: statsVisible ? '0.5s' : '0s' }}
+                        style={{transitionDelay: statsVisible ? '0.5s' : '0s' }}
                     >
                         <ul>
                             <li>
