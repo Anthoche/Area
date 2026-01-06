@@ -9,7 +9,7 @@ export default function HomePage() {
             <div className="home-page-content">
                 <div className="home-page-header">
                     <div className="home-page-header-text">
-                        <h1>My Konects</h1>
+                        <h1>Konects</h1>
                         <span>Manage and automate your favorite services seamlessly.</span>
                         <span>Create and organize your Konects to boost productivity.</span>
                     </div>
@@ -27,7 +27,7 @@ export default function HomePage() {
                     </div>
                 </div>
                 <div className="konects-searchbar">
-
+                    <span>Search bar here</span>
                 </div>
                 <div className="konects-filter">
                     <div className="filter-section">
