@@ -1,6 +1,5 @@
-import logo from "../../../lib/assets/Kikonect_logo_no_text.png";
+import logo from "../../lib/assets/Kikonect_logo_no_text.png";
 import React, {useState} from "react";
-import { Link } from "react-router-dom";
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);

@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import "./homepage.css";
-import SearchBar from "./SearchBar";
-import FilterTag from "./FilterTag";
-import ServiceCard from "./ServiceCard";
-import user from "../../../lib/assets/user.png";
+import SearchBar from "./SearchBar.jsx";
+import FilterTag from "./FilterTag.jsx";
+import ServiceCard from "./ServiceCard.jsx";
+import user from "../../../../lib/assets/user.png";
 
 const API_BASE =
     import.meta.env.VITE_API_URL ||

@@ -1,4 +1,4 @@
-import logo from "../../../lib/assets/Kikonect_logo_no_text.png";
+import logo from "../../lib/assets/Kikonect_logo_no_text.png";
 import React from "react";
 
 export default function Footer() {

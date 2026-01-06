@@ -6,7 +6,6 @@
     --navbar-text-color-hovered: #101828;
     --footer-text-color: #99a1af;
     --transition: .25s;
-    --page-padding: 20vw;
     --step-example-text-color: #1046bac5;
     --step-example-bg-color: #c1d5fe4d;
 }
@@ -18,46 +17,7 @@
     }
 }
 
-@media (max-width: 1600px) {
-    :root {
-        --page-padding: 10vw;
-    }
-}
-
-@media (max-width: 1100px) {
-    :root {
-        --page-padding: 5vw;
-    }
-}
-
-@media (max-width: 850px) {
-    .navbar-section {
-        display: none;
-    }
-
-    .navbar-section:first-child {
-        display: block;
-    }
-
-    .hamburger-button {
-        display: flex !important;
-    }
-}
-
-@media (max-width: 700px) {
-    .footer-sections {
-        flex-direction: column !important;
-        align-items: center !important;
-    }
-
-    .footer-section {
-        align-items: center;
-    }
-}
-
 .welcome-page-wrapper {
-    display: flex;
-    flex-direction: column;
     min-height: 100vh;
     position: relative;
     overflow-x: hidden;
@@ -75,9 +35,6 @@
 .welcome-page-content {
     position: relative;
     z-index: 1;
-}
-
-.welcome-page-content {
     padding: var(--navbar-height) var(--page-padding) 0;
 }
 
@@ -486,7 +443,7 @@ footer > p {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px 20%;
     max-width: 1500px;
-    margin: 40px 10% 0%;
+    margin: 40px 10% 0;
     list-style: none;
     padding: 0;
     color: var(--text-secondary);

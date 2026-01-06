@@ -31,10 +31,52 @@
         --card-bg-color: #18233a;
         --card-border-color: #575a6e;
         --card-shadow: 0 18px 36px rgba(177, 159, 234, 0.12);
-
+        --page-padding: 20vw;
         --navbar-text-color: var(--text-secondary);
         --navbar-text-color-hovered: #ffffff;
     }
+}
+
+@media (max-width: 1600px) {
+    :root {
+        --page-padding: 10vw;
+    }
+}
+
+@media (max-width: 1100px) {
+    :root {
+        --page-padding: 5vw;
+    }
+}
+
+@media (max-width: 850px) {
+    .navbar-section {
+        display: none;
+    }
+
+    .navbar-section:first-child {
+        display: block;
+    }
+
+    .hamburger-button {
+        display: flex !important;
+    }
+}
+
+@media (max-width: 700px) {
+    .footer-sections {
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+
+    .footer-section {
+        align-items: center;
+    }
+}
+
+.page-wrapper {
+    display: flex;
+    flex-direction: column;
 }
 
 body {
