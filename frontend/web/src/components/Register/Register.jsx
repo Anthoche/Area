@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./register.css";
-import logo from "../../../lib/assets/Kikonect_logo.png";
+import logo from "../../../lib/assets/Kikonect_logo_no_text.png";
 
 const API_BASE =
     import.meta.env.VITE_API_URL ||
@@ -18,6 +18,7 @@ export default function Register() {
     const [email, setEmail] = useState(prefilledEmail);
     const [password, setPassword] = useState("");
     const [confirm, setConfirm] = useState("");
+    const [formError, setFormError] = useState("");
 
     useEffect(() => {
         if (prefilledEmail) setEmail(prefilledEmail);
@@ -25,17 +26,23 @@ export default function Register() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setFormError("");
         if (!email || !password || !confirm || !firstName || !lastName) {
-            alert("Please fill in all fields.");
+            setFormError("Please fill in all fields.");
             return;
         }
         const emailRegex = /^[\w.-]+@[\w.-]+\.\w+$/;
         if (!emailRegex.test(email)) {
-            alert("Please enter a valid email address.");
+            setFormError("Please enter a valid email address.");
+            return;
+        }
+        const passwordRules = /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+        if (!passwordRules.test(password)) {
+            setFormError("Password must be at least 8 characters, include a number and a special character.");
             return;
         }
         if (password !== confirm) {
-            alert("Passwords do not match.");
+            setFormError("Passwords do not match.");
             return;
         }
 
@@ -52,18 +59,18 @@ export default function Register() {
             });
 
             if (res.status === 409) {
-                alert("Email already registered. Please login instead.");
+                setFormError("Email already registered. Please login instead.");
                 return;
             }
 
             if (!res.ok) {
-                alert("Server error. Please try again later.");
+                setFormError("Server error. Please try again later.");
                 return;
             }
 
             const data = await res.json();
             console.log("Registration success:", data);
-            alert("Registration successful! You can now login.");
+            setFormError("");
             setEmail("");
             setPassword("");
             setConfirm("");
@@ -72,15 +79,26 @@ export default function Register() {
             navigate("/");
         } catch (err) {
             console.error("Network or fetch error:", err);
-            alert("Network error. Please check your connection or backend.");
+            setFormError("Network error. Please check your connection or backend.");
         }
     };
 
     return (
         <div className="reg-page">
             <div className="reg-card">
-                <img src={logo} alt="KiKoNect logo" className="logoR-img" />
+                <div className="logo-container">
+                    <img src={logo} alt="KiKoNect logo" className="logo-img" />
+                    <h1>KiKoNect</h1>
+                </div>
                 <h2 className="title">Create an account</h2>
+                                {formError && (
+                                    <div
+                                        className="error-popup"
+                                        style={{ marginBottom: 30, color: "#b91818ff", fontStyle: 'italic', fontWeight: 300, fontSize: 15 }}
+                                    >
+                                        {formError}
+                                    </div>
+                                )}
                 <form onSubmit={handleSubmit} className="reg-form">
                     <div className="floating-input">
                         <input

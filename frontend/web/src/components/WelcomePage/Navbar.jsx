@@ -1,5 +1,6 @@
 import logo from "../../../lib/assets/Kikonect_logo_no_text.png";
 import React, {useState} from "react";
+import { Link } from "react-router-dom";
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -11,6 +12,10 @@ export default function Navbar() {
     const closeMenu = () => {
         setIsMenuOpen(false);
     };
+
+    const userId = Number(localStorage.getItem("user_id"));
+    const isLoggedIn = Number.isFinite(userId) && userId > 0;
+    
 
     return (
         <div className="navbar-wrapper">
@@ -25,7 +30,14 @@ export default function Navbar() {
                     <ul className="navbar-list">
                         <li><a href="#features">Features</a></li>
                         <li><a href="#how-it-works">How it works</a></li>
-                        <li className="navbar-login-btn"><a href="/login">Login</a></li>
+                        <li className="navbar-login-btn">
+                            <a 
+                                href={isLoggedIn ? "/home" : "/login"} 
+                                onClick={closeMenu}
+                            >
+                            {isLoggedIn ? "My Account" : "Login"}
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 <button className="hamburger-button" onClick={toggleMenu} aria-label="Toggle menu">
@@ -48,7 +60,14 @@ export default function Navbar() {
                     <ul className="mobile-menu-list">
                         <li><a href="#features" onClick={closeMenu}>Features</a></li>
                         <li><a href="#how-it-works" onClick={closeMenu}>How it works</a></li>
-                        <li className="mobile-login-btn"><a href="/login" onClick={closeMenu}>Login</a></li>
+                        <li className="mobile-login-btn">
+                            <a 
+                                href={isLoggedIn ? "/home" : "/login"} 
+                                onClick={closeMenu}
+                            >
+                            {isLoggedIn ? "My Account" : "Login"}
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>

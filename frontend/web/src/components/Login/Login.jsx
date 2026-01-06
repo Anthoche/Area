@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoginForm from "./LoginForm";
 import "./login.css";
-import logo from "../../../lib/assets/Kikonect_logo.png";
+import logo from "../../../lib/assets/Kikonect_logo_no_text.png";
 
 const API_BASE =
   import.meta.env.VITE_API_URL ||
@@ -48,7 +48,6 @@ export default function Login() {
       }
       const data = await res.json();
       console.log("Login success:", data);
-       // persist the user id for later OAuth calls
       if (data?.id) {
         setUserId(data.id);
         localStorage.setItem("user_id", data.id);
@@ -66,7 +65,10 @@ export default function Login() {
   return (
     <div className="login-page">
       <div className="login-card">
-       <img src={logo} alt="KiKoNect logo" className="logo-img" />
+       <div className="logo-container">
+           <img src={logo} alt="KiKoNect logo" className="logo-img" />
+           <h1>KiKoNect</h1>
+       </div>
         {
         <LoginForm
         email={email}

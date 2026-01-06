@@ -68,8 +68,11 @@ class _RegisterPageState extends State<RegisterPage> {
       );
     } else {
       if (mounted) {
-        showErrorDialog(context, 'Something went wrong',
-            buttonColor: Colors.blue);
+        showErrorDialog(
+          context,
+          'Something went wrong',
+          buttonColor: Theme.of(context).colorScheme.primary,
+        );
       }
     }
   }
@@ -90,74 +93,78 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      body: Container(
-        child: Center(
-          child: SizedBox(
-            width: 300,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Brand logo.
-                Image.asset(
-                  'lib/assets/Kikonect_logo.png',
-                  height: 250,
-                  width: 250,
-                  alignment: Alignment.center,
-                ),
-                const Text(
-                  "Create an account",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Center(
+            child: SizedBox(
+              width: 300,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Brand logo.
+                  Image.asset(
+                    'lib/assets/Kikonect_logo.png',
+                    height: 250,
+                    width: 250,
+                    alignment: Alignment.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 30),
-                AppTextField(
-                    label: "First Name", controller: firstNameController),
-                const SizedBox(height: 30),
-                AppTextField(
-                    label: "Last Name", controller: lastNameController),
-                const SizedBox(height: 30),
-                AppTextField(label: "Email", controller: emailController),
-                const SizedBox(height: 30),
-                AppTextField(
-                    label: "Password",
-                    obscure: true,
-                    controller: passwordController),
-                const SizedBox(height: 30),
-                AppTextField(
-                    label: "Confirm Password",
-                    obscure: true,
-                    controller: confirmPasswordController),
-                const SizedBox(height: 30),
-                PrimaryButton(
-                  text: "Register",
-                  onPressed: () async {
-                    if (isFieldsEmpty()) {
-                      showErrorDialog(context, "Please fill in all fields.",
-                          buttonColor: Colors.blue);
-                      return;
-                    }
-                    if (!isValidEmail(emailController.text)) {
-                      showErrorDialog(
-                        context,
-                        "Please enter a valid email address.",
-                        buttonColor: Colors.blue,
-                      );
-                      return;
-                    }
-                    if (!passwordMatch()) {
-                      showErrorDialog(context, "Passwords do not match",
-                          buttonColor: Colors.blue);
-                      return;
-                    }
-                    await registerUser();
-                  },
-                )
-              ],
+                  Text(
+                    "Create an account",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 30),
+                  AppTextField(
+                      label: "First Name", controller: firstNameController),
+                  const SizedBox(height: 30),
+                  AppTextField(
+                      label: "Last Name", controller: lastNameController),
+                  const SizedBox(height: 30),
+                  AppTextField(label: "Email", controller: emailController),
+                  const SizedBox(height: 30),
+                  AppTextField(
+                      label: "Password",
+                      obscure: true,
+                      controller: passwordController),
+                  const SizedBox(height: 30),
+                  AppTextField(
+                      label: "Confirm Password",
+                      obscure: true,
+                      controller: confirmPasswordController),
+                  const SizedBox(height: 30),
+                  PrimaryButton(
+                    text: "Register",
+                    onPressed: () async {
+                      if (isFieldsEmpty()) {
+                        showErrorDialog(context, "Please fill in all fields.",
+                            buttonColor: colorScheme.primary);
+                        return;
+                      }
+                      if (!isValidEmail(emailController.text)) {
+                        showErrorDialog(
+                          context,
+                          "Please enter a valid email address.",
+                          buttonColor: colorScheme.primary,
+                        );
+                        return;
+                      }
+                      if (!passwordMatch()) {
+                        showErrorDialog(context, "Passwords do not match",
+                            buttonColor: colorScheme.primary);
+                        return;
+                      }
+                      await registerUser();
+                    },
+                  )
+                ],
+              ),
             ),
           ),
         ),

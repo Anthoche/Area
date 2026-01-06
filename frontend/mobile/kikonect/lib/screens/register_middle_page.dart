@@ -116,6 +116,7 @@ class _RegisterMiddlePageState extends State<RegisterMiddlePage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: Center(
         child: SizedBox(
@@ -129,19 +130,22 @@ class _RegisterMiddlePageState extends State<RegisterMiddlePage> {
                 width: 250,
                 alignment: Alignment.center,
               ),
-              const Text(
+              Text(
                 "Create an account",
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 "Enter your email to sign up for this app",
-                style: TextStyle(fontSize: 15, color: Colors.black),
+                style: TextStyle(
+                  fontSize: 15,
+                  color: colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 30),
@@ -159,9 +163,9 @@ class _RegisterMiddlePageState extends State<RegisterMiddlePage> {
                 },
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 "──────────  or  ──────────",
-                style: TextStyle(color: Colors.black),
+                style: TextStyle(color: colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 10),
               PrimaryButton(

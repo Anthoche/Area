@@ -13,6 +13,8 @@ class ServiceSelectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -33,10 +35,13 @@ class ServiceSelectionCard extends StatelessWidget {
               height: 60,
               width: 60,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8)
+                  BoxShadow(
+                    color: theme.shadowColor.withOpacity(0.2),
+                    blurRadius: 8,
+                  )
                 ],
               ),
               padding: const EdgeInsets.all(12),
