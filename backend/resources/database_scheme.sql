@@ -219,6 +219,7 @@ VALUES
 
     ('discord', 'discord_message', 'channel_id', 'string', TRUE, 'Target channel ID', '"123456789012345678"'::jsonb),
     ('discord', 'discord_message', 'content', 'string', TRUE, 'Message content', '"Hello from Area"'::jsonb),
+    ('discord', 'discord_message', 'bot_token', 'string', FALSE, 'Discord bot token', NULL),
 
     ('discord', 'discord_embed', 'channel_id', 'string', TRUE, 'Target channel ID', '"123456789012345678"'::jsonb),
     ('discord', 'discord_embed', 'title', 'string', TRUE, 'Embed title', NULL),
@@ -226,17 +227,21 @@ VALUES
     ('discord', 'discord_embed', 'url', 'string', FALSE, 'Embed URL', NULL),
     ('discord', 'discord_embed', 'color', 'string', FALSE, 'Hex color (e.g. #5865F2)', NULL),
     ('discord', 'discord_embed', 'content', 'string', FALSE, 'Optional message content', NULL),
+    ('discord', 'discord_embed', 'bot_token', 'string', FALSE, 'Discord bot token', NULL),
 
     ('discord', 'discord_edit_message', 'channel_id', 'string', TRUE, 'Target channel ID', NULL),
     ('discord', 'discord_edit_message', 'message_id', 'string', TRUE, 'Message ID to edit', NULL),
     ('discord', 'discord_edit_message', 'content', 'string', TRUE, 'New message content', NULL),
+    ('discord', 'discord_edit_message', 'bot_token', 'string', FALSE, 'Discord bot token', NULL),
 
     ('discord', 'discord_delete_message', 'channel_id', 'string', TRUE, 'Target channel ID', NULL),
     ('discord', 'discord_delete_message', 'message_id', 'string', TRUE, 'Message ID to delete', NULL),
+    ('discord', 'discord_delete_message', 'bot_token', 'string', FALSE, 'Discord bot token', NULL),
 
     ('discord', 'discord_add_reaction', 'channel_id', 'string', TRUE, 'Target channel ID', NULL),
     ('discord', 'discord_add_reaction', 'message_id', 'string', TRUE, 'Message ID to react to', NULL),
     ('discord', 'discord_add_reaction', 'emoji', 'string', TRUE, 'Emoji (e.g. 😀 or name:id)', NULL),
+    ('discord', 'discord_add_reaction', 'bot_token', 'string', FALSE, 'Discord bot token', NULL),
 
     ('google', 'google_gmail_send', 'token_id', 'number', TRUE, 'Stored Google token id', NULL),
     ('google', 'google_gmail_send', 'to', 'string', TRUE, 'Recipient email', '"dest@example.com"'::jsonb),
@@ -264,36 +269,45 @@ VALUES
 
     ('slack', 'slack_message', 'channel_id', 'string', TRUE, 'Target channel ID', '"C1234567890"'::jsonb),
     ('slack', 'slack_message', 'text', 'string', TRUE, 'Message text', '"Hello from Area"'::jsonb),
+    ('slack', 'slack_message', 'bot_token', 'string', FALSE, 'Slack bot token', NULL),
 
     ('slack', 'slack_blocks', 'channel_id', 'string', TRUE, 'Target channel ID', '"C1234567890"'::jsonb),
     ('slack', 'slack_blocks', 'text', 'string', FALSE, 'Fallback text', NULL),
     ('slack', 'slack_blocks', 'blocks', 'array<object>', TRUE, 'Block Kit JSON array', NULL),
+    ('slack', 'slack_blocks', 'bot_token', 'string', FALSE, 'Slack bot token', NULL),
 
     ('slack', 'slack_update', 'channel_id', 'string', TRUE, 'Target channel ID', '"C1234567890"'::jsonb),
     ('slack', 'slack_update', 'message_ts', 'string', TRUE, 'Message timestamp', NULL),
     ('slack', 'slack_update', 'text', 'string', TRUE, 'New message text', NULL),
+    ('slack', 'slack_update', 'bot_token', 'string', FALSE, 'Slack bot token', NULL),
 
     ('slack', 'slack_delete', 'channel_id', 'string', TRUE, 'Target channel ID', '"C1234567890"'::jsonb),
     ('slack', 'slack_delete', 'message_ts', 'string', TRUE, 'Message timestamp', NULL),
+    ('slack', 'slack_delete', 'bot_token', 'string', FALSE, 'Slack bot token', NULL),
 
     ('slack', 'slack_reaction', 'channel_id', 'string', TRUE, 'Target channel ID', '"C1234567890"'::jsonb),
     ('slack', 'slack_reaction', 'message_ts', 'string', TRUE, 'Message timestamp', NULL),
     ('slack', 'slack_reaction', 'emoji', 'string', TRUE, 'Emoji', NULL),
+    ('slack', 'slack_reaction', 'bot_token', 'string', FALSE, 'Slack bot token', NULL),
 
     ('notion', 'notion_create_page', 'parent_page_id', 'string', TRUE, 'Parent page ID', NULL),
     ('notion', 'notion_create_page', 'title', 'string', TRUE, 'Page title', NULL),
     ('notion', 'notion_create_page', 'content', 'string', FALSE, 'Page content', NULL),
     ('notion', 'notion_create_page', 'blocks', 'array<object>', FALSE, 'Optional blocks (JSON array)', NULL),
+    ('notion', 'notion_create_page', 'bot_token', 'string', FALSE, 'Notion token', NULL),
 
     ('notion', 'notion_append_blocks', 'block_id', 'string', TRUE, 'Block ID', NULL),
     ('notion', 'notion_append_blocks', 'blocks', 'array<object>', TRUE, 'Blocks JSON array', NULL),
+    ('notion', 'notion_append_blocks', 'bot_token', 'string', FALSE, 'Notion token', NULL),
 
     ('notion', 'notion_create_database_row', 'database_id', 'string', TRUE, 'Database ID', NULL),
     ('notion', 'notion_create_database_row', 'properties', 'object', TRUE, 'Notion properties JSON object', NULL),
     ('notion', 'notion_create_database_row', 'children', 'array<object>', FALSE, 'Optional blocks (JSON array)', NULL),
+    ('notion', 'notion_create_database_row', 'bot_token', 'string', FALSE, 'Notion token', NULL),
 
     ('notion', 'notion_update_page', 'page_id', 'string', TRUE, 'Page ID', NULL),
     ('notion', 'notion_update_page', 'properties', 'object', TRUE, 'Notion properties JSON object', NULL),
+    ('notion', 'notion_update_page', 'bot_token', 'string', FALSE, 'Notion token', NULL),
 
     ('core', 'http_webhook', 'url', 'string', TRUE, 'Target URL', '"https://example.com/hook"'::jsonb),
     ('core', 'http_webhook', 'payload', 'object', FALSE, 'JSON payload to send', NULL);

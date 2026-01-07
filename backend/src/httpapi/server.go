@@ -253,6 +253,7 @@ func (h *Handler) listAreas() http.Handler {
 				return
 			}
 		}
+		w.Header().Set("Cache-Control", "no-store")
 		var userCount int64
 		if count, err := database.CountUsers(); err == nil {
 			userCount = count
@@ -312,6 +313,7 @@ func (h *Handler) about() http.Handler {
 			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
 			return
 		}
+		w.Header().Set("Cache-Control", "no-store")
 		out := aboutResponse{}
 		out.Client.Host = host
 		out.Server.CurrentTime = time.Now().Unix()

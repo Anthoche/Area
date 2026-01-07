@@ -26,6 +26,7 @@ func (h *HTTPHandlers) Page() http.Handler {
 		Title        string          `json:"title"`
 		Content      string          `json:"content"`
 		Blocks       json.RawMessage `json:"blocks"`
+		BotToken     string          `json:"bot_token"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -42,7 +43,11 @@ func (h *HTTPHandlers) Page() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "parent_page_id and title are required"})
 			return
 		}
-		if err := h.client.CreatePage(r.Context(), p.ParentPageID, p.Title, p.Content, p.Blocks); err != nil {
+		client := h.client
+		if strings.TrimSpace(p.BotToken) != "" {
+			client = NewClientWithToken(p.BotToken)
+		}
+		if err := client.CreatePage(r.Context(), p.ParentPageID, p.Title, p.Content, p.Blocks); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
@@ -53,8 +58,9 @@ func (h *HTTPHandlers) Page() http.Handler {
 // AppendBlocks handles POST /actions/notion/blocks
 func (h *HTTPHandlers) AppendBlocks() http.Handler {
 	type payload struct {
-		BlockID string          `json:"block_id"`
-		Blocks  json.RawMessage `json:"blocks"`
+		BlockID  string          `json:"block_id"`
+		Blocks   json.RawMessage `json:"blocks"`
+		BotToken string          `json:"bot_token"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -71,7 +77,11 @@ func (h *HTTPHandlers) AppendBlocks() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "block_id and blocks are required"})
 			return
 		}
-		if err := h.client.AppendBlocks(r.Context(), p.BlockID, p.Blocks); err != nil {
+		client := h.client
+		if strings.TrimSpace(p.BotToken) != "" {
+			client = NewClientWithToken(p.BotToken)
+		}
+		if err := client.AppendBlocks(r.Context(), p.BlockID, p.Blocks); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
@@ -85,6 +95,7 @@ func (h *HTTPHandlers) Database() http.Handler {
 		DatabaseID string          `json:"database_id"`
 		Properties json.RawMessage `json:"properties"`
 		Children   json.RawMessage `json:"children"`
+		BotToken   string          `json:"bot_token"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -101,7 +112,11 @@ func (h *HTTPHandlers) Database() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "database_id and properties are required"})
 			return
 		}
-		if err := h.client.CreateDatabaseRow(r.Context(), p.DatabaseID, p.Properties, p.Children); err != nil {
+		client := h.client
+		if strings.TrimSpace(p.BotToken) != "" {
+			client = NewClientWithToken(p.BotToken)
+		}
+		if err := client.CreateDatabaseRow(r.Context(), p.DatabaseID, p.Properties, p.Children); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
@@ -114,6 +129,7 @@ func (h *HTTPHandlers) UpdatePage() http.Handler {
 	type payload struct {
 		PageID     string          `json:"page_id"`
 		Properties json.RawMessage `json:"properties"`
+		BotToken   string          `json:"bot_token"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -130,7 +146,11 @@ func (h *HTTPHandlers) UpdatePage() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "page_id and properties are required"})
 			return
 		}
-		if err := h.client.UpdatePage(r.Context(), p.PageID, p.Properties); err != nil {
+		client := h.client
+		if strings.TrimSpace(p.BotToken) != "" {
+			client = NewClientWithToken(p.BotToken)
+		}
+		if err := client.UpdatePage(r.Context(), p.PageID, p.Properties); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
