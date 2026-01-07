@@ -245,6 +245,7 @@ class ServiceSelectionPage extends StatelessWidget {
           builder: (context, setSheetState) {
             final theme = Theme.of(context);
             final colorScheme = theme.colorScheme;
+            final viewInsets = MediaQuery.of(context).viewInsets;
             final hasMissingRequired =
                 _hasMissingRequiredFields(fields, values);
             if (!tokenPrefilled) {
@@ -269,174 +270,191 @@ class ServiceSelectionPage extends StatelessWidget {
                 }
               }
             }
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.7,
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 12),
-                    Center(
-                      child: Container(
-                        width: 50,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: colorScheme.outlineVariant,
-                          borderRadius: BorderRadius.circular(10),
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.only(bottom: viewInsets.bottom),
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.7,
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Container(
+                          width: 50,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: colorScheme.outlineVariant,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      item['name']?.toString() ?? 'Parameters',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    if (hasMissingRequired)
-                      Padding(
-                        padding: EdgeInsets.only(bottom: 10),
-                        child: Text(
-                          "Please fill required fields.",
-                          style: TextStyle(color: colorScheme.error),
-                          textAlign: TextAlign.center,
+                      const SizedBox(height: 20),
+                      Text(
+                        item['name']?.toString() ?? 'Parameters',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
                         ),
+                        textAlign: TextAlign.center,
                       ),
-                    Expanded(
-                      child: ListView(
-                        children: fields.map<Widget>((field) {
-                          final key = field['key']?.toString() ?? '';
-                          final type = field['type']?.toString() ?? 'string';
-                          final requiredField = field['required'] == true;
-                          final description =
-                              field['description']?.toString() ?? '';
-                          final example = field['example']?.toString() ?? '';
-                          final currentValue = values[key];
+                      const SizedBox(height: 16),
+                      if (hasMissingRequired)
+                        Padding(
+                          padding: EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            "Please fill required fields.",
+                            style: TextStyle(color: colorScheme.error),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      Expanded(
+                        child: ListView(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.manual,
+                          padding: EdgeInsets.only(
+                            bottom: viewInsets.bottom > 0 ? 12 : 0,
+                          ),
+                          children: fields.map<Widget>((field) {
+                            final key = field['key']?.toString() ?? '';
+                            final type =
+                                field['type']?.toString() ?? 'string';
+                            final requiredField = field['required'] == true;
+                            final description =
+                                field['description']?.toString() ?? '';
+                            final example = field['example']?.toString() ?? '';
+                            final currentValue = values[key];
 
-                          if (key == 'token_id') {
-                            final tokenOk = _isTokenIdValid(values[key]);
+                            if (key == 'token_id') {
+                              final tokenOk = _isTokenIdValid(values[key]);
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Text(
+                                  tokenOk
+                                      ? "Token linked."
+                                      : "Missing token id. Please login to this service.",
+                                  style: TextStyle(
+                                    color: tokenOk
+                                        ? colorScheme.secondary
+                                        : colorScheme.error,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              );
+                            }
+
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 12),
-                              child: Text(
-                                tokenOk
-                                    ? "Token linked."
-                                    : "Missing token id. Please login to this service.",
-                                style: TextStyle(
-                                  color: tokenOk
-                                      ? colorScheme.secondary
-                                      : colorScheme.error,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    requiredField ? "$key *" : key,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  TextFormField(
+                                    keyboardType: type == 'number'
+                                        ? TextInputType.number
+                                        : TextInputType.text,
+                                    initialValue:
+                                        currentValue?.toString() ?? '',
+                                    scrollPadding: EdgeInsets.only(
+                                      bottom: viewInsets.bottom + 80,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: example.isNotEmpty
+                                          ? example
+                                          : description,
+                                      hintStyle: TextStyle(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                      filled: true,
+                                      fillColor:
+                                          theme.inputDecorationTheme.fillColor ??
+                                              colorScheme.surfaceVariant,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                        horizontal: 12,
+                                      ),
+                                    ),
+                                    onChanged: (value) {
+                                      setSheetState(() {
+                                        if (type == 'number') {
+                                          values[key] =
+                                              num.tryParse(value) ?? 0;
+                                        } else if (type.startsWith('array')) {
+                                          values[key] = value
+                                              .split(',')
+                                              .map((v) => v.trim())
+                                              .where((v) => v.isNotEmpty)
+                                              .toList();
+                                        } else {
+                                          values[key] = value;
+                                        }
+                                      });
+                                    },
+                                  ),
+                                ],
                               ),
                             );
-                          }
-
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  requiredField ? "$key *" : key,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                TextFormField(
-                                  keyboardType: type == 'number'
-                                      ? TextInputType.number
-                                      : TextInputType.text,
-                                  initialValue: currentValue?.toString() ?? '',
-                                  decoration: InputDecoration(
-                                    hintText: example.isNotEmpty
-                                        ? example
-                                        : description,
-                                    hintStyle: TextStyle(
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                                    filled: true,
-                                    fillColor: theme
-                                            .inputDecorationTheme.fillColor ??
-                                        colorScheme.surfaceVariant,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                      horizontal: 12,
-                                    ),
-                                  ),
-                                  onChanged: (value) {
-                                    setSheetState(() {
-                                      if (type == 'number') {
-                                        values[key] = num.tryParse(value) ?? 0;
-                                      } else if (type.startsWith('array')) {
-                                        values[key] = value
-                                            .split(',')
-                                            .map((v) => v.trim())
-                                            .where((v) => v.isNotEmpty)
-                                            .toList();
-                                      } else {
-                                        values[key] = value;
-                                      }
-                                    });
-                                  },
-                                ),
-                              ],
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: colorScheme.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
                             ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
                           ),
-                        ),
-                        onPressed: hasMissingRequired
-                            ? null
-                            : () {
-                                Navigator.pop(context);
-                                Navigator.pop(context, {
-                                  "service_id": rawData['id'],
-                                  "service": service['name'],
-                                  "id": item['id'],
-                                  "name": item['name'],
-                                  "action": item['name'],
-                                  "action_url": item['action_url'],
-                                  "fields": values,
-                                  "color": service['color'],
-                                  "icon": service['icon'],
-                                });
-                              },
-                        child: const Text(
-                          "Validate",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                          onPressed: hasMissingRequired
+                              ? null
+                              : () {
+                                  Navigator.pop(context);
+                                  Navigator.pop(context, {
+                                    "service_id": rawData['id'],
+                                    "service": service['name'],
+                                    "id": item['id'],
+                                    "name": item['name'],
+                                    "action": item['name'],
+                                    "action_url": item['action_url'],
+                                    "fields": values,
+                                    "color": service['color'],
+                                    "icon": service['icon'],
+                                  });
+                                },
+                          child: const Text(
+                            "Validate",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );
