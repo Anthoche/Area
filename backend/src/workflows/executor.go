@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -82,6 +83,7 @@ func (e *Executor) processOne(ctx context.Context) {
 	if len(payload) == 0 {
 		payload = []byte(`{}`)
 	}
+	payload = normalizeReactionPayload(payload, wf.ActionURL)
 
 	actionCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
@@ -116,4 +118,62 @@ func DecodePayload[T any](payload json.RawMessage, target *T) error {
 		return nil
 	}
 	return json.Unmarshal(payload, target)
+}
+
+func normalizeReactionPayload(raw json.RawMessage, actionURL string) json.RawMessage {
+	var payload map[string]any
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return raw
+	}
+	content, ok := payload["content"].(string)
+	if !ok || strings.TrimSpace(content) == "" {
+		return raw
+	}
+	if strings.HasSuffix(actionURL, "/actions/discord/embed") {
+		applyOrAppendText(payload, "description", content)
+		delete(payload, "content")
+	} else {
+		applyOrAppendText(payload, "text", content)
+		applyOrAppendText(payload, "body", content)
+		applyOrAppendText(payload, "description", content)
+		applyOrAppendText(payload, "subject", content)
+		applyFallbackText(payload, "title", content)
+	}
+	out, err := json.Marshal(payload)
+	if err != nil {
+		return raw
+	}
+	return out
+}
+
+func applyFallbackText(payload map[string]any, key, content string) {
+	val, ok := payload[key]
+	if !ok {
+		payload[key] = content
+		return
+	}
+	str, ok := val.(string)
+	if ok && strings.TrimSpace(str) == "" {
+		payload[key] = content
+	}
+}
+
+func applyOrAppendText(payload map[string]any, key, content string) {
+	val, ok := payload[key]
+	if !ok {
+		payload[key] = content
+		return
+	}
+	str, ok := val.(string)
+	if !ok {
+		return
+	}
+	trimmed := strings.TrimSpace(str)
+	if trimmed == "" {
+		payload[key] = content
+		return
+	}
+	if !strings.Contains(trimmed, content) {
+		payload[key] = trimmed + "\n" + content
+	}
 }
