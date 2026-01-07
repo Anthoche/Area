@@ -145,7 +145,9 @@ VALUES
     ('github', 'GitHub', TRUE, NULL, NULL),
     ('slack', 'Slack', TRUE, NULL, NULL),
     ('notion', 'Notion', TRUE, NULL, NULL),
-    ('weather', 'Weather', TRUE, NULL, NULL)
+    ('weather', 'Weather', TRUE, NULL, NULL),
+    ('steam', 'Steam', TRUE, NULL, NULL),
+    ('crypto', 'Crypto', TRUE, NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO area_capabilities (id, service_id, kind, name, description, action_url, default_payload)
@@ -160,6 +162,11 @@ VALUES
     ('weather_report', 'weather', 'trigger', 'Weather report (interval)', 'Sends current weather for a city every X minutes.', NULL, NULL),
     ('reddit_new_post', 'core', 'trigger', 'Reddit new post', 'Triggers when a new post appears in a subreddit.', NULL, NULL),
     ('youtube_new_video', 'core', 'trigger', 'YouTube new video', 'Triggers when a channel publishes a new video.', NULL, NULL),
+    ('steam_player_online', 'steam', 'trigger', 'Steam player online', 'Triggers when a Steam user becomes online.', NULL, NULL),
+    ('steam_game_sale', 'steam', 'trigger', 'Steam game on sale', 'Triggers when a game goes on sale.', NULL, NULL),
+    ('steam_price_change', 'steam', 'trigger', 'Steam price change', 'Triggers when a game price changes.', NULL, NULL),
+    ('crypto_price_threshold', 'crypto', 'trigger', 'Crypto price threshold', 'Triggers when a crypto price crosses a threshold.', NULL, NULL),
+    ('crypto_percent_change', 'crypto', 'trigger', 'Crypto percent change', 'Triggers when a crypto changes by a % over 1h or 24h.', NULL, NULL),
 
     ('discord_message', 'discord', 'reaction', 'Send message', 'Send a message to a channel using the bot.', '/actions/discord/message', '{"content":"Hello from Area"}'::jsonb),
     ('discord_embed', 'discord', 'reaction', 'Send embed', 'Send an embed to a channel.', '/actions/discord/embed', '{"title":"Area update","description":"Something happened"}'::jsonb),
@@ -216,6 +223,30 @@ VALUES
 
     ('core', 'youtube_new_video', 'channel', 'string', TRUE, 'YouTube channel name, handle, or ID', '"@GoogleDevelopers"'::jsonb),
     ('core', 'youtube_new_video', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '5'::jsonb),
+
+    ('steam', 'steam_player_online', 'steam_id', 'string', TRUE, 'SteamID64 of the user', '"76561198000000000"'::jsonb),
+    ('steam', 'steam_player_online', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '5'::jsonb),
+
+    ('steam', 'steam_game_sale', 'app_id', 'number', TRUE, 'Steam app ID', '570'::jsonb),
+    ('steam', 'steam_game_sale', 'country', 'string', FALSE, 'Country code for pricing (e.g. us, fr)', '"us"'::jsonb),
+    ('steam', 'steam_game_sale', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '10'::jsonb),
+
+    ('steam', 'steam_price_change', 'app_id', 'number', TRUE, 'Steam app ID', '570'::jsonb),
+    ('steam', 'steam_price_change', 'country', 'string', FALSE, 'Country code for pricing (e.g. us, fr)', '"us"'::jsonb),
+    ('steam', 'steam_price_change', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '10'::jsonb),
+
+    ('crypto', 'crypto_price_threshold', 'coin_id', 'string', TRUE, 'Coin id (CoinGecko, e.g. bitcoin)', '"bitcoin"'::jsonb),
+    ('crypto', 'crypto_price_threshold', 'currency', 'string', FALSE, 'Currency (e.g. usd, eur)', '"usd"'::jsonb),
+    ('crypto', 'crypto_price_threshold', 'threshold', 'number', TRUE, 'Price threshold', '50000'::jsonb),
+    ('crypto', 'crypto_price_threshold', 'direction', 'string', TRUE, 'above or below', '"above"'::jsonb),
+    ('crypto', 'crypto_price_threshold', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '5'::jsonb),
+
+    ('crypto', 'crypto_percent_change', 'coin_id', 'string', TRUE, 'Coin id (CoinGecko, e.g. bitcoin)', '"bitcoin"'::jsonb),
+    ('crypto', 'crypto_percent_change', 'currency', 'string', FALSE, 'Currency (e.g. usd, eur)', '"usd"'::jsonb),
+    ('crypto', 'crypto_percent_change', 'percent', 'number', TRUE, 'Percent change threshold', '5'::jsonb),
+    ('crypto', 'crypto_percent_change', 'period', 'string', TRUE, '1h or 24h', '"1h"'::jsonb),
+    ('crypto', 'crypto_percent_change', 'direction', 'string', FALSE, 'above, below, or any', '"any"'::jsonb),
+    ('crypto', 'crypto_percent_change', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '5'::jsonb),
 
     ('discord', 'discord_message', 'channel_id', 'string', TRUE, 'Target channel ID', '"123456789012345678"'::jsonb),
     ('discord', 'discord_message', 'content', 'string', TRUE, 'Message content', '"Hello from Area"'::jsonb),

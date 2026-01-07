@@ -119,6 +119,45 @@ type YouTubeNewVideoConfig struct {
 	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
 }
 
+type CryptoPriceThresholdConfig struct {
+	CoinID          string                 `json:"coin_id"`
+	Currency        string                 `json:"currency,omitempty"`
+	Threshold       float64                `json:"threshold"`
+	Direction       string                 `json:"direction"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type CryptoPercentChangeConfig struct {
+	CoinID          string                 `json:"coin_id"`
+	Currency        string                 `json:"currency,omitempty"`
+	Percent         float64                `json:"percent"`
+	Period          string                 `json:"period"`
+	Direction       string                 `json:"direction,omitempty"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type SteamPlayerOnlineConfig struct {
+	SteamID         string                 `json:"steam_id"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type SteamGameSaleConfig struct {
+	AppID           int                    `json:"app_id"`
+	Country         string                 `json:"country,omitempty"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type SteamPriceChangeConfig struct {
+	AppID           int                    `json:"app_id"`
+	Country         string                 `json:"country,omitempty"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
 type Store struct {
 	db *gorm.DB
 }
@@ -639,6 +678,61 @@ func youtubeNewVideoConfigFromJSON(raw json.RawMessage) (YouTubeNewVideoConfig, 
 	var cfg YouTubeNewVideoConfig
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return YouTubeNewVideoConfig{}, err
+	}
+	return cfg, nil
+}
+
+func cryptoPriceThresholdConfigFromJSON(raw json.RawMessage) (CryptoPriceThresholdConfig, error) {
+	if len(raw) == 0 {
+		return CryptoPriceThresholdConfig{}, errors.New("empty config")
+	}
+	var cfg CryptoPriceThresholdConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return CryptoPriceThresholdConfig{}, err
+	}
+	return cfg, nil
+}
+
+func cryptoPercentChangeConfigFromJSON(raw json.RawMessage) (CryptoPercentChangeConfig, error) {
+	if len(raw) == 0 {
+		return CryptoPercentChangeConfig{}, errors.New("empty config")
+	}
+	var cfg CryptoPercentChangeConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return CryptoPercentChangeConfig{}, err
+	}
+	return cfg, nil
+}
+
+func steamPlayerOnlineConfigFromJSON(raw json.RawMessage) (SteamPlayerOnlineConfig, error) {
+	if len(raw) == 0 {
+		return SteamPlayerOnlineConfig{}, errors.New("empty config")
+	}
+	var cfg SteamPlayerOnlineConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return SteamPlayerOnlineConfig{}, err
+	}
+	return cfg, nil
+}
+
+func steamGameSaleConfigFromJSON(raw json.RawMessage) (SteamGameSaleConfig, error) {
+	if len(raw) == 0 {
+		return SteamGameSaleConfig{}, errors.New("empty config")
+	}
+	var cfg SteamGameSaleConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return SteamGameSaleConfig{}, err
+	}
+	return cfg, nil
+}
+
+func steamPriceChangeConfigFromJSON(raw json.RawMessage) (SteamPriceChangeConfig, error) {
+	if len(raw) == 0 {
+		return SteamPriceChangeConfig{}, errors.New("empty config")
+	}
+	var cfg SteamPriceChangeConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return SteamPriceChangeConfig{}, err
 	}
 	return cfg, nil
 }

@@ -17,7 +17,9 @@ import (
 	"area/src/httpapi"
 	"area/src/integrations/github"
 	"area/src/integrations/google"
+	"area/src/integrations/crypto"
 	"area/src/integrations/reddit"
+	"area/src/integrations/steam"
 	"area/src/integrations/weather"
 	"area/src/integrations/youtube"
 	"area/src/workflows"
@@ -119,6 +121,10 @@ func main() {
 	reddit.StartRedditPoller(context.Background(), wfStore, wfService)
 	// YouTube poller (new videos from channel feed).
 	youtube.StartYouTubePoller(context.Background(), wfStore, wfService)
+	// Crypto poller (CoinGecko).
+	crypto.StartCryptoPoller(context.Background(), wfStore, wfService)
+	// Steam poller (player status and store price changes).
+	steam.StartSteamPoller(context.Background(), wfStore, wfService)
 
 	server := &http.Server{
 		Addr:              ":" + port,

@@ -105,6 +105,46 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 		if err != nil || (strings.TrimSpace(cfg.ChannelID) == "" && strings.TrimSpace(cfg.Channel) == "") {
 			return nil, errors.New("youtube_new_video requires channel")
 		}
+	case "steam_player_online":
+		cfg, err := steamPlayerOnlineConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.SteamID) == "" {
+			return nil, errors.New("steam_player_online requires steam_id")
+		}
+	case "steam_game_sale":
+		cfg, err := steamGameSaleConfigFromJSON(triggerConfig)
+		if err != nil || cfg.AppID <= 0 {
+			return nil, errors.New("steam_game_sale requires app_id")
+		}
+	case "steam_price_change":
+		cfg, err := steamPriceChangeConfigFromJSON(triggerConfig)
+		if err != nil || cfg.AppID <= 0 {
+			return nil, errors.New("steam_price_change requires app_id")
+		}
+	case "crypto_price_threshold":
+		cfg, err := cryptoPriceThresholdConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.CoinID) == "" || cfg.Threshold == 0 || cfg.Direction == "" {
+			return nil, errors.New("crypto_price_threshold requires coin_id, threshold and direction")
+		}
+		switch strings.ToLower(cfg.Direction) {
+		case "above", "below":
+		default:
+			return nil, errors.New("crypto_price_threshold direction must be above or below")
+		}
+	case "crypto_percent_change":
+		cfg, err := cryptoPercentChangeConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.CoinID) == "" || cfg.Percent == 0 || cfg.Period == "" {
+			return nil, errors.New("crypto_percent_change requires coin_id, percent and period")
+		}
+		switch strings.ToLower(cfg.Period) {
+		case "1h", "24h":
+		default:
+			return nil, errors.New("crypto_percent_change period must be 1h or 24h")
+		}
+		switch strings.ToLower(strings.TrimSpace(cfg.Direction)) {
+		case "", "any", "above", "below":
+		default:
+			return nil, errors.New("crypto_percent_change direction must be above, below, or any")
+		}
 	default:
 		return nil, fmt.Errorf("unsupported trigger_type %s", triggerType)
 	}
@@ -213,6 +253,31 @@ func RedditNewPostConfigFromJSON(raw json.RawMessage) (RedditNewPostConfig, erro
 // YouTubeNewVideoConfigFromJSON exposes parsing for youtube_new_video trigger config.
 func YouTubeNewVideoConfigFromJSON(raw json.RawMessage) (YouTubeNewVideoConfig, error) {
 	return youtubeNewVideoConfigFromJSON(raw)
+}
+
+// SteamPlayerOnlineConfigFromJSON exposes parsing for steam_player_online trigger config.
+func SteamPlayerOnlineConfigFromJSON(raw json.RawMessage) (SteamPlayerOnlineConfig, error) {
+	return steamPlayerOnlineConfigFromJSON(raw)
+}
+
+// SteamGameSaleConfigFromJSON exposes parsing for steam_game_sale trigger config.
+func SteamGameSaleConfigFromJSON(raw json.RawMessage) (SteamGameSaleConfig, error) {
+	return steamGameSaleConfigFromJSON(raw)
+}
+
+// SteamPriceChangeConfigFromJSON exposes parsing for steam_price_change trigger config.
+func SteamPriceChangeConfigFromJSON(raw json.RawMessage) (SteamPriceChangeConfig, error) {
+	return steamPriceChangeConfigFromJSON(raw)
+}
+
+// CryptoPriceThresholdConfigFromJSON exposes parsing for crypto_price_threshold trigger config.
+func CryptoPriceThresholdConfigFromJSON(raw json.RawMessage) (CryptoPriceThresholdConfig, error) {
+	return cryptoPriceThresholdConfigFromJSON(raw)
+}
+
+// CryptoPercentChangeConfigFromJSON exposes parsing for crypto_percent_change trigger config.
+func CryptoPercentChangeConfigFromJSON(raw json.RawMessage) (CryptoPercentChangeConfig, error) {
+	return cryptoPercentChangeConfigFromJSON(raw)
 }
 
 type ctxUserIDKey struct{}
