@@ -255,8 +255,12 @@ export default function Homepage() {
 
   const buildPayloadForWorkflow = (wf) => {
     if (!wf) return {};
-    const payload = { ...(form.values || {}) };
-    return payload;
+    const cfg = wf.trigger_config || {};
+    const fromCfg = cfg.payload_template || cfg.payload;
+    if (fromCfg && typeof fromCfg === "object") {
+      return { ...fromCfg };
+    }
+    return { ...(form.values || {}) };
   };
 
   const buildIntervalPayload = () => {
