@@ -114,4 +114,16 @@ class ApiService {
           'Failed to update workflow: ${response.statusCode} ${response.body}');
     }
   }
+
+  /// Deletes a workflow.
+  Future<void> deleteWorkflow(int workflowId) async {
+    final url = Uri.parse('$_baseUrl/workflows/$workflowId');
+    final headers = await _getHeaders();
+
+    final response = await http.delete(url, headers: headers);
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception(
+          'Failed to delete workflow: ${response.statusCode} ${response.body}');
+    }
+  }
 }

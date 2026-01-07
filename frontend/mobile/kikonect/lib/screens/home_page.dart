@@ -156,6 +156,9 @@ class _HomepageState extends State<Homepage> {
 
   void _showWorkflowControls(dynamic item) {
     final triggerType = (item['trigger_type'] ?? '').toString();
+    final helperText = triggerType == 'manual'
+        ? "This Konect runs when you trigger it manually."
+        : "This Konect runs automatically when the trigger happens.";
     final idValue = item['id'];
     final id =
         idValue is int ? idValue : int.tryParse(idValue?.toString() ?? '');
@@ -276,12 +279,12 @@ class _HomepageState extends State<Homepage> {
                           },
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    "This Konect runs automatically when the trigger happens.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 12,
+                    Text(
+                      helperText,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 12,
                     ),
                   ),
                   if (actionEntries.isNotEmpty)
@@ -303,6 +306,74 @@ class _HomepageState extends State<Homepage> {
                         MapEntry("URL", actionUrl),
                       ],
                     ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: isBusy
+                        ? null
+                        : () async {
+                            final name =
+                                (item['name'] ?? 'Konect').toString();
+                            final shouldDelete = await showDialog<bool>(
+                              context: context,
+                              builder: (dialogContext) => AlertDialog(
+                                title: const Text("Delete Konect?"),
+                                content: Text(
+                                  'This will permanently delete "$name".',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(
+                                      dialogContext,
+                                      false,
+                                    ),
+                                    child: const Text("Cancel"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(dialogContext, true),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: colorScheme.error,
+                                    ),
+                                    child: const Text("Delete"),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (shouldDelete != true) return;
+                            setSheetState(() {
+                              isBusy = true;
+                            });
+                            try {
+                              await _apiService.deleteWorkflow(id);
+                              if (!mounted) return;
+                              Navigator.pop(context);
+                              showAppSnackBar(
+                                this.context,
+                                "Konect deleted.",
+                              );
+                              await _loadWorkflows();
+                            } catch (e) {
+                              if (!mounted) return;
+                              showAppSnackBar(
+                                this.context,
+                                "Delete failed: $e",
+                                isError: true,
+                              );
+                              setSheetState(() {
+                                isBusy = false;
+                              });
+                            }
+                          },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.error,
+                      side: BorderSide(color: colorScheme.error),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text("Delete Konect"),
+                  ),
                   ],
                 ),
               ),
@@ -630,6 +701,7 @@ class _HomepageState extends State<Homepage> {
                         _showWorkflowControls(item);
                       }
                     },
+                    onLongPress: () => _showWorkflowControls(item),
                   );
                 },
                 childCount: workflows.length,

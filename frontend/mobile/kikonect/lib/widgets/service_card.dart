@@ -5,6 +5,7 @@ class ServiceCard extends StatelessWidget {
   final String title;
   final Color color;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final String? subtitle;
   final String? badgeText;
   final Color? badgeColor;
@@ -14,6 +15,7 @@ class ServiceCard extends StatelessWidget {
     required this.title,
     required this.color,
     this.onTap,
+    this.onLongPress,
     this.subtitle,
     this.badgeText,
     this.badgeColor,
@@ -24,6 +26,7 @@ class ServiceCard extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Container(
         decoration: BoxDecoration(
           color: color,
