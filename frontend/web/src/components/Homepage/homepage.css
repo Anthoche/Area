@@ -4,11 +4,13 @@
     --section-bg-color: white;
     --section-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --konects-cards-repeat: 1fr;
+    --page-bg-color: #fafafa;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
         --section-bg-color: var(--card-bg-color);
+        --page-bg-color: var(--bg-color);
     }
 }
 
@@ -59,7 +61,7 @@
     flex-direction: column;
     gap: 30px;
     color: var(--text-primary);
-    background: #fafafa;
+    background: var(--page-bg-color);
 }
 
 /* Home page header */
