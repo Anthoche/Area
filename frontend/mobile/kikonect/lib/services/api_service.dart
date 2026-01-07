@@ -33,7 +33,14 @@ class ApiService {
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body);
       if (body is Map<String, dynamic>) {
-        return (body['services'] as List?) ?? [];
+        final services = body['services'];
+        if (services is List) {
+          return services;
+        }
+        return [];
+      }
+      if (body is List) {
+        return body;
       }
       return [];
     } else {

@@ -179,12 +179,18 @@ class _HomepageState extends State<Homepage> {
     final actionUrl = item['action_url']?.toString() ?? '';
     final actionMeta = _findReactionMeta(actionUrl);
     final actionLabel = _actionLabel(actionMeta, actionUrl);
+    final triggerMeta = _findTriggerMeta(triggerType);
+    final triggerLabel = _triggerLabel(triggerMeta, triggerType);
     final rawFields = actionMeta?['fields'];
+    final rawTriggerFields = triggerMeta?['fields'];
     final actionEntries = _formatDetails(
       actionPayload,
       fieldDefs: rawFields is List ? rawFields : const [],
     );
-    final triggerEntries = _formatDetails(triggerDetails);
+    final triggerEntries = _formatDetails(
+      triggerDetails,
+      fieldDefs: rawTriggerFields is List ? rawTriggerFields : const [],
+    );
 
     final initialEnabled = item['enabled'] == true;
     showModalBottomSheet(
@@ -228,7 +234,7 @@ class _HomepageState extends State<Homepage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Trigger: $triggerType",
+                      "Trigger: $triggerLabel",
                       textAlign: TextAlign.center,
                       style: TextStyle(color: colorScheme.onSurfaceVariant),
                     ),
@@ -443,6 +449,27 @@ class _HomepageState extends State<Homepage> {
     return null;
   }
 
+  Map<String, dynamic>? _findTriggerMeta(String triggerType) {
+    if (_services.isEmpty || triggerType.isEmpty) return null;
+    for (final service in _services) {
+      if (service is! Map) continue;
+      final triggers = service['triggers'];
+      if (triggers is! List) continue;
+      for (final trigger in triggers) {
+        if (trigger is! Map) continue;
+        if (trigger['id']?.toString() == triggerType) {
+          return {
+            'service': service['name'],
+            'trigger': trigger['name'],
+            'description': trigger['description'],
+            'fields': trigger['fields'],
+          };
+        }
+      }
+    }
+    return null;
+  }
+
   String _actionPath(String actionUrl) {
     final uri = Uri.tryParse(actionUrl);
     if (uri == null || uri.path.isEmpty) return actionUrl;
@@ -475,6 +502,18 @@ class _HomepageState extends State<Homepage> {
         ? parts.sublist(parts.length - 2).join(' ')
         : parts.last;
     return _titleize(tail.replaceAll('_', ' '));
+  }
+
+  String _triggerLabel(Map<String, dynamic>? meta, String triggerType) {
+    if (meta != null) {
+      final triggerName = meta['trigger']?.toString() ?? '';
+      final serviceName = meta['service']?.toString() ?? '';
+      if (triggerName.isNotEmpty && serviceName.isNotEmpty) {
+        return "$triggerName ($serviceName)";
+      }
+      if (triggerName.isNotEmpty) return triggerName;
+    }
+    return triggerType;
   }
 
   String _titleize(String raw) {

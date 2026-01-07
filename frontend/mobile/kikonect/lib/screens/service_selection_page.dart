@@ -11,15 +11,35 @@ class ServiceSelectionPage extends StatelessWidget {
 
   const ServiceSelectionPage({super.key, required this.isTrigger});
 
+  static const Map<String, Color> _serviceColors = {
+    'core': Color(0xFF5F6368),
+    'discord': Color(0xFF5865F2),
+    'google': Color(0xFF4285F4),
+    'github': Color(0xFF24292E),
+    'slack': Color(0xFF4A154B),
+    'notion': Color(0xFF111111),
+    'weather': Color(0xFF29B6F6),
+  };
+
+  static const Map<String, String> _serviceIcons = {
+    'google': 'lib/assets/G_logo.png',
+    'github': 'lib/assets/github_logo.png',
+  };
+
   /// Parses a hex color string.
-  Color _parseColor(String? hexColor) {
-    if (hexColor == null || hexColor.isEmpty) return Colors.grey;
+  Color? _parseColor(String? hexColor) {
+    if (hexColor == null || hexColor.isEmpty) return null;
     try {
       final hexCode = hexColor.replaceAll('#', '');
       return Color(int.parse('FF$hexCode', radix: 16));
     } catch (e) {
-      return Colors.grey;
+      return null;
     }
+  }
+
+  String _serviceId(Map<String, dynamic> serviceData) {
+    final id = serviceData['id'] ?? serviceData['service_id'] ?? '';
+    return id.toString().toLowerCase();
   }
 
   @override
@@ -56,6 +76,8 @@ class ServiceSelectionPage extends StatelessWidget {
 
           // Filter services that expose at least one trigger or action.
           final services = snapshot.data!.where((s) {
+            if (s is! Map<String, dynamic>) return false;
+            if (!isTrigger && s['enabled'] == false) return false;
             if (isTrigger) {
               return s['triggers'] != null &&
                   (s['triggers'] as List).isNotEmpty;
@@ -83,11 +105,16 @@ class ServiceSelectionPage extends StatelessWidget {
             ),
             itemCount: services.length,
             itemBuilder: (context, index) {
-              final serviceData = services[index];
+              final serviceData =
+                  services[index] as Map<String, dynamic>;
+              final serviceId = _serviceId(serviceData);
+              final color = _parseColor(serviceData['color']?.toString()) ??
+                  _serviceColors[serviceId] ??
+                  Colors.grey;
               final serviceUI = {
-                "name": serviceData['name'],
-                "icon": serviceData['icon'],
-                "color": _parseColor(serviceData['color']),
+                "name": serviceData['name'] ?? serviceId,
+                "icon": serviceData['icon'] ?? _serviceIcons[serviceId],
+                "color": color,
                 "raw": serviceData,
               };
 
@@ -174,32 +201,36 @@ class ServiceSelectionPage extends StatelessWidget {
                           });
                         }
                       },
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceVariant,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: colorScheme.outlineVariant),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.flash_on, color: service['color']),
-                            const SizedBox(width: 16),
-                            Text(
-                              item['name'] ?? "Unknown",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.onSurface,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceVariant,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: colorScheme.outlineVariant),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.flash_on, color: service['color']),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  item['name'] ?? "Unknown",
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
                               ),
-                            ),
-                            const Spacer(),
-                            Icon(
-                              Icons.arrow_forward_ios,
-                              size: 16,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                           ],
                         ),
                       ),
