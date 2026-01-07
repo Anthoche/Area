@@ -340,7 +340,7 @@ class _HomepageState extends State<Homepage> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -463,8 +463,7 @@ class _HomepageState extends State<Homepage> {
   /// Rotates through a small palette to colorize service cards.
   Color _getColor(int index) {
     final colors = [
-      const Color(0xFF00D2FF),
-      const Color(0xFFFF4081),
+      const Color(0xFF00D0FF),
       const Color(0xFFFF4081),
       const Color(0xFF00E676),
       const Color(0xFFD500F9),

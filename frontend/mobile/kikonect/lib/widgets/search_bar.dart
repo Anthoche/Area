@@ -19,8 +19,7 @@ class AppSearchBar extends StatelessWidget {
         hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
         filled: true,
-        fillColor:
-            theme.inputDecorationTheme.fillColor ?? colorScheme.surfaceVariant,
+        fillColor: colorScheme.surfaceVariant,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
