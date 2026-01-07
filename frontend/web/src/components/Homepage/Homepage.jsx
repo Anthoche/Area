@@ -198,15 +198,16 @@ export default function Homepage() {
       const data = await res.json();
       const services = Array.isArray(data.services) ? data.services : [];
       setAreas(services);
-      const triggerCaps =
-        services
-          .find((s) => s.id === "core")
-          ?.triggers?.map((t) => ({
+      const triggerCaps = services
+        .flatMap((s) =>
+          (s.triggers || []).map((t) => ({
             id: t.id,
             name: t.name,
             description: t.description,
             fields: t.fields || [],
-          })) || [];
+            service: s.name || s.id,
+          }))
+        );
       setTriggers(triggerCaps);
       const reactionCaps = services
         .filter((s) => s.enabled !== false)

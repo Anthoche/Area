@@ -230,7 +230,29 @@ func (h *Handler) listAreas() http.Handler {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		services := areas.List()
+		var services []areas.Service
+		if serviceID := r.URL.Query().Get("service_id"); serviceID != "" {
+			svc, err := areas.Get(r.Context(), serviceID)
+			if err != nil {
+				writeJSON(w, http.StatusNotFound, errorResponse{Error: "service not found"})
+				return
+			}
+			services = []areas.Service{*svc}
+		} else if serviceID := r.URL.Query().Get("id"); serviceID != "" {
+			svc, err := areas.Get(r.Context(), serviceID)
+			if err != nil {
+				writeJSON(w, http.StatusNotFound, errorResponse{Error: "service not found"})
+				return
+			}
+			services = []areas.Service{*svc}
+		} else {
+			var err error
+			services, err = areas.List(r.Context())
+			if err != nil {
+				writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+				return
+			}
+		}
 		var userCount int64
 		if count, err := database.CountUsers(); err == nil {
 			userCount = count
@@ -285,7 +307,11 @@ func (h *Handler) about() http.Handler {
 		if err != nil {
 			host = r.RemoteAddr
 		}
-		services := areas.List()
+		services, err := areas.List(r.Context())
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+			return
+		}
 		out := aboutResponse{}
 		out.Client.Host = host
 		out.Server.CurrentTime = time.Now().Unix()
