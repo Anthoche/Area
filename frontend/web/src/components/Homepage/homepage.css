@@ -64,6 +64,42 @@
     background: var(--page-bg-color);
 }
 
+/* Search bar */
+.search-section {
+    background: none;
+    box-shadow: none;
+}
+
+.search-wrapper {
+    position: relative;
+    max-width: 600px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    border: 1px solid var(--card-border-color);
+    border-radius: 25px;
+    background-color: var(--section-bg-color);
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    color: var(--text-primary);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #48179c;
+    box-shadow: 0 0 0 3px rgba(72, 23, 156, 0.1);
+}
+
 /* Home page header */
 .home-page-header {
     display: flex;

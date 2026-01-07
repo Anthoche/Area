@@ -2,7 +2,7 @@ import React from "react";
 import "./konectcard.css";
 
 export default function KonectCard({title, desc, services, type, isActive}) {
-    const servicesList = services.map((s) => <li className="konect-card-inf konect-card-service">{s}</li>);
+    const servicesList = services.map((s) => <li className="konect-card-inf konect-card-service" key={"t-" + title + "-s-" + s}>{s}</li>);
     const konectType = type === "timer" ? "Timer" : "Manual";
     const konectActive = isActive ? <div className='konect-card-inf konect-status active'>Active</div> :
         <div className='konect-card-inf konect-status paused'>Paused</div>;

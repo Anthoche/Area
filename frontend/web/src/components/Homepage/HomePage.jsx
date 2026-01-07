@@ -28,31 +28,37 @@ export default function HomePage() {
                         </button>
                     </div>
                 </div>
-                <div className="konects-searchbar">
-                    <span>Search bar here</span>
+                <div className="search-section home-page-section">
+                    <div className="search-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                             className="lucide lucide-search search-icon">
+                            <circle cx="11" cy="11" r="8"></circle>@
+                            <path d="m21 21-4.3-4.3"></path>
+                        </svg>
+                        <input type="text" placeholder="Search konects..." className="search-input" onChange={() => console.log("search input changed")}/>
+                    </div>
                 </div>
                 <div className="konects-filter home-page-section">
                     <div className="filter-section">
                         <h3 className="filter-title">Type</h3>
                         <ul className="filter-buttons">
                             {/*TODO:  Replace hard-coded tags with typeFiltersList*/}
-                            <li>
+                            <li key={"test-filter-tag-1"}>
                                 <FilterTag
-                                    key={"test-filter-tag"}
                                     label={"Bonjour"}
                                     selected={true}
                                     onClick={() => console.log("clicked")}
                                 />
                             </li>
-                            <li>
+                            <li key={"test-filter-tag-2"}>
                                 <FilterTag
-                                    key={"test-filter-tag-1"}
                                     label={"Bonjour 2"}
                                     selected={false}
                                     onClick={() => console.log("clicked")}
                                 />
                             </li>
-                            <li>
+                            <li key={"test-filter-tag-3"}>
                                 <FilterTag
                                     key={"test-filter-tag-2"}
                                     label={"Bonjour 3"}
@@ -66,25 +72,22 @@ export default function HomePage() {
                         <h3 className="filter-title">Services</h3>
                         <ul className="filter-buttons">
                             {/*TODO:  Replace hard-coded tags with typeFiltersList*/}
-                            <li>
+                            <li key={"test-filter-tag-s1"}>
                                 <FilterTag
-                                    key={"test-filter-tag-s1"}
                                     label={"Service 1"}
                                     selected={true}
                                     onClick={() => console.log("clicked")}
                                 />
                             </li>
-                            <li>
+                            <li key={"test-filter-tag-s2"}>
                                 <FilterTag
-                                    key={"test-filter-tag-s2"}
                                     label={"Service 2"}
                                     selected={false}
                                     onClick={() => console.log("clicked")}
                                 />
                             </li>
-                            <li>
+                            <li key={"test-filter-tag-s3"}>
                                 <FilterTag
-                                    key={"test-filter-tag-s3"}
                                     label={"Service 3"}
                                     selected={false}
                                     onClick={() => console.log("clicked")}
@@ -96,7 +99,8 @@ export default function HomePage() {
                 <div className="konects">
                     <h2>My Konects</h2>
                     <ul className="konects-list">
-                        <li>
+                        {/*TODO:  Replace hard-coded konects with konectsList*/}
+                        <li key={"konect-1"}>
                             <KonectCard
                                 title={"Allo bonjour ici jean-damien"}
                                 desc={"bonjour ceci est une description"}
@@ -105,7 +109,7 @@ export default function HomePage() {
                                 isActive={true}
                             />
                         </li>
-                        <li>
+                        <li key={"konect-2"}>
                             <KonectCard
                                 title={"Bonjour Kikonect !"}
                                 desc={"bonjour ceci est une description"}
@@ -114,7 +118,7 @@ export default function HomePage() {
                                 isActive={false}
                             />
                         </li>
-                        <li>
+                        <li key={"konect-3"}>
                             <KonectCard
                                 title={"Ahhh konect card"}
                                 desc={"lkjdfhslkjfhdskjfhds kljfh dslkjh eslkjhdkjh"}
