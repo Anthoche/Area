@@ -21,8 +21,13 @@ type Client struct {
 
 // NewClient builds a Slack API client.
 func NewClient() *Client {
+	return NewClientWithToken(os.Getenv("SLACK_BOT_TOKEN"))
+}
+
+// NewClientWithToken builds a Slack API client with an explicit token.
+func NewClientWithToken(token string) *Client {
 	return &Client{
-		token:  strings.TrimSpace(os.Getenv("SLACK_BOT_TOKEN")),
+		token:  strings.TrimSpace(token),
 		client: &http.Client{Timeout: 10 * time.Second},
 	}
 }

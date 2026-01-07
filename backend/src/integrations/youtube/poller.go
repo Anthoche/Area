@@ -171,12 +171,20 @@ func fetchNewVideos(ctx context.Context, channelID string, limit int) ([]youtube
 		return nil, err
 	}
 	var videos []youtubeVideo
+	seen := make(map[string]struct{})
 	for _, entry := range feed.Entries {
 		if limit > 0 && len(videos) >= limit {
 			break
 		}
 		published := parseTime(entry.Published, entry.Updated)
 		videoID := strings.TrimPrefix(entry.ID, "yt:video:")
+		if videoID == "" {
+			continue
+		}
+		if _, ok := seen[videoID]; ok {
+			continue
+		}
+		seen[videoID] = struct{}{}
 		videos = append(videos, youtubeVideo{
 			ID:        videoID,
 			Title:     entry.Title,
@@ -225,7 +233,18 @@ func lookupChannelID(ctx context.Context, input string) (string, error) {
 		return "", fmt.Errorf("empty channel value")
 	}
 	if strings.HasPrefix(candidate, "@") {
-		return fetchChannelIDFromPage(ctx, "https://www.youtube.com/"+candidate)
+		urls := []string{
+			"https://www.youtube.com/" + candidate,
+			"https://www.youtube.com/" + candidate + "/about",
+			"https://www.youtube.com/" + candidate + "/videos",
+		}
+		for _, u := range urls {
+			id, err := fetchChannelIDFromPage(ctx, u)
+			if err == nil && id != "" {
+				return id, nil
+			}
+		}
+		return "", fmt.Errorf("unable to resolve channel id from %q", input)
 	}
 	if strings.HasPrefix(candidate, "http://") || strings.HasPrefix(candidate, "https://") {
 		return fetchChannelIDFromPage(ctx, candidate)
@@ -273,6 +292,7 @@ func findChannelID(body string) string {
 	patterns := []string{
 		`"channelId":"(UC[a-zA-Z0-9_-]+)"`,
 		`"externalId":"(UC[a-zA-Z0-9_-]+)"`,
+		`"browseId":"(UC[a-zA-Z0-9_-]+)"`,
 		`channel_id=(UC[a-zA-Z0-9_-]+)`,
 		`/channel/(UC[a-zA-Z0-9_-]+)`,
 	}

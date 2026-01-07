@@ -51,12 +51,13 @@ export default function WelcomePage() {
                         (service?.reactions?.length || 0),
                     0
                 );
+                const visibleServices = services.filter((service) => !service?.hidden);
                 if (!cancelled) {
                     setStats({
                         userCount: Number.isFinite(data.user_count)
                             ? data.user_count
                             : 0,
-                        serviceCount: services.length,
+                        serviceCount: visibleServices.length,
                         actionReactionCount,
                     });
                 }

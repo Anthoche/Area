@@ -22,8 +22,13 @@ type Client struct {
 
 // NewClient builds a Notion API client.
 func NewClient() *Client {
+	return NewClientWithToken(os.Getenv("NOTION_TOKEN"))
+}
+
+// NewClientWithToken builds a Notion API client with an explicit token.
+func NewClientWithToken(token string) *Client {
 	return &Client{
-		token:  strings.TrimSpace(os.Getenv("NOTION_TOKEN")),
+		token:  strings.TrimSpace(token),
 		client: &http.Client{Timeout: 10 * time.Second},
 	}
 }

@@ -26,6 +26,7 @@ func (h *HTTPHandlers) Message() http.Handler {
 	type payload struct {
 		ChannelID string `json:"channel_id"`
 		Content   string `json:"content"`
+		BotToken  string `json:"bot_token"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -42,7 +43,11 @@ func (h *HTTPHandlers) Message() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "channel_id and content are required"})
 			return
 		}
-		if err := h.client.SendMessage(r.Context(), p.ChannelID, p.Content, nil); err != nil {
+		client := h.client
+		if strings.TrimSpace(p.BotToken) != "" {
+			client = NewClientWithToken(p.BotToken)
+		}
+		if err := client.SendMessage(r.Context(), p.ChannelID, p.Content, nil); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
@@ -59,6 +64,7 @@ func (h *HTTPHandlers) Embed() http.Handler {
 		URL         string          `json:"url"`
 		Color       json.RawMessage `json:"color"`
 		Content     string          `json:"content"`
+		BotToken    string          `json:"bot_token"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -90,7 +96,11 @@ func (h *HTTPHandlers) Embed() http.Handler {
 			URL:         p.URL,
 			Color:       color,
 		}
-		if err := h.client.SendMessage(r.Context(), p.ChannelID, p.Content, []Embed{embed}); err != nil {
+		client := h.client
+		if strings.TrimSpace(p.BotToken) != "" {
+			client = NewClientWithToken(p.BotToken)
+		}
+		if err := client.SendMessage(r.Context(), p.ChannelID, p.Content, []Embed{embed}); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
@@ -104,6 +114,7 @@ func (h *HTTPHandlers) Edit() http.Handler {
 		ChannelID string `json:"channel_id"`
 		MessageID string `json:"message_id"`
 		Content   string `json:"content"`
+		BotToken  string `json:"bot_token"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -120,7 +131,11 @@ func (h *HTTPHandlers) Edit() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "channel_id, message_id and content are required"})
 			return
 		}
-		if err := h.client.EditMessage(r.Context(), p.ChannelID, p.MessageID, p.Content); err != nil {
+		client := h.client
+		if strings.TrimSpace(p.BotToken) != "" {
+			client = NewClientWithToken(p.BotToken)
+		}
+		if err := client.EditMessage(r.Context(), p.ChannelID, p.MessageID, p.Content); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
@@ -133,6 +148,7 @@ func (h *HTTPHandlers) Delete() http.Handler {
 	type payload struct {
 		ChannelID string `json:"channel_id"`
 		MessageID string `json:"message_id"`
+		BotToken  string `json:"bot_token"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -149,7 +165,11 @@ func (h *HTTPHandlers) Delete() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "channel_id and message_id are required"})
 			return
 		}
-		if err := h.client.DeleteMessage(r.Context(), p.ChannelID, p.MessageID); err != nil {
+		client := h.client
+		if strings.TrimSpace(p.BotToken) != "" {
+			client = NewClientWithToken(p.BotToken)
+		}
+		if err := client.DeleteMessage(r.Context(), p.ChannelID, p.MessageID); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
@@ -163,6 +183,7 @@ func (h *HTTPHandlers) React() http.Handler {
 		ChannelID string `json:"channel_id"`
 		MessageID string `json:"message_id"`
 		Emoji     string `json:"emoji"`
+		BotToken  string `json:"bot_token"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -179,7 +200,11 @@ func (h *HTTPHandlers) React() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "channel_id, message_id and emoji are required"})
 			return
 		}
-		if err := h.client.AddReaction(r.Context(), p.ChannelID, p.MessageID, p.Emoji); err != nil {
+		client := h.client
+		if strings.TrimSpace(p.BotToken) != "" {
+			client = NewClientWithToken(p.BotToken)
+		}
+		if err := client.AddReaction(r.Context(), p.ChannelID, p.MessageID, p.Emoji); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
