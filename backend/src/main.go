@@ -18,6 +18,7 @@ import (
 	"area/src/integrations/github"
 	"area/src/integrations/google"
 	"area/src/integrations/crypto"
+	"area/src/integrations/nasa"
 	"area/src/integrations/reddit"
 	"area/src/integrations/steam"
 	"area/src/integrations/weather"
@@ -121,6 +122,8 @@ func main() {
 	reddit.StartRedditPoller(context.Background(), wfStore, wfService)
 	// YouTube poller (new videos from channel feed).
 	youtube.StartYouTubePoller(context.Background(), wfStore, wfService)
+	// NASA poller (APOD, Mars photos, NEO).
+	nasa.StartNasaPoller(context.Background(), wfStore, wfService)
 	// Crypto poller (CoinGecko).
 	crypto.StartCryptoPoller(context.Background(), wfStore, wfService)
 	// Steam poller (player status and store price changes).

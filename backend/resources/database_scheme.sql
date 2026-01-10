@@ -147,7 +147,8 @@ VALUES
     ('notion', 'Notion', TRUE, NULL, NULL),
     ('weather', 'Weather', TRUE, NULL, NULL),
     ('steam', 'Steam', TRUE, NULL, NULL),
-    ('crypto', 'Crypto', TRUE, NULL, NULL)
+    ('crypto', 'Crypto', TRUE, NULL, NULL),
+    ('nasa', 'NASA', TRUE, NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO area_capabilities (id, service_id, kind, name, description, action_url, default_payload)
@@ -167,6 +168,9 @@ VALUES
     ('steam_price_change', 'steam', 'trigger', 'Steam price change', 'Triggers when a game price changes.', NULL, NULL),
     ('crypto_price_threshold', 'crypto', 'trigger', 'Crypto price threshold', 'Triggers when a crypto price crosses a threshold.', NULL, NULL),
     ('crypto_percent_change', 'crypto', 'trigger', 'Crypto percent change', 'Triggers when a crypto changes by a % over 1h or 24h.', NULL, NULL),
+    ('nasa_apod', 'nasa', 'trigger', 'NASA APOD', 'Triggers when the Astronomy Picture of the Day updates.', NULL, NULL),
+    ('nasa_mars_photo', 'nasa', 'trigger', 'NASA Mars rover photo', 'Triggers on latest Mars rover photos.', NULL, NULL),
+    ('nasa_neo_close_approach', 'nasa', 'trigger', 'NASA NEO close approach', 'Triggers when a near-earth object passes within a distance.', NULL, NULL),
 
     ('discord_message', 'discord', 'reaction', 'Send message', 'Send a message to a channel using the bot.', '/actions/discord/message', '{"content":"Hello from Area"}'::jsonb),
     ('discord_embed', 'discord', 'reaction', 'Send embed', 'Send an embed to a channel.', '/actions/discord/embed', '{"title":"Area update","description":"Something happened"}'::jsonb),
@@ -247,6 +251,16 @@ VALUES
     ('crypto', 'crypto_percent_change', 'period', 'string', TRUE, '1h or 24h', '"1h"'::jsonb),
     ('crypto', 'crypto_percent_change', 'direction', 'string', FALSE, 'above, below, or any', '"any"'::jsonb),
     ('crypto', 'crypto_percent_change', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '5'::jsonb),
+
+    ('nasa', 'nasa_apod', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '60'::jsonb),
+
+    ('nasa', 'nasa_mars_photo', 'rover', 'string', TRUE, 'Rover name (curiosity, perseverance, opportunity, spirit)', '"curiosity"'::jsonb),
+    ('nasa', 'nasa_mars_photo', 'camera', 'string', FALSE, 'Camera name (e.g. FHAZ, RHAZ, NAVCAM)', '"FHAZ"'::jsonb),
+    ('nasa', 'nasa_mars_photo', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '60'::jsonb),
+
+    ('nasa', 'nasa_neo_close_approach', 'threshold_km', 'number', TRUE, 'Distance threshold in km', '500000'::jsonb),
+    ('nasa', 'nasa_neo_close_approach', 'days_ahead', 'number', FALSE, 'Number of days to look ahead', '1'::jsonb),
+    ('nasa', 'nasa_neo_close_approach', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '60'::jsonb),
 
     ('discord', 'discord_message', 'channel_id', 'string', TRUE, 'Target channel ID', '"123456789012345678"'::jsonb),
     ('discord', 'discord_message', 'content', 'string', TRUE, 'Message content', '"Hello from Area"'::jsonb),

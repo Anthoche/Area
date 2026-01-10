@@ -158,6 +158,25 @@ type SteamPriceChangeConfig struct {
 	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
 }
 
+type NasaApodConfig struct {
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type NasaMarsPhotoConfig struct {
+	Rover           string                 `json:"rover"`
+	Camera          string                 `json:"camera,omitempty"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type NasaNeoConfig struct {
+	ThresholdKM     float64                `json:"threshold_km"`
+	DaysAhead       int                    `json:"days_ahead,omitempty"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
 type Store struct {
 	db *gorm.DB
 }
@@ -733,6 +752,39 @@ func steamPriceChangeConfigFromJSON(raw json.RawMessage) (SteamPriceChangeConfig
 	var cfg SteamPriceChangeConfig
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return SteamPriceChangeConfig{}, err
+	}
+	return cfg, nil
+}
+
+func nasaApodConfigFromJSON(raw json.RawMessage) (NasaApodConfig, error) {
+	if len(raw) == 0 {
+		return NasaApodConfig{}, errors.New("empty config")
+	}
+	var cfg NasaApodConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return NasaApodConfig{}, err
+	}
+	return cfg, nil
+}
+
+func nasaMarsPhotoConfigFromJSON(raw json.RawMessage) (NasaMarsPhotoConfig, error) {
+	if len(raw) == 0 {
+		return NasaMarsPhotoConfig{}, errors.New("empty config")
+	}
+	var cfg NasaMarsPhotoConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return NasaMarsPhotoConfig{}, err
+	}
+	return cfg, nil
+}
+
+func nasaNeoConfigFromJSON(raw json.RawMessage) (NasaNeoConfig, error) {
+	if len(raw) == 0 {
+		return NasaNeoConfig{}, errors.New("empty config")
+	}
+	var cfg NasaNeoConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return NasaNeoConfig{}, err
 	}
 	return cfg, nil
 }

@@ -145,6 +145,20 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 		default:
 			return nil, errors.New("crypto_percent_change direction must be above, below, or any")
 		}
+	case "nasa_apod":
+		if _, err := nasaApodConfigFromJSON(triggerConfig); err != nil {
+			return nil, errors.New("nasa_apod config is invalid")
+		}
+	case "nasa_mars_photo":
+		cfg, err := nasaMarsPhotoConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.Rover) == "" {
+			return nil, errors.New("nasa_mars_photo requires rover")
+		}
+	case "nasa_neo_close_approach":
+		cfg, err := nasaNeoConfigFromJSON(triggerConfig)
+		if err != nil || cfg.ThresholdKM <= 0 {
+			return nil, errors.New("nasa_neo_close_approach requires threshold_km")
+		}
 	default:
 		return nil, fmt.Errorf("unsupported trigger_type %s", triggerType)
 	}
@@ -278,6 +292,21 @@ func CryptoPriceThresholdConfigFromJSON(raw json.RawMessage) (CryptoPriceThresho
 // CryptoPercentChangeConfigFromJSON exposes parsing for crypto_percent_change trigger config.
 func CryptoPercentChangeConfigFromJSON(raw json.RawMessage) (CryptoPercentChangeConfig, error) {
 	return cryptoPercentChangeConfigFromJSON(raw)
+}
+
+// NasaApodConfigFromJSON exposes parsing for nasa_apod trigger config.
+func NasaApodConfigFromJSON(raw json.RawMessage) (NasaApodConfig, error) {
+	return nasaApodConfigFromJSON(raw)
+}
+
+// NasaMarsPhotoConfigFromJSON exposes parsing for nasa_mars_photo trigger config.
+func NasaMarsPhotoConfigFromJSON(raw json.RawMessage) (NasaMarsPhotoConfig, error) {
+	return nasaMarsPhotoConfigFromJSON(raw)
+}
+
+// NasaNeoConfigFromJSON exposes parsing for nasa_neo_close_approach trigger config.
+func NasaNeoConfigFromJSON(raw json.RawMessage) (NasaNeoConfig, error) {
+	return nasaNeoConfigFromJSON(raw)
 }
 
 type ctxUserIDKey struct{}

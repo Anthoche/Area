@@ -53,6 +53,7 @@ services:
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
       - NOTION_TOKEN=${NOTION_TOKEN}
       - STEAM_API_KEY=${STEAM_API_KEY}
+      - NASA_API_KEY=${NASA_API_KEY}
 
   client_mobile:
     build:
