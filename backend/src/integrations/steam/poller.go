@@ -54,6 +54,7 @@ func StartSteamPoller(ctx context.Context, wfStore *workflows.Store, wfService *
 	}()
 }
 
+// pollPlayerOnline checks Steam player online status and triggers workflows on status changes.
 func pollPlayerOnline(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, apiKey string, lastOnline map[int64]int, lastCheck map[int64]time.Time) {
 	if strings.TrimSpace(apiKey) == "" {
 		return
@@ -116,6 +117,7 @@ func pollPlayerOnline(ctx context.Context, wfStore *workflows.Store, wfService *
 	}
 }
 
+// pollGameSales checks Steam game sales and triggers workflows on new sales.
 func pollGameSales(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, lastSale map[int64]int, lastCheck map[int64]time.Time) {
 	wfs, err := wfStore.ListWorkflowsByTrigger(ctx, "steam_game_sale")
 	if err != nil {
@@ -178,6 +180,7 @@ func pollGameSales(ctx context.Context, wfStore *workflows.Store, wfService *wor
 	}
 }
 
+// pollPriceChanges checks Steam game prices and triggers workflows on price changes.
 func pollPriceChanges(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, lastPrice map[int64]int, lastCheck map[int64]time.Time) {
 	wfs, err := wfStore.ListWorkflowsByTrigger(ctx, "steam_price_change")
 	if err != nil {
@@ -241,13 +244,14 @@ func pollPriceChanges(ctx context.Context, wfStore *workflows.Store, wfService *
 }
 
 type steamPlayerSummary struct {
-	SteamID      string `json:"steamid"`
-	PersonaName  string `json:"personaname"`
-	PersonaState int    `json:"personastate"`
-	GameID       string `json:"gameid"`
+	SteamID       string `json:"steamid"`
+	PersonaName   string `json:"personaname"`
+	PersonaState  int    `json:"personastate"`
+	GameID        string `json:"gameid"`
 	GameExtraInfo string `json:"gameextrainfo"`
 }
 
+// fetchPlayerSummary retrieves Steam player summary information.
 func fetchPlayerSummary(ctx context.Context, apiKey, steamID string) (*steamPlayerSummary, error) {
 	u := fmt.Sprintf("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=%s&steamids=%s",
 		url.QueryEscape(apiKey),
@@ -289,10 +293,11 @@ type steamPriceOverview struct {
 }
 
 type steamAppData struct {
-	Name          string             `json:"name"`
+	Name          string              `json:"name"`
 	PriceOverview *steamPriceOverview `json:"price_overview"`
 }
 
+// fetchAppDetails retrieves Steam app details including pricing.
 func fetchAppDetails(ctx context.Context, appID int, country string) (*steamAppData, error) {
 	cc := strings.TrimSpace(strings.ToLower(country))
 	if cc == "" {
@@ -313,7 +318,7 @@ func fetchAppDetails(ctx context.Context, appID int, country string) (*steamAppD
 		return nil, fmt.Errorf("steam store status %d: %s", resp.StatusCode, string(body))
 	}
 	var raw map[string]struct {
-		Success bool         `json:"success"`
+		Success bool          `json:"success"`
 		Data    *steamAppData `json:"data"`
 	}
 	body, _ := io.ReadAll(resp.Body)

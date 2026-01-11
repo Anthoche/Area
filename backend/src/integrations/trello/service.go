@@ -79,6 +79,7 @@ func (c *Client) CreateList(ctx context.Context, boardID, name, pos string) erro
 	return c.doForm(ctx, http.MethodPost, apiBase+"/lists", params)
 }
 
+// ensureCredentials checks that API credentials are set.
 func (c *Client) ensureCredentials() error {
 	if c.key == "" || c.token == "" {
 		return fmt.Errorf("missing TRELLO_API_KEY or TRELLO_TOKEN")
@@ -86,6 +87,7 @@ func (c *Client) ensureCredentials() error {
 	return nil
 }
 
+// doForm performs an HTTP request with form-encoded parameters.
 func (c *Client) doForm(ctx context.Context, method, endpoint string, params url.Values) error {
 	if params == nil {
 		params = url.Values{}

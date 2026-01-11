@@ -45,6 +45,7 @@ func StartAirQualityPoller(ctx context.Context, wfStore *workflows.Store, wfServ
 	}()
 }
 
+// pollAQI checks AQI workflows and triggers on threshold crossings.
 func pollAQI(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, lastState map[int64]bool, lastCheck map[int64]time.Time, cityCache map[string][2]float64) {
 	wfs, err := wfStore.ListWorkflowsByTrigger(ctx, "air_quality_aqi_threshold")
 	if err != nil {
@@ -136,6 +137,7 @@ func pollAQI(ctx context.Context, wfStore *workflows.Store, wfService *workflows
 	}
 }
 
+// pollPM25 checks PM2.5 workflows and triggers on threshold crossings.
 func pollPM25(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, lastState map[int64]bool, lastCheck map[int64]time.Time, cityCache map[string][2]float64) {
 	wfs, err := wfStore.ListWorkflowsByTrigger(ctx, "air_quality_pm25_threshold")
 	if err != nil {
@@ -227,6 +229,7 @@ type airQualitySnapshot struct {
 	PM10  float64
 }
 
+// fetchAirQuality retrieves the latest air quality data for given coordinates.
 func fetchAirQuality(ctx context.Context, lat, lon float64) (*airQualitySnapshot, error) {
 	u := fmt.Sprintf("https://air-quality-api.open-meteo.com/v1/air-quality?latitude=%g&longitude=%g&hourly=us_aqi,european_aqi,pm2_5,pm10&timezone=UTC",
 		lat,
@@ -270,6 +273,7 @@ func fetchAirQuality(ctx context.Context, lat, lon float64) (*airQualitySnapshot
 	}, nil
 }
 
+// latestIndex finds the latest index in times that is not in the future.
 func latestIndex(times []string) int {
 	now := time.Now().UTC()
 	for i := len(times) - 1; i >= 0; i-- {
@@ -284,6 +288,7 @@ func latestIndex(times []string) int {
 	return len(times) - 1
 }
 
+// valueAt safely retrieves a value from a slice or returns 0 if out of bounds.
 func valueAt(values []float64, idx int) float64 {
 	if idx < 0 || idx >= len(values) {
 		return 0
@@ -291,6 +296,7 @@ func valueAt(values []float64, idx int) float64 {
 	return values[idx]
 }
 
+// geocodeCity retrieves the latitude and longitude of a city.
 func geocodeCity(ctx context.Context, city string) (float64, float64, error) {
 	u := fmt.Sprintf("https://geocoding-api.open-meteo.com/v1/search?name=%s&count=1&language=fr&format=json", url.QueryEscape(city))
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)

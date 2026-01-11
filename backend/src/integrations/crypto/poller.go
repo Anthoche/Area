@@ -45,6 +45,7 @@ func StartCryptoPoller(ctx context.Context, wfStore *workflows.Store, wfService 
 	}()
 }
 
+// pollPriceThreshold checks price threshold workflows and triggers on crossings.
 func pollPriceThreshold(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, lastState map[int64]bool, lastCheck map[int64]time.Time) {
 	wfs, err := wfStore.ListWorkflowsByTrigger(ctx, "crypto_price_threshold")
 	if err != nil {
@@ -99,6 +100,7 @@ func pollPriceThreshold(ctx context.Context, wfStore *workflows.Store, wfService
 	}
 }
 
+// pollPercentChange checks percent change workflows and triggers on threshold crossings.
 func pollPercentChange(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, lastState map[int64]bool, lastCheck map[int64]time.Time) {
 	wfs, err := wfStore.ListWorkflowsByTrigger(ctx, "crypto_percent_change")
 	if err != nil {
@@ -155,6 +157,7 @@ func pollPercentChange(ctx context.Context, wfStore *workflows.Store, wfService 
 	}
 }
 
+// evaluateChange checks if the change meets the threshold in the specified direction.
 func evaluateChange(value, threshold float64, direction string) bool {
 	dir := strings.ToLower(strings.TrimSpace(direction))
 	switch dir {
@@ -170,6 +173,7 @@ func evaluateChange(value, threshold float64, direction string) bool {
 	}
 }
 
+// buildPricePayload constructs the payload for price threshold events.
 func buildPricePayload(cfg workflows.CryptoPriceThresholdConfig, coin *marketCoin, event string) map[string]any {
 	payload := map[string]any{
 		"coin_id":    coin.ID,
@@ -195,6 +199,7 @@ func buildPricePayload(cfg workflows.CryptoPriceThresholdConfig, coin *marketCoi
 	return payload
 }
 
+// buildChangePayload constructs the payload for percent change events.
 func buildChangePayload(cfg workflows.CryptoPercentChangeConfig, coin *marketCoin, change float64, event string) map[string]any {
 	payload := map[string]any{
 		"coin_id":    coin.ID,
@@ -223,15 +228,16 @@ func buildChangePayload(cfg workflows.CryptoPercentChangeConfig, coin *marketCoi
 }
 
 type marketCoin struct {
-	ID       string
-	Symbol   string
-	Name     string
-	Price    float64
-	Currency string
-	Change1H float64
+	ID        string
+	Symbol    string
+	Name      string
+	Price     float64
+	Currency  string
+	Change1H  float64
 	Change24H float64
 }
 
+// fetchMarket retrieves market data for a coin from CoinGecko.
 func fetchMarket(ctx context.Context, coinID, currency string) (*marketCoin, error) {
 	id := strings.ToLower(strings.TrimSpace(coinID))
 	if id == "" {
@@ -260,11 +266,11 @@ func fetchMarket(ctx context.Context, coinID, currency string) (*marketCoin, err
 		return nil, fmt.Errorf("coingecko status %d: %s", resp.StatusCode, string(body))
 	}
 	var raw []struct {
-		ID       string  `json:"id"`
-		Symbol   string  `json:"symbol"`
-		Name     string  `json:"name"`
-		Price    float64 `json:"current_price"`
-		Change1H float64 `json:"price_change_percentage_1h_in_currency"`
+		ID        string  `json:"id"`
+		Symbol    string  `json:"symbol"`
+		Name      string  `json:"name"`
+		Price     float64 `json:"current_price"`
+		Change1H  float64 `json:"price_change_percentage_1h_in_currency"`
 		Change24H float64 `json:"price_change_percentage_24h_in_currency"`
 	}
 	body, _ := io.ReadAll(resp.Body)

@@ -53,6 +53,7 @@ func StartNasaPoller(ctx context.Context, wfStore *workflows.Store, wfService *w
 	}()
 }
 
+// pollAPOD checks NASA APOD and triggers workflows on new images.
 func pollAPOD(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, apiKey string, lastAPOD map[int64]string, lastCheck map[int64]time.Time) {
 	wfs, err := wfStore.ListWorkflowsByTrigger(ctx, "nasa_apod")
 	if err != nil {
@@ -106,6 +107,7 @@ func pollAPOD(ctx context.Context, wfStore *workflows.Store, wfService *workflow
 	}
 }
 
+// pollMarsPhotos checks NASA Mars photos and triggers workflows on new images.
 func pollMarsPhotos(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, apiKey string, lastMars map[int64]int, lastCheck map[int64]time.Time) {
 	wfs, err := wfStore.ListWorkflowsByTrigger(ctx, "nasa_mars_photo")
 	if err != nil {
@@ -162,6 +164,7 @@ func pollMarsPhotos(ctx context.Context, wfStore *workflows.Store, wfService *wo
 	}
 }
 
+// pollNEO checks NASA NEOs and triggers workflows on close approaches.
 func pollNEO(ctx context.Context, wfStore *workflows.Store, wfService *workflows.Service, apiKey string, lastNEO map[int64]string, lastCheck map[int64]time.Time) {
 	wfs, err := wfStore.ListWorkflowsByTrigger(ctx, "nasa_neo_close_approach")
 	if err != nil {
@@ -232,6 +235,7 @@ type apodResponse struct {
 	MediaType   string `json:"media_type"`
 }
 
+// fetchAPOD retrieves the Astronomy Picture of the Day.
 func fetchAPOD(ctx context.Context, apiKey string) (*apodResponse, error) {
 	u := fmt.Sprintf("https://api.nasa.gov/planetary/apod?api_key=%s", url.QueryEscape(apiKey))
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
@@ -272,6 +276,7 @@ type marsPhoto struct {
 	} `json:"rover"`
 }
 
+// fetchLatestMarsPhoto retrieves the latest Mars photo from a rover and optional camera.
 func fetchLatestMarsPhoto(ctx context.Context, apiKey, rover, camera string) (*marsPhoto, error) {
 	rover = strings.ToLower(strings.TrimSpace(rover))
 	u := fmt.Sprintf("https://api.nasa.gov/mars-photos/api/v1/rovers/%s/latest_photos?api_key=%s",
@@ -348,6 +353,7 @@ type neoEvent struct {
 	VelocityKPS       float64
 }
 
+// augmentContent adds info and link to the content field of the payload.
 func augmentContent(payload map[string]any, info, link string) {
 	content, _ := payload["content"].(string)
 	trimmed := strings.TrimSpace(content)
@@ -366,6 +372,7 @@ func augmentContent(payload map[string]any, info, link string) {
 	}
 }
 
+// fetchNearestNEO retrieves the nearest NEO within the threshold in the next daysAhead days.
 func fetchNearestNEO(ctx context.Context, apiKey string, thresholdKM float64, daysAhead int) (*neoEvent, error) {
 	start := time.Now().UTC()
 	end := start.AddDate(0, 0, daysAhead)

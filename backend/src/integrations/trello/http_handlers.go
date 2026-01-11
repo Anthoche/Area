@@ -132,6 +132,7 @@ func (h *HTTPHandlers) CreateList() http.Handler {
 	})
 }
 
+// clientFromPayload builds a Trello client from payload credentials or returns the default.
 func clientFromPayload(defaultClient *Client, apiKey, token string) (*Client, error) {
 	key := strings.TrimSpace(apiKey)
 	tok := strings.TrimSpace(token)
