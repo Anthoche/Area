@@ -137,6 +137,8 @@ func normalizeReactionPayload(raw json.RawMessage, actionURL string) json.RawMes
 		applyOrAppendText(payload, "body", content)
 		applyOrAppendText(payload, "description", content)
 		applyOrAppendText(payload, "subject", content)
+		applyOrAppendText(payload, "desc", content)
+		applyFallbackText(payload, "name", content)
 		applyFallbackText(payload, "title", content)
 	}
 	out, err := json.Marshal(payload)

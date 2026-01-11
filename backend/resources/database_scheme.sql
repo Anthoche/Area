@@ -149,7 +149,8 @@ VALUES
     ('steam', 'Steam', TRUE, NULL, NULL),
     ('crypto', 'Crypto', TRUE, NULL, NULL),
     ('nasa', 'NASA', TRUE, NULL, NULL),
-    ('air_quality', 'Air Quality', TRUE, NULL, NULL)
+    ('air_quality', 'Air Quality', TRUE, NULL, NULL),
+    ('trello', 'Trello', TRUE, NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO area_capabilities (id, service_id, kind, name, description, action_url, default_payload)
@@ -174,6 +175,10 @@ VALUES
     ('nasa_neo_close_approach', 'nasa', 'trigger', 'NASA NEO close approach', 'Triggers when a near-earth object passes within a distance.', NULL, NULL),
     ('air_quality_aqi_threshold', 'air_quality', 'trigger', 'Air Quality AQI threshold', 'Triggers when AQI crosses a threshold.', NULL, NULL),
     ('air_quality_pm25_threshold', 'air_quality', 'trigger', 'Air Quality PM2.5 threshold', 'Triggers when PM2.5 crosses a threshold.', NULL, NULL),
+
+    ('trello_create_card', 'trello', 'reaction', 'Create card', 'Create a Trello card in a list.', '/actions/trello/card', NULL),
+    ('trello_move_card', 'trello', 'reaction', 'Move card', 'Move a Trello card to another list.', '/actions/trello/card/move', NULL),
+    ('trello_create_list', 'trello', 'reaction', 'Create list', 'Create a Trello list on a board.', '/actions/trello/list', NULL),
 
     ('discord_message', 'discord', 'reaction', 'Send message', 'Send a message to a channel using the bot.', '/actions/discord/message', '{"content":"Hello from Area"}'::jsonb),
     ('discord_embed', 'discord', 'reaction', 'Send embed', 'Send an embed to a channel.', '/actions/discord/embed', '{"title":"Area update","description":"Something happened"}'::jsonb),
@@ -275,6 +280,25 @@ VALUES
     ('air_quality', 'air_quality_pm25_threshold', 'threshold', 'number', TRUE, 'PM2.5 threshold (µg/m³)', '15'::jsonb),
     ('air_quality', 'air_quality_pm25_threshold', 'direction', 'string', TRUE, 'above or below', '"above"'::jsonb),
     ('air_quality', 'air_quality_pm25_threshold', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '10'::jsonb),
+
+    ('trello', 'trello_create_card', 'api_key', 'string', TRUE, 'Trello API key', NULL),
+    ('trello', 'trello_create_card', 'token', 'string', TRUE, 'Trello user token', NULL),
+    ('trello', 'trello_create_card', 'list_id', 'string', TRUE, 'Target list ID', NULL),
+    ('trello', 'trello_create_card', 'name', 'string', TRUE, 'Card name', NULL),
+    ('trello', 'trello_create_card', 'desc', 'string', FALSE, 'Card description', NULL),
+    ('trello', 'trello_create_card', 'pos', 'string', FALSE, 'Card position (top, bottom, or numeric)', '"bottom"'::jsonb),
+
+    ('trello', 'trello_move_card', 'api_key', 'string', TRUE, 'Trello API key', NULL),
+    ('trello', 'trello_move_card', 'token', 'string', TRUE, 'Trello user token', NULL),
+    ('trello', 'trello_move_card', 'card_id', 'string', TRUE, 'Card ID to move', NULL),
+    ('trello', 'trello_move_card', 'list_id', 'string', TRUE, 'Destination list ID', NULL),
+    ('trello', 'trello_move_card', 'pos', 'string', FALSE, 'Card position (top, bottom, or numeric)', '"bottom"'::jsonb),
+
+    ('trello', 'trello_create_list', 'api_key', 'string', TRUE, 'Trello API key', NULL),
+    ('trello', 'trello_create_list', 'token', 'string', TRUE, 'Trello user token', NULL),
+    ('trello', 'trello_create_list', 'board_id', 'string', TRUE, 'Board ID', NULL),
+    ('trello', 'trello_create_list', 'name', 'string', TRUE, 'List name', NULL),
+    ('trello', 'trello_create_list', 'pos', 'string', FALSE, 'List position (top, bottom, or numeric)', '"bottom"'::jsonb),
 
     ('discord', 'discord_message', 'channel_id', 'string', TRUE, 'Target channel ID', '"123456789012345678"'::jsonb),
     ('discord', 'discord_message', 'content', 'string', TRUE, 'Message content', '"Hello from Area"'::jsonb),
