@@ -66,3 +66,44 @@ type GithubToken struct {
 	Scope       string
 	CreatedAt   time.Time
 }
+
+type AreaService struct {
+	ID          string `gorm:"primaryKey"`
+	Name        string
+	Enabled     bool
+	MoreInfo    string
+	OAuthScopes json.RawMessage `gorm:"type:jsonb"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+func (AreaService) TableName() string { return "area_services" }
+
+type AreaCapability struct {
+	ID             string `gorm:"primaryKey"`
+	ServiceID      string `gorm:"primaryKey;index"`
+	Kind           string `gorm:"index"`
+	Name           string
+	Description    string
+	ActionURL      string
+	DefaultPayload json.RawMessage `gorm:"type:jsonb"`
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+func (AreaCapability) TableName() string { return "area_capabilities" }
+
+type AreaField struct {
+	ID           uint   `gorm:"primaryKey"`
+	ServiceID    string `gorm:"index"`
+	CapabilityID string `gorm:"index"`
+	Key          string
+	Type         string
+	Required     bool
+	Description  string
+	Example      json.RawMessage `gorm:"type:jsonb"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+func (AreaField) TableName() string { return "area_fields" }

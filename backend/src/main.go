@@ -15,9 +15,13 @@ import (
 	"area/src/auth"
 	"area/src/database"
 	"area/src/httpapi"
+	"area/src/integrations/airquality"
+	"area/src/integrations/crypto"
 	"area/src/integrations/github"
 	"area/src/integrations/google"
+	"area/src/integrations/nasa"
 	"area/src/integrations/reddit"
+	"area/src/integrations/steam"
 	"area/src/integrations/weather"
 	"area/src/integrations/youtube"
 	"area/src/workflows"
@@ -119,6 +123,14 @@ func main() {
 	reddit.StartRedditPoller(context.Background(), wfStore, wfService)
 	// YouTube poller (new videos from channel feed).
 	youtube.StartYouTubePoller(context.Background(), wfStore, wfService)
+	// NASA poller (APOD, Mars photos, NEO).
+	nasa.StartNasaPoller(context.Background(), wfStore, wfService)
+	// Air quality poller (AQI, PM2.5 thresholds).
+	airquality.StartAirQualityPoller(context.Background(), wfStore, wfService)
+	// Crypto poller (CoinGecko).
+	crypto.StartCryptoPoller(context.Background(), wfStore, wfService)
+	// Steam poller (player status and store price changes).
+	steam.StartSteamPoller(context.Background(), wfStore, wfService)
 
 	server := &http.Server{
 		Addr:              ":" + port,

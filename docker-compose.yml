@@ -52,6 +52,10 @@ services:
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
       - NOTION_TOKEN=${NOTION_TOKEN}
+      - STEAM_API_KEY=${STEAM_API_KEY}
+      - NASA_API_KEY=${NASA_API_KEY}
+      - TRELLO_API_KEY=${TRELLO_API_KEY}
+      - TRELLO_TOKEN=${TRELLO_TOKEN}
 
   client_mobile:
     build:
