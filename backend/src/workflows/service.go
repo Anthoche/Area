@@ -159,6 +159,31 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 		if err != nil || cfg.ThresholdKM <= 0 {
 			return nil, errors.New("nasa_neo_close_approach requires threshold_km")
 		}
+	case "air_quality_aqi_threshold":
+		cfg, err := airQualityAQIConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.City) == "" || cfg.Threshold == 0 || cfg.Direction == "" {
+			return nil, errors.New("air_quality_aqi_threshold requires city, threshold and direction")
+		}
+		switch strings.ToLower(cfg.Direction) {
+		case "above", "below":
+		default:
+			return nil, errors.New("air_quality_aqi_threshold direction must be above or below")
+		}
+		switch strings.ToLower(cfg.Index) {
+		case "", "us_aqi", "european_aqi":
+		default:
+			return nil, errors.New("air_quality_aqi_threshold index must be us_aqi or european_aqi")
+		}
+	case "air_quality_pm25_threshold":
+		cfg, err := airQualityPM25ConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.City) == "" || cfg.Threshold == 0 || cfg.Direction == "" {
+			return nil, errors.New("air_quality_pm25_threshold requires city, threshold and direction")
+		}
+		switch strings.ToLower(cfg.Direction) {
+		case "above", "below":
+		default:
+			return nil, errors.New("air_quality_pm25_threshold direction must be above or below")
+		}
 	default:
 		return nil, fmt.Errorf("unsupported trigger_type %s", triggerType)
 	}
@@ -307,6 +332,16 @@ func NasaMarsPhotoConfigFromJSON(raw json.RawMessage) (NasaMarsPhotoConfig, erro
 // NasaNeoConfigFromJSON exposes parsing for nasa_neo_close_approach trigger config.
 func NasaNeoConfigFromJSON(raw json.RawMessage) (NasaNeoConfig, error) {
 	return nasaNeoConfigFromJSON(raw)
+}
+
+// AirQualityAQIConfigFromJSON exposes parsing for air_quality_aqi_threshold trigger config.
+func AirQualityAQIConfigFromJSON(raw json.RawMessage) (AirQualityAQIConfig, error) {
+	return airQualityAQIConfigFromJSON(raw)
+}
+
+// AirQualityPM25ConfigFromJSON exposes parsing for air_quality_pm25_threshold trigger config.
+func AirQualityPM25ConfigFromJSON(raw json.RawMessage) (AirQualityPM25Config, error) {
+	return airQualityPM25ConfigFromJSON(raw)
 }
 
 type ctxUserIDKey struct{}

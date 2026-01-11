@@ -177,6 +177,23 @@ type NasaNeoConfig struct {
 	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
 }
 
+type AirQualityAQIConfig struct {
+	City            string                 `json:"city"`
+	Index           string                 `json:"index"`
+	Threshold       float64                `json:"threshold"`
+	Direction       string                 `json:"direction"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type AirQualityPM25Config struct {
+	City            string                 `json:"city"`
+	Threshold       float64                `json:"threshold"`
+	Direction       string                 `json:"direction"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
 type Store struct {
 	db *gorm.DB
 }
@@ -785,6 +802,28 @@ func nasaNeoConfigFromJSON(raw json.RawMessage) (NasaNeoConfig, error) {
 	var cfg NasaNeoConfig
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return NasaNeoConfig{}, err
+	}
+	return cfg, nil
+}
+
+func airQualityAQIConfigFromJSON(raw json.RawMessage) (AirQualityAQIConfig, error) {
+	if len(raw) == 0 {
+		return AirQualityAQIConfig{}, errors.New("empty config")
+	}
+	var cfg AirQualityAQIConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return AirQualityAQIConfig{}, err
+	}
+	return cfg, nil
+}
+
+func airQualityPM25ConfigFromJSON(raw json.RawMessage) (AirQualityPM25Config, error) {
+	if len(raw) == 0 {
+		return AirQualityPM25Config{}, errors.New("empty config")
+	}
+	var cfg AirQualityPM25Config
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return AirQualityPM25Config{}, err
 	}
 	return cfg, nil
 }

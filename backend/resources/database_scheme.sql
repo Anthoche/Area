@@ -148,7 +148,8 @@ VALUES
     ('weather', 'Weather', TRUE, NULL, NULL),
     ('steam', 'Steam', TRUE, NULL, NULL),
     ('crypto', 'Crypto', TRUE, NULL, NULL),
-    ('nasa', 'NASA', TRUE, NULL, NULL)
+    ('nasa', 'NASA', TRUE, NULL, NULL),
+    ('air_quality', 'Air Quality', TRUE, NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO area_capabilities (id, service_id, kind, name, description, action_url, default_payload)
@@ -171,6 +172,8 @@ VALUES
     ('nasa_apod', 'nasa', 'trigger', 'NASA APOD', 'Triggers when the Astronomy Picture of the Day updates.', NULL, NULL),
     ('nasa_mars_photo', 'nasa', 'trigger', 'NASA Mars rover photo', 'Triggers on latest Mars rover photos.', NULL, NULL),
     ('nasa_neo_close_approach', 'nasa', 'trigger', 'NASA NEO close approach', 'Triggers when a near-earth object passes within a distance.', NULL, NULL),
+    ('air_quality_aqi_threshold', 'air_quality', 'trigger', 'Air Quality AQI threshold', 'Triggers when AQI crosses a threshold.', NULL, NULL),
+    ('air_quality_pm25_threshold', 'air_quality', 'trigger', 'Air Quality PM2.5 threshold', 'Triggers when PM2.5 crosses a threshold.', NULL, NULL),
 
     ('discord_message', 'discord', 'reaction', 'Send message', 'Send a message to a channel using the bot.', '/actions/discord/message', '{"content":"Hello from Area"}'::jsonb),
     ('discord_embed', 'discord', 'reaction', 'Send embed', 'Send an embed to a channel.', '/actions/discord/embed', '{"title":"Area update","description":"Something happened"}'::jsonb),
@@ -261,6 +264,17 @@ VALUES
     ('nasa', 'nasa_neo_close_approach', 'threshold_km', 'number', TRUE, 'Distance threshold in km', '500000'::jsonb),
     ('nasa', 'nasa_neo_close_approach', 'days_ahead', 'number', FALSE, 'Number of days to look ahead', '1'::jsonb),
     ('nasa', 'nasa_neo_close_approach', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '60'::jsonb),
+
+    ('air_quality', 'air_quality_aqi_threshold', 'city', 'string', TRUE, 'City name (e.g. Paris)', '"Paris"'::jsonb),
+    ('air_quality', 'air_quality_aqi_threshold', 'index', 'string', FALSE, 'AQI index (us_aqi or european_aqi)', '"us_aqi"'::jsonb),
+    ('air_quality', 'air_quality_aqi_threshold', 'threshold', 'number', TRUE, 'AQI threshold', '100'::jsonb),
+    ('air_quality', 'air_quality_aqi_threshold', 'direction', 'string', TRUE, 'above or below', '"above"'::jsonb),
+    ('air_quality', 'air_quality_aqi_threshold', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '10'::jsonb),
+
+    ('air_quality', 'air_quality_pm25_threshold', 'city', 'string', TRUE, 'City name (e.g. Paris)', '"Paris"'::jsonb),
+    ('air_quality', 'air_quality_pm25_threshold', 'threshold', 'number', TRUE, 'PM2.5 threshold (µg/m³)', '15'::jsonb),
+    ('air_quality', 'air_quality_pm25_threshold', 'direction', 'string', TRUE, 'above or below', '"above"'::jsonb),
+    ('air_quality', 'air_quality_pm25_threshold', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '10'::jsonb),
 
     ('discord', 'discord_message', 'channel_id', 'string', TRUE, 'Target channel ID', '"123456789012345678"'::jsonb),
     ('discord', 'discord_message', 'content', 'string', TRUE, 'Message content', '"Hello from Area"'::jsonb),

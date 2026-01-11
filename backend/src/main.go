@@ -15,9 +15,10 @@ import (
 	"area/src/auth"
 	"area/src/database"
 	"area/src/httpapi"
+	"area/src/integrations/airquality"
+	"area/src/integrations/crypto"
 	"area/src/integrations/github"
 	"area/src/integrations/google"
-	"area/src/integrations/crypto"
 	"area/src/integrations/nasa"
 	"area/src/integrations/reddit"
 	"area/src/integrations/steam"
@@ -124,6 +125,8 @@ func main() {
 	youtube.StartYouTubePoller(context.Background(), wfStore, wfService)
 	// NASA poller (APOD, Mars photos, NEO).
 	nasa.StartNasaPoller(context.Background(), wfStore, wfService)
+	// Air quality poller (AQI, PM2.5 thresholds).
+	airquality.StartAirQualityPoller(context.Background(), wfStore, wfService)
 	// Crypto poller (CoinGecko).
 	crypto.StartCryptoPoller(context.Background(), wfStore, wfService)
 	// Steam poller (player status and store price changes).

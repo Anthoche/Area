@@ -316,11 +316,11 @@ type neoFeedResponse struct {
 }
 
 type neoObject struct {
-	ID                   string  `json:"id"`
-	Name                 string  `json:"name"`
-	Hazardous            bool    `json:"is_potentially_hazardous_asteroid"`
-	EstimatedDiameter    neoDiameter `json:"estimated_diameter"`
-	CloseApproachData    []neoApproach `json:"close_approach_data"`
+	ID                string        `json:"id"`
+	Name              string        `json:"name"`
+	Hazardous         bool          `json:"is_potentially_hazardous_asteroid"`
+	EstimatedDiameter neoDiameter   `json:"estimated_diameter"`
+	CloseApproachData []neoApproach `json:"close_approach_data"`
 }
 
 type neoDiameter struct {
@@ -340,12 +340,12 @@ type neoApproach struct {
 }
 
 type neoEvent struct {
-	ID               string
-	Name             string
-	IsHazardous      bool
+	ID                string
+	Name              string
+	IsHazardous       bool
 	CloseApproachDate string
-	MissDistanceKM   float64
-	VelocityKPS      float64
+	MissDistanceKM    float64
+	VelocityKPS       float64
 }
 
 func augmentContent(payload map[string]any, info, link string) {
