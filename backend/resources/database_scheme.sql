@@ -145,7 +145,12 @@ VALUES
     ('github', 'GitHub', TRUE, NULL, NULL),
     ('slack', 'Slack', TRUE, NULL, NULL),
     ('notion', 'Notion', TRUE, NULL, NULL),
-    ('weather', 'Weather', TRUE, NULL, NULL)
+    ('weather', 'Weather', TRUE, NULL, NULL),
+    ('steam', 'Steam', TRUE, NULL, NULL),
+    ('crypto', 'Crypto', TRUE, NULL, NULL),
+    ('nasa', 'NASA', TRUE, NULL, NULL),
+    ('air_quality', 'Air Quality', TRUE, NULL, NULL),
+    ('trello', 'Trello', TRUE, NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO area_capabilities (id, service_id, kind, name, description, action_url, default_payload)
@@ -160,6 +165,20 @@ VALUES
     ('weather_report', 'weather', 'trigger', 'Weather report (interval)', 'Sends current weather for a city every X minutes.', NULL, NULL),
     ('reddit_new_post', 'core', 'trigger', 'Reddit new post', 'Triggers when a new post appears in a subreddit.', NULL, NULL),
     ('youtube_new_video', 'core', 'trigger', 'YouTube new video', 'Triggers when a channel publishes a new video.', NULL, NULL),
+    ('steam_player_online', 'steam', 'trigger', 'Steam player online', 'Triggers when a Steam user becomes online.', NULL, NULL),
+    ('steam_game_sale', 'steam', 'trigger', 'Steam game on sale', 'Triggers when a game goes on sale.', NULL, NULL),
+    ('steam_price_change', 'steam', 'trigger', 'Steam price change', 'Triggers when a game price changes.', NULL, NULL),
+    ('crypto_price_threshold', 'crypto', 'trigger', 'Crypto price threshold', 'Triggers when a crypto price crosses a threshold.', NULL, NULL),
+    ('crypto_percent_change', 'crypto', 'trigger', 'Crypto percent change', 'Triggers when a crypto changes by a % over 1h or 24h.', NULL, NULL),
+    ('nasa_apod', 'nasa', 'trigger', 'NASA APOD', 'Triggers when the Astronomy Picture of the Day updates.', NULL, NULL),
+    ('nasa_mars_photo', 'nasa', 'trigger', 'NASA Mars rover photo', 'Triggers on latest Mars rover photos.', NULL, NULL),
+    ('nasa_neo_close_approach', 'nasa', 'trigger', 'NASA NEO close approach', 'Triggers when a near-earth object passes within a distance.', NULL, NULL),
+    ('air_quality_aqi_threshold', 'air_quality', 'trigger', 'Air Quality AQI threshold', 'Triggers when AQI crosses a threshold.', NULL, NULL),
+    ('air_quality_pm25_threshold', 'air_quality', 'trigger', 'Air Quality PM2.5 threshold', 'Triggers when PM2.5 crosses a threshold.', NULL, NULL),
+
+    ('trello_create_card', 'trello', 'reaction', 'Create card', 'Create a Trello card in a list.', '/actions/trello/card', NULL),
+    ('trello_move_card', 'trello', 'reaction', 'Move card', 'Move a Trello card to another list.', '/actions/trello/card/move', NULL),
+    ('trello_create_list', 'trello', 'reaction', 'Create list', 'Create a Trello list on a board.', '/actions/trello/list', NULL),
 
     ('discord_message', 'discord', 'reaction', 'Send message', 'Send a message to a channel using the bot.', '/actions/discord/message', '{"content":"Hello from Area"}'::jsonb),
     ('discord_embed', 'discord', 'reaction', 'Send embed', 'Send an embed to a channel.', '/actions/discord/embed', '{"title":"Area update","description":"Something happened"}'::jsonb),
@@ -216,6 +235,70 @@ VALUES
 
     ('core', 'youtube_new_video', 'channel', 'string', TRUE, 'YouTube channel name, handle, or ID', '"@GoogleDevelopers"'::jsonb),
     ('core', 'youtube_new_video', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '5'::jsonb),
+
+    ('steam', 'steam_player_online', 'steam_id', 'string', TRUE, 'SteamID64 of the user', '"76561198000000000"'::jsonb),
+    ('steam', 'steam_player_online', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '5'::jsonb),
+
+    ('steam', 'steam_game_sale', 'app_id', 'number', TRUE, 'Steam app ID', '570'::jsonb),
+    ('steam', 'steam_game_sale', 'country', 'string', FALSE, 'Country code for pricing (e.g. us, fr)', '"us"'::jsonb),
+    ('steam', 'steam_game_sale', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '10'::jsonb),
+
+    ('steam', 'steam_price_change', 'app_id', 'number', TRUE, 'Steam app ID', '570'::jsonb),
+    ('steam', 'steam_price_change', 'country', 'string', FALSE, 'Country code for pricing (e.g. us, fr)', '"us"'::jsonb),
+    ('steam', 'steam_price_change', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '10'::jsonb),
+
+    ('crypto', 'crypto_price_threshold', 'coin_id', 'string', TRUE, 'Coin id (CoinGecko, e.g. bitcoin)', '"bitcoin"'::jsonb),
+    ('crypto', 'crypto_price_threshold', 'currency', 'string', FALSE, 'Currency (e.g. usd, eur)', '"usd"'::jsonb),
+    ('crypto', 'crypto_price_threshold', 'threshold', 'number', TRUE, 'Price threshold', '50000'::jsonb),
+    ('crypto', 'crypto_price_threshold', 'direction', 'string', TRUE, 'above or below', '"above"'::jsonb),
+    ('crypto', 'crypto_price_threshold', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '5'::jsonb),
+
+    ('crypto', 'crypto_percent_change', 'coin_id', 'string', TRUE, 'Coin id (CoinGecko, e.g. bitcoin)', '"bitcoin"'::jsonb),
+    ('crypto', 'crypto_percent_change', 'currency', 'string', FALSE, 'Currency (e.g. usd, eur)', '"usd"'::jsonb),
+    ('crypto', 'crypto_percent_change', 'percent', 'number', TRUE, 'Percent change threshold', '5'::jsonb),
+    ('crypto', 'crypto_percent_change', 'period', 'string', TRUE, '1h or 24h', '"1h"'::jsonb),
+    ('crypto', 'crypto_percent_change', 'direction', 'string', FALSE, 'above, below, or any', '"any"'::jsonb),
+    ('crypto', 'crypto_percent_change', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '5'::jsonb),
+
+    ('nasa', 'nasa_apod', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '60'::jsonb),
+
+    ('nasa', 'nasa_mars_photo', 'rover', 'string', TRUE, 'Rover name (curiosity, perseverance, opportunity, spirit)', '"curiosity"'::jsonb),
+    ('nasa', 'nasa_mars_photo', 'camera', 'string', FALSE, 'Camera name (e.g. FHAZ, RHAZ, NAVCAM)', '"FHAZ"'::jsonb),
+    ('nasa', 'nasa_mars_photo', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '60'::jsonb),
+
+    ('nasa', 'nasa_neo_close_approach', 'threshold_km', 'number', TRUE, 'Distance threshold in km', '500000'::jsonb),
+    ('nasa', 'nasa_neo_close_approach', 'days_ahead', 'number', FALSE, 'Number of days to look ahead', '1'::jsonb),
+    ('nasa', 'nasa_neo_close_approach', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '60'::jsonb),
+
+    ('air_quality', 'air_quality_aqi_threshold', 'city', 'string', TRUE, 'City name (e.g. Paris)', '"Paris"'::jsonb),
+    ('air_quality', 'air_quality_aqi_threshold', 'index', 'string', FALSE, 'AQI index (us_aqi or european_aqi)', '"us_aqi"'::jsonb),
+    ('air_quality', 'air_quality_aqi_threshold', 'threshold', 'number', TRUE, 'AQI threshold', '100'::jsonb),
+    ('air_quality', 'air_quality_aqi_threshold', 'direction', 'string', TRUE, 'above or below', '"above"'::jsonb),
+    ('air_quality', 'air_quality_aqi_threshold', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '10'::jsonb),
+
+    ('air_quality', 'air_quality_pm25_threshold', 'city', 'string', TRUE, 'City name (e.g. Paris)', '"Paris"'::jsonb),
+    ('air_quality', 'air_quality_pm25_threshold', 'threshold', 'number', TRUE, 'PM2.5 threshold (µg/m³)', '15'::jsonb),
+    ('air_quality', 'air_quality_pm25_threshold', 'direction', 'string', TRUE, 'above or below', '"above"'::jsonb),
+    ('air_quality', 'air_quality_pm25_threshold', 'interval_minutes', 'number', FALSE, 'Polling interval in minutes', '10'::jsonb),
+
+    ('trello', 'trello_create_card', 'api_key', 'string', TRUE, 'Trello API key', NULL),
+    ('trello', 'trello_create_card', 'token', 'string', TRUE, 'Trello user token', NULL),
+    ('trello', 'trello_create_card', 'list_id', 'string', TRUE, 'Target list ID', NULL),
+    ('trello', 'trello_create_card', 'name', 'string', TRUE, 'Card name', NULL),
+    ('trello', 'trello_create_card', 'desc', 'string', FALSE, 'Card description', NULL),
+    ('trello', 'trello_create_card', 'pos', 'string', FALSE, 'Card position (top, bottom, or numeric)', '"bottom"'::jsonb),
+
+    ('trello', 'trello_move_card', 'api_key', 'string', TRUE, 'Trello API key', NULL),
+    ('trello', 'trello_move_card', 'token', 'string', TRUE, 'Trello user token', NULL),
+    ('trello', 'trello_move_card', 'card_id', 'string', TRUE, 'Card ID to move', NULL),
+    ('trello', 'trello_move_card', 'list_id', 'string', TRUE, 'Destination list ID', NULL),
+    ('trello', 'trello_move_card', 'pos', 'string', FALSE, 'Card position (top, bottom, or numeric)', '"bottom"'::jsonb),
+
+    ('trello', 'trello_create_list', 'api_key', 'string', TRUE, 'Trello API key', NULL),
+    ('trello', 'trello_create_list', 'token', 'string', TRUE, 'Trello user token', NULL),
+    ('trello', 'trello_create_list', 'board_id', 'string', TRUE, 'Board ID', NULL),
+    ('trello', 'trello_create_list', 'name', 'string', TRUE, 'List name', NULL),
+    ('trello', 'trello_create_list', 'pos', 'string', FALSE, 'List position (top, bottom, or numeric)', '"bottom"'::jsonb),
 
     ('discord', 'discord_message', 'channel_id', 'string', TRUE, 'Target channel ID', '"123456789012345678"'::jsonb),
     ('discord', 'discord_message', 'content', 'string', TRUE, 'Message content', '"Hello from Area"'::jsonb),

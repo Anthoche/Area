@@ -119,6 +119,81 @@ type YouTubeNewVideoConfig struct {
 	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
 }
 
+type CryptoPriceThresholdConfig struct {
+	CoinID          string                 `json:"coin_id"`
+	Currency        string                 `json:"currency,omitempty"`
+	Threshold       float64                `json:"threshold"`
+	Direction       string                 `json:"direction"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type CryptoPercentChangeConfig struct {
+	CoinID          string                 `json:"coin_id"`
+	Currency        string                 `json:"currency,omitempty"`
+	Percent         float64                `json:"percent"`
+	Period          string                 `json:"period"`
+	Direction       string                 `json:"direction,omitempty"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type SteamPlayerOnlineConfig struct {
+	SteamID         string                 `json:"steam_id"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type SteamGameSaleConfig struct {
+	AppID           int                    `json:"app_id"`
+	Country         string                 `json:"country,omitempty"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type SteamPriceChangeConfig struct {
+	AppID           int                    `json:"app_id"`
+	Country         string                 `json:"country,omitempty"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type NasaApodConfig struct {
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type NasaMarsPhotoConfig struct {
+	Rover           string                 `json:"rover"`
+	Camera          string                 `json:"camera,omitempty"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type NasaNeoConfig struct {
+	ThresholdKM     float64                `json:"threshold_km"`
+	DaysAhead       int                    `json:"days_ahead,omitempty"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type AirQualityAQIConfig struct {
+	City            string                 `json:"city"`
+	Index           string                 `json:"index"`
+	Threshold       float64                `json:"threshold"`
+	Direction       string                 `json:"direction"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
+type AirQualityPM25Config struct {
+	City            string                 `json:"city"`
+	Threshold       float64                `json:"threshold"`
+	Direction       string                 `json:"direction"`
+	IntervalMin     int                    `json:"interval_minutes,omitempty"`
+	PayloadTemplate map[string]interface{} `json:"payload_template,omitempty"`
+}
+
 type Store struct {
 	db *gorm.DB
 }
@@ -639,6 +714,116 @@ func youtubeNewVideoConfigFromJSON(raw json.RawMessage) (YouTubeNewVideoConfig, 
 	var cfg YouTubeNewVideoConfig
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return YouTubeNewVideoConfig{}, err
+	}
+	return cfg, nil
+}
+
+func cryptoPriceThresholdConfigFromJSON(raw json.RawMessage) (CryptoPriceThresholdConfig, error) {
+	if len(raw) == 0 {
+		return CryptoPriceThresholdConfig{}, errors.New("empty config")
+	}
+	var cfg CryptoPriceThresholdConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return CryptoPriceThresholdConfig{}, err
+	}
+	return cfg, nil
+}
+
+func cryptoPercentChangeConfigFromJSON(raw json.RawMessage) (CryptoPercentChangeConfig, error) {
+	if len(raw) == 0 {
+		return CryptoPercentChangeConfig{}, errors.New("empty config")
+	}
+	var cfg CryptoPercentChangeConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return CryptoPercentChangeConfig{}, err
+	}
+	return cfg, nil
+}
+
+func steamPlayerOnlineConfigFromJSON(raw json.RawMessage) (SteamPlayerOnlineConfig, error) {
+	if len(raw) == 0 {
+		return SteamPlayerOnlineConfig{}, errors.New("empty config")
+	}
+	var cfg SteamPlayerOnlineConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return SteamPlayerOnlineConfig{}, err
+	}
+	return cfg, nil
+}
+
+func steamGameSaleConfigFromJSON(raw json.RawMessage) (SteamGameSaleConfig, error) {
+	if len(raw) == 0 {
+		return SteamGameSaleConfig{}, errors.New("empty config")
+	}
+	var cfg SteamGameSaleConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return SteamGameSaleConfig{}, err
+	}
+	return cfg, nil
+}
+
+func steamPriceChangeConfigFromJSON(raw json.RawMessage) (SteamPriceChangeConfig, error) {
+	if len(raw) == 0 {
+		return SteamPriceChangeConfig{}, errors.New("empty config")
+	}
+	var cfg SteamPriceChangeConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return SteamPriceChangeConfig{}, err
+	}
+	return cfg, nil
+}
+
+func nasaApodConfigFromJSON(raw json.RawMessage) (NasaApodConfig, error) {
+	if len(raw) == 0 {
+		return NasaApodConfig{}, errors.New("empty config")
+	}
+	var cfg NasaApodConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return NasaApodConfig{}, err
+	}
+	return cfg, nil
+}
+
+func nasaMarsPhotoConfigFromJSON(raw json.RawMessage) (NasaMarsPhotoConfig, error) {
+	if len(raw) == 0 {
+		return NasaMarsPhotoConfig{}, errors.New("empty config")
+	}
+	var cfg NasaMarsPhotoConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return NasaMarsPhotoConfig{}, err
+	}
+	return cfg, nil
+}
+
+func nasaNeoConfigFromJSON(raw json.RawMessage) (NasaNeoConfig, error) {
+	if len(raw) == 0 {
+		return NasaNeoConfig{}, errors.New("empty config")
+	}
+	var cfg NasaNeoConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return NasaNeoConfig{}, err
+	}
+	return cfg, nil
+}
+
+func airQualityAQIConfigFromJSON(raw json.RawMessage) (AirQualityAQIConfig, error) {
+	if len(raw) == 0 {
+		return AirQualityAQIConfig{}, errors.New("empty config")
+	}
+	var cfg AirQualityAQIConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return AirQualityAQIConfig{}, err
+	}
+	return cfg, nil
+}
+
+func airQualityPM25ConfigFromJSON(raw json.RawMessage) (AirQualityPM25Config, error) {
+	if len(raw) == 0 {
+		return AirQualityPM25Config{}, errors.New("empty config")
+	}
+	var cfg AirQualityPM25Config
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return AirQualityPM25Config{}, err
 	}
 	return cfg, nil
 }
