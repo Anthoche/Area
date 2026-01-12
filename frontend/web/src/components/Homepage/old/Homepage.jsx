@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import "./homepage.css";
-import SearchBar from "./SearchBar.jsx";
-import FilterTag from "./FilterTag.jsx";
-import ServiceCard from "./ServiceCard.jsx";
+import SearchBar from "./SearchBar";
+import FilterTag from "./FilterTag";
+import ServiceCard from "./ServiceCard";
 import user from "../../../../lib/assets/user.png";
 
 const API_BASE =
@@ -29,7 +29,7 @@ export default function Homepage() {
     const [loading, setLoading] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
     const getUserId = () => Number(localStorage.getItem("user_id") || "");
-    const userEmail = localStorage.getItem("user_email") || "user@example.com";
+    const userEmail = localStorage.getItem("user_email") || "";
     const [form, setForm] = useState({
         name: "Mon Konect",
         triggerType: "",
@@ -97,10 +97,11 @@ export default function Homepage() {
     const tokenId = params.get("token_id");
     const googleEmail = params.get("google_email");
     const githubLogin = params.get("github_login");
+    const githubEmail = params.get("github_email");
     const userIdFromQuery = params.get("user_id");
     if (tokenId && (googleEmail || params.get("google_email"))) {
       localStorage.setItem("google_token_id", tokenId);
-    } else if (tokenId && (githubLogin || params.get("github_email"))) {
+    } else if (tokenId && (githubLogin || githubEmail)) {
       localStorage.setItem("github_token_id", tokenId);
     }
     if (googleEmail) {
@@ -110,10 +111,13 @@ export default function Homepage() {
     if (githubLogin) {
       localStorage.setItem("github_login", githubLogin);
     }
+    if (githubEmail) {
+      localStorage.setItem("user_email", githubEmail);
+    }
     if (userIdFromQuery) {
       localStorage.setItem("user_id", userIdFromQuery);
     }
-    if (tokenId || googleEmail || githubLogin) {
+    if (tokenId || googleEmail || githubLogin || githubEmail) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     fetchAreas().then(() => fetchWorkflows());
@@ -198,15 +202,16 @@ export default function Homepage() {
       const data = await res.json();
       const services = Array.isArray(data.services) ? data.services : [];
       setAreas(services);
-      const triggerCaps =
-        services
-          .find((s) => s.id === "core")
-          ?.triggers?.map((t) => ({
+      const triggerCaps = services
+        .flatMap((s) =>
+          (s.triggers || []).map((t) => ({
             id: t.id,
             name: t.name,
             description: t.description,
             fields: t.fields || [],
-          })) || [];
+            service: s.name || s.id,
+          }))
+        );
       setTriggers(triggerCaps);
       const reactionCaps = services
         .filter((s) => s.enabled !== false)
@@ -250,8 +255,12 @@ export default function Homepage() {
 
   const buildPayloadForWorkflow = (wf) => {
     if (!wf) return {};
-    const payload = { ...(form.values || {}) };
-    return payload;
+    const cfg = wf.trigger_config || {};
+    const fromCfg = cfg.payload_template || cfg.payload;
+    if (fromCfg && typeof fromCfg === "object") {
+      return { ...fromCfg };
+    }
+    return { ...(form.values || {}) };
   };
 
   const buildIntervalPayload = () => {
@@ -490,7 +499,9 @@ export default function Homepage() {
           <div className="section-card">
             {showProfile && (
               <div className="profile-card">
-                <div className="profile-email">{userEmail}</div>
+                <div className="profile-email">
+                  {userEmail || "Email indisponible"}
+                </div>
                 <button
                   className="ghost"
                   onClick={() => {
