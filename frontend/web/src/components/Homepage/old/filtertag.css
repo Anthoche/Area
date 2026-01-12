@@ -1,0 +1,26 @@
+.filter-tag{
+    background: linear-gradient(135deg, #dfdfe1, #fcfdff);
+    color: rgb(0, 0, 0);
+    border: none; 
+    margin-top: 20px;
+    padding: 10px 15px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tags-row {
+    margin: 15px 0 25px;
+    display: flex;
+    justify-content: flex-start;
+    gap: 12.5px;
+}
+
+.filter-tag.active {
+    background: linear-gradient(90deg, #1b7cd09e, #3162c5);
+    color: #fff;  
+    border-color: #2563eb;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.15);
+}

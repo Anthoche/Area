@@ -1,0 +1,87 @@
+:root {
+
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+
+    }
+}
+
+.konect-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 18px;
+    background-color: var(--section-bg-color);
+    border: 1px solid var(--card-border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.2s;
+    cursor: pointer;
+    height: 100%;
+}
+
+.konect-card:hover {
+    border-color: #48179c;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.konect-card-header {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.konect-card-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.konect-card-body > p {
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.konect-card-inf {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.konect-status.active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.konect-status.paused {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.konect-card-footer {
+    display: flex;
+    justify-content: space-between;
+}
+
+.konect-card-services {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.konect-card-service {
+    padding: 0.25rem 0.625rem;
+    list-style: none;
+    background-color: #ede9fe;
+    color: #5b21b6;
+}
+
+.konect-type {
+    background-color: #f3f4f6;
+    color: #374151;
+}
