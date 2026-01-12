@@ -5,6 +5,17 @@ import KonectCard from "./KonectCard.jsx";
 import "./homepage.css";
 
 export default function HomePage() {
+    const typeFiltersList = [
+        <FilterTag key={"1"} label={"Bonjour"} selected={false} onClick={() => console.log("clicked")}/>,
+        <FilterTag key={"2"} label={"Bonjour 2"} selected={false} onClick={() => console.log("clicked")}/>,
+        <FilterTag key={"3"} label={"Bonjour 3"} selected={false} onClick={() => console.log("clicked")}/>,
+    ];
+    const serviceFiltersList = [
+        <FilterTag key={"1"} label={"Service 1"} selected={false} onClick={() => console.log("clicked")}/>,
+        <FilterTag key={"2"} label={"Service 2"} selected={false} onClick={() => console.log("clicked")}/>,
+        <FilterTag key={"3"} label={"Service 3"} selected={false} onClick={() => console.log("clicked")}/>,
+    ];
+
     return (
         <div className="home-page-wrapper page-wrapper">
             <Navbar/>
@@ -19,8 +30,7 @@ export default function HomePage() {
                         <button className="create-konect-btn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                                 className="lucide lucide-plus"
-                                 data-fg-b4eh13="107.23:107.5728:/src/app/components/KonectsContent.tsx:85:13:2780:18:e:Plus::::::MOt">
+                                 className="lucide lucide-plus">
                                 <path d="M5 12h14"></path>
                                 <path d="M12 5v14"></path>
                             </svg>
@@ -33,66 +43,24 @@ export default function HomePage() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                              className="lucide lucide-search search-icon">
-                            <circle cx="11" cy="11" r="8"></circle>@
+                            <circle cx="11" cy="11" r="8"></circle>
                             <path d="m21 21-4.3-4.3"></path>
                         </svg>
-                        <input type="text" placeholder="Search konects..." className="search-input" onChange={() => console.log("search input changed")}/>
+                        <input type="text" placeholder="Search konects..." className="search-input"
+                               onChange={() => console.log("search input changed")}/>
                     </div>
                 </div>
                 <div className="konects-filter home-page-section">
                     <div className="filter-section">
                         <h3 className="filter-title">Type</h3>
                         <ul className="filter-buttons">
-                            {/*TODO:  Replace hard-coded tags with typeFiltersList*/}
-                            <li key={"test-filter-tag-1"}>
-                                <FilterTag
-                                    label={"Bonjour"}
-                                    selected={true}
-                                    onClick={() => console.log("clicked")}
-                                />
-                            </li>
-                            <li key={"test-filter-tag-2"}>
-                                <FilterTag
-                                    label={"Bonjour 2"}
-                                    selected={false}
-                                    onClick={() => console.log("clicked")}
-                                />
-                            </li>
-                            <li key={"test-filter-tag-3"}>
-                                <FilterTag
-                                    key={"test-filter-tag-2"}
-                                    label={"Bonjour 3"}
-                                    selected={false}
-                                    onClick={() => console.log("clicked")}
-                                />
-                            </li>
+                            {typeFiltersList.map((tag) => <li key={tag.key}>{tag}</li>)}
                         </ul>
                     </div>
                     <div className="filter-section">
                         <h3 className="filter-title">Services</h3>
                         <ul className="filter-buttons">
-                            {/*TODO:  Replace hard-coded tags with typeFiltersList*/}
-                            <li key={"test-filter-tag-s1"}>
-                                <FilterTag
-                                    label={"Service 1"}
-                                    selected={true}
-                                    onClick={() => console.log("clicked")}
-                                />
-                            </li>
-                            <li key={"test-filter-tag-s2"}>
-                                <FilterTag
-                                    label={"Service 2"}
-                                    selected={false}
-                                    onClick={() => console.log("clicked")}
-                                />
-                            </li>
-                            <li key={"test-filter-tag-s3"}>
-                                <FilterTag
-                                    label={"Service 3"}
-                                    selected={false}
-                                    onClick={() => console.log("clicked")}
-                                />
-                            </li>
+                            {serviceFiltersList.map((tag) => <li key={tag.key}>{tag}</li>)}
                         </ul>
                     </div>
                 </div>
