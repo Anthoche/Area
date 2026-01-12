@@ -191,6 +191,7 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 	if err != nil {
 		return nil, err
 	}
+	triggerConfig = encryptTriggerConfig(triggerConfig)
 	return s.Store.CreateWorkflow(ctx, userID, name, triggerType, actionURL, triggerConfig)
 }
 
