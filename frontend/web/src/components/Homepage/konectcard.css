@@ -20,6 +20,10 @@
     transition: all 0.2s;
     cursor: pointer;
     height: 100%;
+    width: 100%;
+    text-align: left;
+    color: inherit;
+    font: inherit;
 }
 
 .konect-card:hover {

@@ -115,6 +115,27 @@ nav {
     transition: var(--transition);
 }
 
+.navbar-email {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.navbar-logout-btn > button {
+    border-radius: 25px;
+    border: #d1d5dc 1px solid;
+    padding: 10px 20px;
+    font-weight: bold;
+    background: transparent;
+    color: var(--navbar-text-color);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.navbar-logout-btn > button:hover {
+    border-color: #99a1af;
+    color: var(--accent-color);
+}
+
 /* Hamburger Menu Button */
 .hamburger-button {
     display: none;

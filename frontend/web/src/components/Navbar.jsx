@@ -13,7 +13,13 @@ export default function Navbar() {
     };
 
     const userId = Number(localStorage.getItem("user_id"));
+    const userEmail = localStorage.getItem("user_email") || "";
     const isLoggedIn = Number.isFinite(userId) && userId > 0;
+
+    const logout = () => {
+        localStorage.clear();
+        window.location.href = "/";
+    };
     
 
     return (
@@ -29,14 +35,22 @@ export default function Navbar() {
                     <ul className="navbar-list">
                         <li><a href="#features">Features</a></li>
                         <li><a href="#how-it-works">How it works</a></li>
-                        <li className="navbar-login-btn">
-                            <a 
-                                href={isLoggedIn ? "/home" : "/login"} 
-                                onClick={closeMenu}
-                            >
-                            {isLoggedIn ? "My Account" : "Login"}
-                            </a>
-                        </li>
+                        {isLoggedIn && userEmail && (
+                            <li className="navbar-email">{userEmail}</li>
+                        )}
+                        {isLoggedIn ? (
+                            <li className="navbar-logout-btn">
+                                <button type="button" onClick={logout}>
+                                    Logout
+                                </button>
+                            </li>
+                        ) : (
+                            <li className="navbar-login-btn">
+                                <a href="/login" onClick={closeMenu}>
+                                    Login
+                                </a>
+                            </li>
+                        )}
                     </ul>
                 </div>
                 <button className="hamburger-button" onClick={toggleMenu} aria-label="Toggle menu">
@@ -59,14 +73,22 @@ export default function Navbar() {
                     <ul className="mobile-menu-list">
                         <li><a href="#features" onClick={closeMenu}>Features</a></li>
                         <li><a href="#how-it-works" onClick={closeMenu}>How it works</a></li>
-                        <li className="mobile-login-btn">
-                            <a 
-                                href={isLoggedIn ? "/home" : "/login"} 
-                                onClick={closeMenu}
-                            >
-                            {isLoggedIn ? "My Account" : "Login"}
-                            </a>
-                        </li>
+                        {isLoggedIn && userEmail && (
+                            <li className="navbar-email">{userEmail}</li>
+                        )}
+                        {isLoggedIn ? (
+                            <li className="navbar-logout-btn">
+                                <button type="button" onClick={logout}>
+                                    Logout
+                                </button>
+                            </li>
+                        ) : (
+                            <li className="mobile-login-btn">
+                                <a href="/login" onClick={closeMenu}>
+                                    Login
+                                </a>
+                            </li>
+                        )}
                     </ul>
                 </div>
             </div>
