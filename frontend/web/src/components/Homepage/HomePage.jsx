@@ -27,7 +27,9 @@ export default function HomePage() {
     const [deleting, setDeleting] = useState(false);
     const [loading, setLoading] = useState(false);
     const [activeTypeFilters, setActiveTypeFilters] = useState([]);
+    const [allTypeFilter, setActiveAllTypeFilter] = useState(true);
     const [activeServiceFilters, setActiveServiceFilters] = useState([]);
+    const [allServiceFilter, setActiveAllServiceFilter] = useState(true);
     const [form, setForm] = useState({
         name: "My Konect",
         triggerType: "",
@@ -396,15 +398,25 @@ export default function HomePage() {
     };
 
     const toggleTypeFilter = (value) => {
+        if (value === "all") {
+            setActiveAllTypeFilter(true);
+            return setActiveTypeFilters([]);
+        }
         setActiveTypeFilters((prev) =>
             prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
         );
+        setActiveAllTypeFilter(false);
     };
 
     const toggleServiceFilter = (value) => {
+        if (value === "all") {
+            setActiveAllServiceFilter(true);
+            return setActiveServiceFilters([]);
+        }
         setActiveServiceFilters((prev) =>
             prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
         );
+        setActiveAllServiceFilter(false);
     };
 
     const matchesFilters = (wf) => {
@@ -533,6 +545,13 @@ export default function HomePage() {
                     <div className="filter-section">
                         <h3 className="filter-title">Type</h3>
                         <ul className="filter-buttons">
+                            <li key="all-filter">
+                                <FilterTag
+                                    label={"All"}
+                                    selected={allTypeFilter}
+                                    onClick={() => toggleTypeFilter("all")}
+                                />
+                            </li>
                             {typeFiltersList.map((tag) => (
                                 <li key={tag.value}>
                                     <FilterTag
@@ -547,6 +566,13 @@ export default function HomePage() {
                     <div className="filter-section">
                         <h3 className="filter-title">Services</h3>
                         <ul className="filter-buttons">
+                            <li key="all-filter">
+                                <FilterTag
+                                    label={"All"}
+                                    selected={allServiceFilter}
+                                    onClick={() => toggleServiceFilter("all")}
+                                />
+                            </li>
                             {serviceFiltersList.map((tag) => (
                                 <li key={tag.value}>
                                     <FilterTag
