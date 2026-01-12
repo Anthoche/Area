@@ -76,7 +76,7 @@ export default function Register() {
             setConfirm("");
             setFirstName("");
             setLastName("");
-            navigate("/");
+            navigate("/login");
         } catch (err) {
             console.error("Network or fetch error:", err);
             setFormError("Network error. Please check your connection or backend.");

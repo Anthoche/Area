@@ -3,8 +3,8 @@
 import { useEffect, useState, useRef } from "react";
 import "./welcomepage.css";
 import "./hero-animations.css";
-import Navbar from "./Navbar.jsx";
-import Footer from "./Footer.jsx";
+import Navbar from "../Navbar.jsx";
+import Footer from "../Footer.jsx";
 import HowItWorks from "./HowItWorks.jsx";
 import PopUseCases from "./PopUseCases.jsx";
 import WhyUs from "./WhyUs.jsx";
@@ -72,7 +72,7 @@ export default function WelcomePage() {
     }, [API_BASE]);
 
     return (
-        <div className="welcome-page-wrapper">
+        <div className="welcome-page-wrapper page-wrapper">
             <div className="welcome-wave-bg">
                 <svg viewBox="0 0 1440 220" fill="none" 
                     xmlns="http://www.w3.org/2000/svg" 

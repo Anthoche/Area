@@ -1,14 +1,14 @@
 import React from "react";
 import "./filtertag.css";
 
-export default function FilterTag({ label, selected, onClick }) {
+export default function FilterTag({label, selected, onClick}) {
     return (
-      <button
-        className={`filter-tag ${selected ? "active" : ""}`}
-        type="button"
-        onClick={onClick}
-      >
-        {label}
-      </button>
+        <button
+            className={`filter-tag ${selected ? "active" : ""}`}
+            type="button"
+            onClick={onClick}
+        >
+            {label}
+        </button>
     );
 }
