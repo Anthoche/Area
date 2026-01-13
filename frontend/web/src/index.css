@@ -2,6 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    scroll-behavior: smooth !important;
 }
 
 /* Variables */
@@ -88,6 +89,10 @@ nav {
 .navbar-list > li > a:hover {
     transition: var(--transition);
     color: var(--navbar-text-color-hovered);
+}
+
+.navbar-logo-link {
+    text-decoration: none;
 }
 
 .navbar-list-logo {
