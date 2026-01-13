@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,6 +14,8 @@ import (
 	"time"
 
 	"area/src/database"
+
+	"gorm.io/gorm"
 )
 
 // Client handles GitHub OAuth without third-party helpers.
@@ -63,6 +66,15 @@ func (c *Client) ExchangeAndStore(ctx context.Context, code, redirectURI string,
 		return -1, 0, "", "", err
 	}
 
+	if userID != nil {
+		if _, err := database.GetUserByID(*userID); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				userID = nil
+			} else {
+				return -1, 0, "", "", err
+			}
+		}
+	}
 	if userID == nil && email != "" {
 		if u, err := database.GetUserByEmail(email); err == nil {
 			id := int64(u.ID)

@@ -1,5 +1,5 @@
 import logo from "../../lib/assets/Kikonect_logo_no_text.png";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const API_BASE =
     import.meta.env.VITE_API_URL ||
@@ -8,6 +8,13 @@ const API_BASE =
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const readAuthInfo = () => ({
+        userId: Number(localStorage.getItem("user_id")),
+        userEmail: localStorage.getItem("user_email") || "",
+        googleTokenId: localStorage.getItem("google_token_id"),
+        githubTokenId: localStorage.getItem("github_token_id"),
+    });
+    const [authInfo, setAuthInfo] = useState(readAuthInfo);
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -16,13 +23,24 @@ export default function Navbar() {
         setIsMenuOpen(false);
     };
 
-    const userId = Number(localStorage.getItem("user_id"));
-    const userEmail = localStorage.getItem("user_email") || "";
-    const googleTokenId = localStorage.getItem("google_token_id");
-    const githubTokenId = localStorage.getItem("github_token_id");
+    useEffect(() => {
+        const refresh = () => setAuthInfo(readAuthInfo());
+        window.addEventListener("storage", refresh);
+        window.addEventListener("auth-updated", refresh);
+        return () => {
+            window.removeEventListener("storage", refresh);
+            window.removeEventListener("auth-updated", refresh);
+        };
+    }, []);
+
+    const userId = authInfo.userId;
+    const userEmail = authInfo.userEmail;
+    const googleTokenId = authInfo.googleTokenId;
+    const githubTokenId = authInfo.githubTokenId;
     const isLoggedIn = Number.isFinite(userId) && userId > 0;
     const logout = () => {
         localStorage.clear();
+        window.dispatchEvent(new Event("auth-updated"));
         window.location.href = "/";
     };
     const oauthRedirect = encodeURIComponent(`${window.location.origin}/home`);

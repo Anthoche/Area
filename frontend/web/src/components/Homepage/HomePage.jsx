@@ -86,6 +86,8 @@ export default function HomePage() {
         const githubLogin = params.get("github_login");
         const githubEmail = params.get("github_email");
         const userIdFromQuery = params.get("user_id");
+        const existingEmail = localStorage.getItem("user_email") || "";
+        const canOverrideEmail = !existingEmail || existingEmail === "user@example.com";
         if (tokenId && (googleEmail || params.get("google_email"))) {
             localStorage.setItem("google_token_id", tokenId);
         } else if (tokenId && (githubLogin || githubEmail)) {
@@ -93,13 +95,17 @@ export default function HomePage() {
         }
         if (googleEmail) {
             localStorage.setItem("google_email", googleEmail);
-            localStorage.setItem("user_email", googleEmail);
+            if (canOverrideEmail) {
+                localStorage.setItem("user_email", googleEmail);
+            }
         }
         if (githubLogin) {
             localStorage.setItem("github_login", githubLogin);
         }
         if (githubEmail) {
-            localStorage.setItem("user_email", githubEmail);
+            if (canOverrideEmail) {
+                localStorage.setItem("user_email", githubEmail);
+            }
         }
         if (userIdFromQuery) {
             localStorage.setItem("user_id", userIdFromQuery);
@@ -107,8 +113,33 @@ export default function HomePage() {
         if (tokenId || googleEmail || githubLogin || githubEmail) {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
+        window.dispatchEvent(new Event("auth-updated"));
+        syncOauthStatus(userIdFromQuery || localStorage.getItem("user_id"));
         fetchAreas().then(() => fetchWorkflows());
     }, []);
+
+    const syncOauthStatus = async (userId) => {
+        const resolvedId = Number(userId);
+        if (!resolvedId) {
+            return;
+        }
+        try {
+            const res = await fetch(`${API_BASE}/oauth/status?user_id=${resolvedId}`);
+            if (!res.ok) {
+                return;
+            }
+            const data = await res.json();
+            if (data?.google_token_id) {
+                localStorage.setItem("google_token_id", data.google_token_id);
+            }
+            if (data?.github_token_id) {
+                localStorage.setItem("github_token_id", data.github_token_id);
+            }
+            window.dispatchEvent(new Event("auth-updated"));
+        } catch (err) {
+            console.error("oauth status error:", err);
+        }
+    };
 
     useEffect(() => {
         if (selectedWorkflow) {
