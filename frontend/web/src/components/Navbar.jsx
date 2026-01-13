@@ -12,7 +12,6 @@ export default function Navbar() {
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
     };
-
     const closeMenu = () => {
         setIsMenuOpen(false);
     };
@@ -22,12 +21,10 @@ export default function Navbar() {
     const googleTokenId = localStorage.getItem("google_token_id");
     const githubTokenId = localStorage.getItem("github_token_id");
     const isLoggedIn = Number.isFinite(userId) && userId > 0;
-
     const logout = () => {
         localStorage.clear();
         window.location.href = "/";
     };
-
     const oauthRedirect = encodeURIComponent(`${window.location.origin}/home`);
     const connectGoogle = () => {
         const baseUrl = `${API_BASE}/oauth/google/login?ui_redirect=${oauthRedirect}`;
