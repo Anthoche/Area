@@ -1,5 +1,10 @@
 import logo from "../../lib/assets/Kikonect_logo_no_text.png";
-import React, {useState} from "react";
+import React, { useState } from "react";
+
+const API_BASE =
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.API_URL ||
+    `${window.location.protocol}//${window.location.hostname}:8080`;
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,13 +19,26 @@ export default function Navbar() {
 
     const userId = Number(localStorage.getItem("user_id"));
     const userEmail = localStorage.getItem("user_email") || "";
+    const googleTokenId = localStorage.getItem("google_token_id");
+    const githubTokenId = localStorage.getItem("github_token_id");
     const isLoggedIn = Number.isFinite(userId) && userId > 0;
 
     const logout = () => {
         localStorage.clear();
         window.location.href = "/";
     };
-    
+
+    const oauthRedirect = encodeURIComponent(`${window.location.origin}/home`);
+    const connectGoogle = () => {
+        const baseUrl = `${API_BASE}/oauth/google/login?ui_redirect=${oauthRedirect}`;
+        const url = userId && userId > 0 ? `${baseUrl}&user_id=${userId}` : baseUrl;
+        window.location.href = url;
+    };
+    const connectGithub = () => {
+        const baseUrl = `${API_BASE}/oauth/github/login?ui_redirect=${oauthRedirect}`;
+        const url = userId && userId > 0 ? `${baseUrl}&user_id=${userId}` : baseUrl;
+        window.location.href = url;
+    };
 
     return (
         <div className="navbar-wrapper">
@@ -37,6 +55,22 @@ export default function Navbar() {
                         <li><a href="#how-it-works">How it works</a></li>
                         {isLoggedIn && userEmail && (
                             <li className="navbar-email">{userEmail}</li>
+                        )}
+                        {isLoggedIn && !googleTokenId && (
+                            <>
+                                <li className="navbar-connect-btn">
+                                    <button type="button" onClick={connectGoogle}>
+                                        Connect Google
+                                    </button>
+                                </li>
+                            </>
+                        )}
+                        {isLoggedIn && !githubTokenId && (
+                            <li className="navbar-connect-btn">
+                                <button type="button" onClick={connectGithub}>
+                                    Connect GitHub
+                                </button>
+                            </li>
                         )}
                         {isLoggedIn ? (
                             <li className="navbar-logout-btn">
@@ -75,6 +109,22 @@ export default function Navbar() {
                         <li><a href="#how-it-works" onClick={closeMenu}>How it works</a></li>
                         {isLoggedIn && userEmail && (
                             <li className="navbar-email">{userEmail}</li>
+                        )}
+                        {isLoggedIn && !googleTokenId && (
+                            <>
+                                <li className="navbar-connect-btn">
+                                    <button type="button" onClick={connectGoogle}>
+                                        Connect Google
+                                    </button>
+                                </li>
+                            </>
+                        )}
+                        {isLoggedIn && !githubTokenId && (
+                            <li className="navbar-connect-btn">
+                                <button type="button" onClick={connectGithub}>
+                                    Connect GitHub
+                                </button>
+                            </li>
                         )}
                         {isLoggedIn ? (
                             <li className="navbar-logout-btn">

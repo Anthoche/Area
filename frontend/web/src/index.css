@@ -120,6 +120,22 @@ nav {
     font-size: 0.9rem;
 }
 
+.navbar-connect-btn > button {
+    border-radius: 25px;
+    border: #d1d5dc 1px solid;
+    padding: 8px 16px;
+    font-weight: 600;
+    background: transparent;
+    color: var(--navbar-text-color);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.navbar-connect-btn > button:hover {
+    border-color: #99a1af;
+    color: var(--accent-color);
+}
+
 .navbar-logout-btn > button {
     border-radius: 25px;
     border: #d1d5dc 1px solid;
