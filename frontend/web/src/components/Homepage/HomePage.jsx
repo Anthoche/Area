@@ -402,10 +402,17 @@ export default function HomePage() {
             setActiveAllTypeFilter(true);
             return setActiveTypeFilters([]);
         }
-        setActiveTypeFilters((prev) =>
-            prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-        );
-        setActiveAllTypeFilter(false);
+        setActiveTypeFilters((prev) => {
+            const newList = prev.includes(value)
+                ? prev.filter((v) => v !== value)
+                : [...prev, value];
+            if (newList.length === 0) {
+                setActiveAllTypeFilter(true);
+            } else {
+                setActiveAllTypeFilter(false);
+            }
+            return newList;
+        });
     };
 
     const toggleServiceFilter = (value) => {
@@ -413,10 +420,17 @@ export default function HomePage() {
             setActiveAllServiceFilter(true);
             return setActiveServiceFilters([]);
         }
-        setActiveServiceFilters((prev) =>
-            prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-        );
-        setActiveAllServiceFilter(false);
+        setActiveServiceFilters((prev) => {
+            const newList = prev.includes(value)
+                ? prev.filter((v) => v !== value)
+                : [...prev, value];
+            if (newList.length === 0) {
+                setActiveAllServiceFilter(true);
+            } else {
+                setActiveAllServiceFilter(false);
+            }
+            return newList;
+        });
     };
 
     const matchesFilters = (wf) => {
