@@ -90,7 +90,6 @@ export default function Navbar() {
                     <span className={`hamburger-line ${isMenuOpen ? 'open' : ''}`}></span>
                 </button>
             </nav>
-
             <div className={`mobile-menu-overlay ${isMenuOpen ? 'open' : ''}`} onClick={closeMenu}></div>
             <div className={`mobile-menu ${isMenuOpen ? 'open' : ''}`}>
                 <div className="mobile-menu-section">
