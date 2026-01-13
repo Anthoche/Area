@@ -27,7 +27,10 @@ export default function HomePage() {
     const [deleting, setDeleting] = useState(false);
     const [loading, setLoading] = useState(false);
     const [activeTypeFilters, setActiveTypeFilters] = useState([]);
+    const [allTypeFilter, setActiveAllTypeFilter] = useState(true);
     const [activeServiceFilters, setActiveServiceFilters] = useState([]);
+    const [allServiceFilter, setActiveAllServiceFilter] = useState(true);
+    const [showAllTypes, setShowAllTypes] = useState(false);
     const [form, setForm] = useState({
         name: "My Konect",
         triggerType: "",
@@ -427,15 +430,39 @@ export default function HomePage() {
     };
 
     const toggleTypeFilter = (value) => {
-        setActiveTypeFilters((prev) =>
-            prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-        );
+        if (value === "all") {
+            setActiveAllTypeFilter(true);
+            return setActiveTypeFilters([]);
+        }
+        setActiveTypeFilters((prev) => {
+            const newList = prev.includes(value)
+                ? prev.filter((v) => v !== value)
+                : [...prev, value];
+            if (newList.length === 0) {
+                setActiveAllTypeFilter(true);
+            } else {
+                setActiveAllTypeFilter(false);
+            }
+            return newList;
+        });
     };
 
     const toggleServiceFilter = (value) => {
-        setActiveServiceFilters((prev) =>
-            prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-        );
+        if (value === "all") {
+            setActiveAllServiceFilter(true);
+            return setActiveServiceFilters([]);
+        }
+        setActiveServiceFilters((prev) => {
+            const newList = prev.includes(value)
+                ? prev.filter((v) => v !== value)
+                : [...prev, value];
+            if (newList.length === 0) {
+                setActiveAllServiceFilter(true);
+            } else {
+                setActiveAllServiceFilter(false);
+            }
+            return newList;
+        });
     };
 
     const matchesFilters = (wf) => {
@@ -564,7 +591,14 @@ export default function HomePage() {
                     <div className="filter-section">
                         <h3 className="filter-title">Type</h3>
                         <ul className="filter-buttons">
-                            {typeFiltersList.map((tag) => (
+                            <li key="all-filter">
+                                <FilterTag
+                                    label={"All"}
+                                    selected={allTypeFilter}
+                                    onClick={() => toggleTypeFilter("all")}
+                                />
+                            </li>
+                            {(showAllTypes ? typeFiltersList : typeFiltersList.slice(0, 2)).map((tag) => (
                                 <li key={tag.value}>
                                     <FilterTag
                                         label={tag.label}
@@ -573,11 +607,28 @@ export default function HomePage() {
                                     />
                                 </li>
                             ))}
+                            {typeFiltersList.length > 2 && (
+                                <li className="show-more-item">
+                                    <button
+                                        className="show-more-button"
+                                        onClick={() => setShowAllTypes(!showAllTypes)}
+                                    >
+                                        {showAllTypes ? "Show less" : "Show more"}
+                                    </button>
+                                </li>
+                            )}
                         </ul>
                     </div>
                     <div className="filter-section">
                         <h3 className="filter-title">Services</h3>
                         <ul className="filter-buttons">
+                            <li key="all-filter">
+                                <FilterTag
+                                    label={"All"}
+                                    selected={allServiceFilter}
+                                    onClick={() => toggleServiceFilter("all")}
+                                />
+                            </li>
                             {serviceFiltersList.map((tag) => (
                                 <li key={tag.value}>
                                     <FilterTag

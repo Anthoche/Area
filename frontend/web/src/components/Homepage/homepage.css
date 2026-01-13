@@ -193,6 +193,26 @@
     max-width: 100%;
 }
 
+.show-more-item {
+    margin-left: 4px;
+}
+
+.show-more-button {
+    background: none;
+    border: none;
+    color: var(--text-third);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 4px 8px;
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+.show-more-button:hover {
+    color: var(--text-secondary);
+}
+
 /* Konects */
 .konects {
     margin-bottom: 30px;
