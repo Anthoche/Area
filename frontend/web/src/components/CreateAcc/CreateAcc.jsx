@@ -28,14 +28,14 @@ export default function CreateAcc() {
 
   const handleGoogleLogin = () => {
     const id = Number(localStorage.getItem("user_id"));
-    const uiRedirect = encodeURIComponent("http://localhost:8081/home");
+    const uiRedirect = encodeURIComponent(`${window.location.origin}/home`);
     const baseUrl = `${API_BASE}/oauth/google/login?ui_redirect=${uiRedirect}`;
     const url = id && id > 0 ? `${baseUrl}&user_id=${id}` : baseUrl;
     window.location.href = url;
   };
   const handleGithubLogin = () => {
     const id = Number(localStorage.getItem("user_id"));
-    const uiRedirect = encodeURIComponent("http://localhost:8081/home");
+    const uiRedirect = encodeURIComponent(`${window.location.origin}/home`);
     const baseUrl = `${API_BASE}/oauth/github/login?ui_redirect=${uiRedirect}`;
     const url = id && id > 0 ? `${baseUrl}&user_id=${id}` : baseUrl;
     window.location.href = url;

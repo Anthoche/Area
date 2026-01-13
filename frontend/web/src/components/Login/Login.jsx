@@ -79,7 +79,7 @@ export default function Login() {
         handleForgotPassword={handleForgotPassword}
         onGoogleLogin={() => {
           const id = userId || Number(localStorage.getItem("user_id"));
-          const uiRedirect = encodeURIComponent("http://localhost:8081/home");
+          const uiRedirect = encodeURIComponent(`${window.location.origin}/home`);
           const baseUrl = `${API_BASE}/oauth/google/login?ui_redirect=${uiRedirect}`;
           const url =
             id && id > 0
@@ -89,7 +89,7 @@ export default function Login() {
         }}
         onGithubLogin={() => {
           const id = userId || Number(localStorage.getItem("user_id"));
-          const uiRedirect = encodeURIComponent("http://localhost:8081/home");
+          const uiRedirect = encodeURIComponent(`${window.location.origin}/home`);
           const baseUrl = `${API_BASE}/oauth/github/login?ui_redirect=${uiRedirect}`;
           const url =
             id && id > 0
