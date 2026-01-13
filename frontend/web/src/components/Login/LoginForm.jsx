@@ -1,3 +1,14 @@
+/**
+ * @file LoginForm.jsx
+ * @description
+ * Login form UI for user authentication and OAuth options.
+ *
+ * Allows users to:
+ *  - Sign up using email
+ *  - Continue registration flow
+ *  - Authenticate using Google or GitHub OAuth
+ */
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import logoGoogle from "../../../lib/assets/G_logo.png";

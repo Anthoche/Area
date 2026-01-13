@@ -1,3 +1,13 @@
+/**
+ * @file HomePage.jsx
+ * @description
+ * Main dashboard for managing workflows, areas, and triggers.
+ *
+ * Allows users to:
+ *  - Manage workflows, areas, and triggers
+ *  - Filter, create, and edit automations
+ */
+
 import React, {useEffect, useMemo, useState} from "react";
 import Navbar from "../Navbar.jsx";
 import Footer from "../Footer.jsx";
@@ -5,6 +15,7 @@ import FilterTag from "./FilterTag.jsx";
 import KonectCard from "./KonectCard.jsx";
 import "./homepage.css";
 
+// Utility to match action URLs for reactions
 const API_BASE =
     import.meta.env.VITE_API_URL ||
     import.meta.env.API_URL ||
@@ -28,6 +39,7 @@ export default function HomePage() {
     const [loading, setLoading] = useState(false);
     const [activeTypeFilters, setActiveTypeFilters] = useState([]);
     const [activeServiceFilters, setActiveServiceFilters] = useState([]);
+    // Form state for creating/editing workflows
     const [form, setForm] = useState({
         name: "My Konect",
         triggerType: "",
@@ -35,13 +47,16 @@ export default function HomePage() {
         values: {},
     });
 
+    // Get user ID from localStorage
     const getUserId = () => Number(localStorage.getItem("user_id") || "");
-
+    
+    // Get definition of the selected reaction
     const selectedReactionDef = useMemo(
         () => reactions.find((r) => r.id === selectedReaction),
         [reactions, selectedReaction]
     );
 
+    // Get fields for the selected trigger type
     const triggerFields = useMemo(() => {
         const trig = triggers.find((t) => t.id === form.triggerType);
         return trig?.fields || [];
@@ -49,6 +64,7 @@ export default function HomePage() {
 
     const reactionFields = selectedReactionDef?.fields || [];
 
+    // Generate default form values from fields and stored OAuth tokens
     const defaultValuesFromFields = (fields, hint) => {
         const googleToken = localStorage.getItem("google_token_id");
         const githubToken = localStorage.getItem("github_token_id");
@@ -79,6 +95,7 @@ export default function HomePage() {
         );
     };
 
+    // On component mount, check for OAuth tokens in URL and fetch areas/workflows
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const tokenId = params.get("token_id");
@@ -110,6 +127,7 @@ export default function HomePage() {
         fetchAreas().then(() => fetchWorkflows());
     }, []);
 
+    // Update payload preview when selected workflow or form changes
     useEffect(() => {
         if (selectedWorkflow) {
             setPayloadPreview(
@@ -118,6 +136,7 @@ export default function HomePage() {
         }
     }, [selectedWorkflow, form, selectedReaction]);
 
+    // Set default trigger type and values when triggers are loaded
     useEffect(() => {
         if (!form.triggerType && triggers.length) {
             const first = triggers[0];
@@ -130,6 +149,7 @@ export default function HomePage() {
         }
     }, [triggers, form.triggerType]);
 
+    // Fetch user's workflows from the backend
     const fetchWorkflows = async () => {
         try {
             setLoading(true);
@@ -154,6 +174,7 @@ export default function HomePage() {
         }
     };
 
+    // Fetch available areas, triggers, and reactions from the backend
     const fetchAreas = async () => {
         try {
             const res = await fetch(`${API_BASE}/areas`);
@@ -207,7 +228,8 @@ export default function HomePage() {
             setReactions([]);
         }
     };
-
+    
+    // Build payload for selected workflow based on its trigger configuration
     const buildPayloadForWorkflow = (wf) => {
         if (!wf) return {};
         const cfg = wf.trigger_config || {};
@@ -218,10 +240,12 @@ export default function HomePage() {
         return {...(form.values || {})};
     };
 
+    // Build payload for interval trigger from form values
     const buildIntervalPayload = () => {
         return form.values || {};
     };
 
+    // Build action URL based on selected reaction and form values
     const buildActionUrl = () => {
         const actionUrl = selectedReactionDef?.action_url || "";
         if (actionUrl.startsWith("http")) return actionUrl;
@@ -238,6 +262,7 @@ export default function HomePage() {
         return actionUrl;
     };
 
+    // Handle creation of new workflow
     const handleCreate = async () => {
         if (!form.name) {
             alert("Name is required");
@@ -294,7 +319,8 @@ export default function HomePage() {
             setCreating(false);
         }
     };
-
+    
+    // Handle manual triggering of selected workflow
     const handleTrigger = async () => {
         if (!selectedWorkflow) {
             alert("Please select a Konect");
@@ -337,6 +363,7 @@ export default function HomePage() {
         }
     };
 
+    // Handle deletion of selected workflow
     const handleDelete = async () => {
         if (!selectedWorkflow) return;
         if (!window.confirm("Delete this Konect?")) return;
@@ -366,6 +393,7 @@ export default function HomePage() {
         }
     };
 
+    // Toggle workflow enabled/disabled state
     const handleToggleTimer = async () => {
         if (!selectedWorkflow) return;
         const action = selectedWorkflow.enabled ? "disable" : "enable";
@@ -395,18 +423,21 @@ export default function HomePage() {
         }
     };
 
+    // Toggle type filter tag
     const toggleTypeFilter = (value) => {
         setActiveTypeFilters((prev) =>
             prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
         );
     };
 
+    // Toggle service filter tag
     const toggleServiceFilter = (value) => {
         setActiveServiceFilters((prev) =>
             prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
         );
     };
 
+    // Check if a workflow matches current active filters
     const matchesFilters = (wf) => {
         if (!activeTypeFilters.length && !activeServiceFilters.length) return true;
         const trigger = triggers.find((t) => t.id === wf.trigger_type);
@@ -421,12 +452,13 @@ export default function HomePage() {
             serviceIds.some((id) => activeServiceFilters.includes(id));
         return typeOk && serviceOk;
     };
-
+    // Generate type filter tags from available triggers
     const typeFiltersList = triggers.map((t) => ({
         value: t.id,
         label: t.name,
     }));
 
+    // Generate service filter tags from available areas
     const serviceFiltersList = areas
         .filter((s) => s.enabled !== false)
         .map((s) => ({
@@ -434,7 +466,7 @@ export default function HomePage() {
             label: s.name || s.id,
         }));
 
-
+    // Normalize workflows for display based on current filters and search term
     const normalizedWorkflows = workflows
         .filter(matchesFilters)
         .filter((wf) =>
@@ -464,7 +496,7 @@ export default function HomePage() {
                 services: services.length ? services : ["Core"],
             };
         });
-
+    // Render main homepage with workflow management UI
     return (
         <div className={`home-page-wrapper page-wrapper ${panelOpen ? "panel-open" : ""}`}>
             <Navbar/>
@@ -927,6 +959,9 @@ export default function HomePage() {
     );
 }
 
+/** 
+ * Check if workflow action URL matches reaction action URL.
+*/
 function matchActionUrl(workflowUrl, reactionUrl) {
     if (!workflowUrl || !reactionUrl) return false;
     if (workflowUrl === reactionUrl) return true;

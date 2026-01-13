@@ -1,3 +1,13 @@
+/**
+ * @file PopUseCases.jsx
+ * @description
+ * Section listing popular automation use cases.
+ *
+ * Allows users to:
+ *  - Discover popular automation scenarios
+ *  - Get inspiration for workflow creation
+ */
+
 "use client";
 import "./welcomepage.css";
 import "./hero-animations.css";
@@ -6,6 +16,8 @@ import { useEffect, useRef, useState } from "react";
 export default function PopUseCases() {
     const sectionRef = useRef(null);
     const [visible, setVisible] = useState(false);
+    
+    // Observe section visibility for animations
     useEffect(() => {
         const observer = new window.IntersectionObserver(
             ([entry]) => setVisible(entry.isIntersecting),

@@ -1,3 +1,13 @@
+/**
+ * @file HowItWorks.jsx
+ * @description
+ * Section explaining how the automation platform works for users.
+ *
+ * Allows users to:
+ *  - Learn how to build automations
+ *  - Follow step-by-step onboarding
+ */
+
 "use client";
 import "./welcomepage.css";
 import "./hero-animations.css";
@@ -9,12 +19,15 @@ export default function HowItWorks() {
     const isLoggedIn = Number.isFinite(userId) && userId > 0;
     const sectionRef = useRef(null);
     const [visible, setVisible] = useState(false);
+
+    // Observe section visibility for animations
     useEffect(() => {
         const observer = new window.IntersectionObserver(
             ([entry]) => setVisible(entry.isIntersecting),
             { threshold: 0.2 }
         );
-        if (sectionRef.current) observer.observe(sectionRef.current);
+        if (sectionRef.current) 
+            observer.observe(sectionRef.current);
         return () => observer.disconnect();
     }, []);
     return (

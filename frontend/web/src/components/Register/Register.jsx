@@ -1,8 +1,22 @@
+/**
+ * @file Register.jsx
+ * @description
+ * User registration form for new account creation.
+ *
+ * Allows users to:
+ *  -  Handle form validation
+ *  -  Handle password rules
+ *  -  Create an account via backend API
+ */
+
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./register.css";
 import logo from "../../../lib/assets/Kikonect_logo_no_text.png";
 
+/**
+ * Resolve backend API base URL.
+ */
 const API_BASE =
     import.meta.env.VITE_API_URL ||
     import.meta.env.API_URL ||
@@ -11,8 +25,9 @@ const API_BASE =
 export default function Register() {
     const location = useLocation();
     const navigate = useNavigate();
+    
+    // Prefill email if coming from previous step (CreateAcc)
     const prefilledEmail = location.state?.email || "";
-
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState(prefilledEmail);
@@ -24,6 +39,14 @@ export default function Register() {
         if (prefilledEmail) setEmail(prefilledEmail);
     }, [prefilledEmail]);
 
+    /**
+     * Handles registration submission.
+     * Performs:
+     *  - Empty field validation
+     *  - Email format validation
+     *  - Password complexity & match validation
+     *  - API call to backend
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
         setFormError("");
@@ -36,6 +59,7 @@ export default function Register() {
             setFormError("Please enter a valid email address.");
             return;
         }
+        // Password rules: min 8 chars, at least one number, one special char
         const passwordRules = /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
         if (!passwordRules.test(password)) {
             setFormError("Password must be at least 8 characters, include a number and a special character.");
@@ -91,14 +115,22 @@ export default function Register() {
                     <h1>KiKoNect</h1>
                 </div>
                 <h2 className="title">Create an account</h2>
-                                {formError && (
-                                    <div
-                                        className="error-popup"
-                                        style={{ marginBottom: 30, color: "#b91818ff", fontStyle: 'italic', fontWeight: 300, fontSize: 15 }}
-                                    >
-                                        {formError}
-                                    </div>
-                                )}
+
+                {formError && (
+                    <div
+                        className="error-popup"
+                        style={{
+                            marginBottom: 30,
+                            color: "#b91818ff",
+                            fontStyle: "italic",
+                            fontWeight: 300,
+                            fontSize: 15,
+                        }}
+                    >
+                        {formError}
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="reg-form">
                     <div className="floating-input">
                         <input
