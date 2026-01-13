@@ -30,6 +30,7 @@ export default function HomePage() {
     const [allTypeFilter, setActiveAllTypeFilter] = useState(true);
     const [activeServiceFilters, setActiveServiceFilters] = useState([]);
     const [allServiceFilter, setActiveAllServiceFilter] = useState(true);
+    const [showAllTypes, setShowAllTypes] = useState(false);
     const [form, setForm] = useState({
         name: "My Konect",
         triggerType: "",
@@ -566,7 +567,7 @@ export default function HomePage() {
                                     onClick={() => toggleTypeFilter("all")}
                                 />
                             </li>
-                            {typeFiltersList.map((tag) => (
+                            {(showAllTypes ? typeFiltersList : typeFiltersList.slice(0, 2)).map((tag) => (
                                 <li key={tag.value}>
                                     <FilterTag
                                         label={tag.label}
@@ -575,6 +576,16 @@ export default function HomePage() {
                                     />
                                 </li>
                             ))}
+                            {typeFiltersList.length > 2 && (
+                                <li className="show-more-item">
+                                    <button
+                                        className="show-more-button"
+                                        onClick={() => setShowAllTypes(!showAllTypes)}
+                                    >
+                                        {showAllTypes ? "Show less" : "Show more"}
+                                    </button>
+                                </li>
+                            )}
                         </ul>
                     </div>
                     <div className="filter-section">
