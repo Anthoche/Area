@@ -30,6 +30,14 @@ The application offers the following functionalities (high level user flow):
 - 📖 Auto‑generated API docs at `/docs/` and service catalog at `/about.json`.
 - 📦 Docker Compose stack (Postgres + API + web + mobile build).
 
+## 📚 Wiki
+
+- Main wiki: https://github.com/Anthoche/Area/wiki
+- Areas catalog: https://github.com/Anthoche/Area/wiki/Areas
+- Comparative study: https://github.com/Anthoche/Area/wiki/Comparative-Study
+- Database schema: https://github.com/Anthoche/Area/wiki/Database-Schema
+- Interaction diagrams: https://github.com/Anthoche/Area/wiki/Interaction-Diagrams
+
 ## 🛠️ Stack
 
 - Go 1.21+, PostgreSQL, Docker Compose
