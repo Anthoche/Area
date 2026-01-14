@@ -76,15 +76,76 @@ Use `sqlmock` for DB-facing code. Avoid network in tests; mock senders/HTTP.
 
 ---
 
-## Frontend Changes (React/Vite)
+## Adding Frontend Web Features
 Location: `frontend/web`
-1. Install deps: `npm install`.
-2. Add routes/components under `src/components` and `src/App.jsx`.
-3. API base URL via `VITE_API_URL` (defaults to `http(s)://<host>:8080`).
-4. Run dev server: `npm run dev`.
-5. Build: `npm run build` (used by nginx image in docker-compose).
 
-## Mobile Changes (Flutter)
+### Project Structure
+- **Entry point:** `src/main.jsx` attaches the app to the DOM and enables React Strict Mode.
+- **Routing:** `src/App.jsx` defines all routes using React Router (`react-router-dom`).
+- **Components:** Organized by feature in `src/components/` (e.g., `Login/`, `Register/`, `Homepage/`, `CreateAcc/`, `WelcomePage/`).
+- **Assets:** Images and icons in `lib/assets/`.
+- **Styling:** CSS modules per component (e.g., `login.css`, `homepage.css`, `welcomepage.css`).
+- **Public assets:** Favicon and static files in `public/`.
+- **Nginx config:** `nginx.conf` for SPA routing and static serving in production.
+
+### Development Workflow
+1. **Install dependencies:**
+  ```bash
+  npm install
+  ```
+2. **Run the dev server:**
+  ```bash
+  npm run dev
+  ```
+  - App runs on [http://localhost:5173](http://localhost:5173) by default.
+3. **Build for production:**
+  ```bash
+  npm run build
+  ```
+  - Output in `dist/`, served by nginx in Docker.
+4. **Preview production build:**
+  ```bash
+  npm run preview
+  ```
+
+### Environment & API
+- **API base URL:** Set via `VITE_API_URL` in `.env` or shell. Defaults to `http(s)://<host>:8080` if unset.
+- **OAuth:** Login and registration support Google and GitHub OAuth (see `Login.jsx`, `CreateAcc.jsx`).
+
+### Adding Features
+- **New page/route:**
+  - Add a component under `src/components/`.
+  - Register the route in `src/App.jsx`.
+- **UI changes:**
+  - Update or add CSS in the relevant component folder.
+  - Use shared styles in `index.css` for global variables.
+- **API calls:**
+  - Use `fetch` or your preferred HTTP client. Base URL should use `VITE_API_URL`.
+  - Handle errors and loading states in the UI.
+
+### Docker & Deployment
+- **Dockerfile** builds the app and serves it with nginx.
+- **nginx.conf** ensures SPA routing (all routes fallback to `index.html`).
+- **docker-compose** can be used to run the full stack (backend + frontend).
+
+### Example Main Components
+- **WelcomePage:** Landing page with onboarding, features, and animations.
+- **Login/Register/CreateAcc:** Auth flows with email and OAuth.
+- **HomePage:** Main dashboard for managing workflows and automations.
+- **Navbar/Footer:** Shared navigation and branding.
+
+### Best Practices
+- Use functional components and React hooks.
+- Keep logic in components small and focused.
+- Prefer composition over inheritance for UI.
+- Use semantic HTML and accessible ARIA attributes.
+- Keep assets (images, icons) in `lib/assets/`.
+- Document new components with JSDoc-style comments.
+- Test UI/UX changes in both dev and production builds.
+
+See the `src/components/` directory for more details and examples.
+
+## Adding Mobile Features
 Location: `frontend/mobile`
 1. Standard Flutter workflow (`flutter pub get`, `flutter run`).
 2. In Compose, `client_mobile` builds a release APK and copies it into the web container.
