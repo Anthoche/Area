@@ -22,8 +22,20 @@ class ServiceSelectionPage extends StatelessWidget {
   };
 
   static const Map<String, String> _serviceIcons = {
+    'core': 'lib/assets/kikonect_icon.png',
+    'discord': 'lib/assets/Discord_logo.png',
     'google': 'lib/assets/G_logo.png',
     'github': 'lib/assets/github_logo.png',
+    'slack': 'lib/assets/Slack_logo.png',
+    'notion': 'lib/assets/Notion_logo.png',
+    'weather': 'lib/assets/Weather_logo.png',
+    'steam': 'lib/assets/Steam_logo.png',
+    'crypto': 'lib/assets/Crypto_logo.png',
+    'nasa': 'lib/assets/Nasa_logo.png',
+    'air_quality': 'lib/assets/Air-quality_logo.png',
+    'trello': 'lib/assets/Trello_logo.png',
+    'reddit': 'lib/assets/Reddit_logo.png',
+    'youtube': 'lib/assets/Youtube_logo.png',
   };
 
   /// Parses a hex color string.
@@ -120,7 +132,12 @@ class ServiceSelectionPage extends StatelessWidget {
 
               return ServiceSelectionCard(
                 service: serviceUI,
-                onTap: () => _showActionsModal(context, serviceUI),
+                onTap: () async {
+                  final selection = await _showActionsModal(context, serviceUI);
+                  if (selection != null) {
+                    Navigator.pop(context, selection);
+                  }
+                },
               );
             },
           );
@@ -129,13 +146,16 @@ class ServiceSelectionPage extends StatelessWidget {
     );
   }
 
-  void _showActionsModal(BuildContext context, Map<String, dynamic> service) {
+  Future<Map<String, dynamic>?> _showActionsModal(
+    BuildContext context,
+    Map<String, dynamic> service,
+  ) async {
     final rawData = service['raw'] as Map<String, dynamic>;
     final List items = isTrigger
         ? (rawData['triggers'] as List? ?? [])
         : (rawData['reactions'] as List? ?? []);
 
-    showModalBottomSheet(
+    return showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       // Allow the sheet to take more height.
       isScrollControlled: true,
@@ -181,27 +201,33 @@ class ServiceSelectionPage extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final item = items[index];
                     return InkWell(
-                      onTap: () {
-                        // Close the modal.
-                        Navigator.pop(context);
+                      onTap: () async {
                         final fields = (item['fields'] as List? ?? []);
                         if (fields.isNotEmpty) {
-                          _showFieldsModal(context, service, item, fields);
-                        } else {
-                          Navigator.pop(context, {
-                            "service_id": rawData['id'],
-                            "service": service['name'],
-                            "id": item['id'],
-                            "name": item['name'],
-                            "action": item['name'],
-                            "action_url": item['action_url'],
-                            "fields": {},
-                            "color": service['color'],
-                            "icon": service['icon'],
-                          });
+                          final selection = await _showFieldsModal(
+                            context,
+                            service,
+                            item,
+                            fields,
+                          );
+                          if (selection != null) {
+                            Navigator.pop(context, selection);
+                          }
+                          return;
                         }
+                        Navigator.pop(context, <String, dynamic>{
+                          "service_id": rawData['id'],
+                          "service": service['name'],
+                          "id": item['id'],
+                          "name": item['name'],
+                          "action": item['name'],
+                          "action_url": item['action_url'],
+                          "fields": <String, dynamic>{},
+                          "color": service['color'],
+                          "icon": service['icon'],
+                        });
                       },
-                        child: Container(
+                      child: Container(
                           margin: const EdgeInsets.only(bottom: 16),
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
@@ -245,12 +271,12 @@ class ServiceSelectionPage extends StatelessWidget {
     );
   }
 
-  void _showFieldsModal(
+  Future<Map<String, dynamic>?> _showFieldsModal(
     BuildContext context,
     Map<String, dynamic> service,
     Map<String, dynamic> item,
     List fields,
-  ) {
+  ) async {
     final rawData = service['raw'] as Map<String, dynamic>;
     final values = <String, dynamic>{};
     final storage = const FlutterSecureStorage();
@@ -267,7 +293,7 @@ class ServiceSelectionPage extends StatelessWidget {
       }
     }
 
-    showModalBottomSheet(
+    return showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -459,22 +485,21 @@ class ServiceSelectionPage extends StatelessWidget {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          onPressed: hasMissingRequired
-                              ? null
-                              : () {
-                                  Navigator.pop(context);
-                                  Navigator.pop(context, {
-                                    "service_id": rawData['id'],
-                                    "service": service['name'],
-                                    "id": item['id'],
-                                    "name": item['name'],
-                                    "action": item['name'],
-                                    "action_url": item['action_url'],
-                                    "fields": values,
-                                    "color": service['color'],
-                                    "icon": service['icon'],
-                                  });
-                                },
+                        onPressed: hasMissingRequired
+                            ? null
+                            : () {
+                                Navigator.pop(context, <String, dynamic>{
+                                  "service_id": rawData['id'],
+                                  "service": service['name'],
+                                  "id": item['id'],
+                                  "name": item['name'],
+                                  "action": item['name'],
+                                  "action_url": item['action_url'],
+                                  "fields": values,
+                                  "color": service['color'],
+                                  "icon": service['icon'],
+                                });
+                              },
                           child: const Text(
                             "Validate",
                             style: TextStyle(

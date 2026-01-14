@@ -180,11 +180,15 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
                           const ServiceSelectionPage(isTrigger: true),
                     ),
                   );
-                  if (result != null) {
+                  if (!mounted || result == null) return;
+                  if (result is Map) {
+                    final typedResult = Map<String, dynamic>.from(result);
+                    final fields = typedResult['fields'];
                     setState(() {
-                      triggerData = result;
-                      triggerFieldValues =
-                          (result['fields'] as Map<String, dynamic>?) ?? {};
+                      triggerData = typedResult;
+                      triggerFieldValues = fields is Map
+                          ? Map<String, dynamic>.from(fields)
+                          : {};
                     });
                   }
                 },
@@ -236,9 +240,11 @@ class _CreateAreaPageState extends State<CreateAreaPage> {
                               const ServiceSelectionPage(isTrigger: false),
                         ),
                       );
-                      if (result != null) {
+                      if (!mounted || result == null) return;
+                      if (result is Map) {
                         setState(() {
-                          actionsData[index] = result;
+                          actionsData[index] =
+                              Map<String, dynamic>.from(result);
                         });
                       }
                     },

@@ -16,6 +16,9 @@
   - [Testing](#testing)
 - [Frontend Changes (React/Vite)](#frontend-changes-reactvite)
 - [Mobile Changes (Flutter)](#mobile-changes-flutter)
+  - [New Screens (Pages)](#new-screens-pages)
+  - [New Widgets](#new-widgets)
+  - [New Services and API Integrations](#new-services-and-api-integrations)
 - [Coding Standards](#coding-standards)
 - [CI & Local Checks](#ci--local-checks)
 - [Pull Request Checklist](#pull-request-checklist)
@@ -147,9 +150,29 @@ See the `src/components/` directory for more details and examples.
 
 ## Adding Mobile Features
 Location: `frontend/mobile`
+## Mobile Changes (Flutter)
+Location: `frontend/mobile/kikonect`
 1. Standard Flutter workflow (`flutter pub get`, `flutter run`).
 2. In Compose, `client_mobile` builds a release APK and copies it into the web container.
 3. If you add assets/plugins, ensure the Docker image or CI has the right SDKs.
+
+### New Screens (Pages)
+1. Add new screens under `lib/screens` (keep the page layout in the screen file).
+2. Wire navigation with `Navigator.push` + `MaterialPageRoute` from the calling screen (or update `lib/app.dart` for a new entry point).
+3. Use `Theme.of(context)` and shared widgets from `lib/widgets` to keep styling consistent.
+4. Reuse `utils/ui_feedback.dart` for snackbars/errors instead of custom toasts.
+
+### New Widgets
+1. Place reusable UI components in `lib/widgets` once they are shared by multiple screens.
+2. Keep widget APIs small and explicit (data in, callbacks out); avoid API calls inside widgets.
+3. Follow the app theme (`Theme.of(context)` / `AppTheme`) instead of hardcoded colors.
+4. Add widget tests under `test/` if the widget has logic or state.
+
+### New Services and API Integrations
+1. Add API calls in `lib/services/api_service.dart` or a new file under `lib/services`.
+2. Use `flutter_dotenv` for base URLs and `flutter_secure_storage` for tokens; update `.env` and `.env.example` when you add env vars.
+3. For new OAuth providers, extend `lib/services/oauth_service.dart` and keep the redirect logic in one place.
+4. If a service needs icons/colors, add assets under `lib/assets`, register them in `pubspec.yaml`, and update `ServiceSelectionPage` fallback maps (`_serviceColors`, `_serviceIcons`) as needed.
 
 ---
 
