@@ -1,14 +1,22 @@
-"use client";
+/**
+ * @file WelcomePage.jsx
+ * @description
+ * Landing page with hero, features, and onboarding sections.
+ *
+ * Allows users to:
+ *  - Explore the platform's features
+ *  - Access onboarding and key sections
+ */
 
+import { Link } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import "./welcomepage.css";
-import "./hero-animations.css";
-import Navbar from "./Navbar.jsx";
-import Footer from "./Footer.jsx";
+import Navbar from "../Navbar.jsx";
+import Footer from "../Footer.jsx";
 import HowItWorks from "./HowItWorks.jsx";
 import PopUseCases from "./PopUseCases.jsx";
 import WhyUs from "./WhyUs.jsx";
-import { Link } from "react-router-dom";
+import "./welcomepage.css";
+import "./hero-animations.css";
 
 export default function WelcomePage() {
     const heroRef = useRef(null);
@@ -18,6 +26,7 @@ export default function WelcomePage() {
     const [iconVisible, setIconVisible] = useState(false);
     const [statsVisible, setStatsVisible] = useState(false);
 
+    // Animate hero section on mount
     useEffect(() => {
         setTimeout(() => setHeroVisible(true), 100);
         setTimeout(() => setIconVisible(true), 400);
@@ -25,12 +34,13 @@ export default function WelcomePage() {
     }, []);
     const userId = Number(localStorage.getItem("user_id"));
     const isLoggedIn = Number.isFinite(userId) && userId > 0;
+    
+    // State for platform statistics
     const [stats, setStats] = useState({
         userCount: null,
         serviceCount: null,
         actionReactionCount: null,
     });
-
     const API_BASE =
         import.meta.env.VITE_API_URL ||
         import.meta.env.API_URL ||
@@ -38,6 +48,7 @@ export default function WelcomePage() {
 
     useEffect(() => {
         let cancelled = false;
+        // Fetch platform statistics from backend
         const fetchStats = async () => {
             try {
                 const res = await fetch(`${API_BASE}/areas`);
@@ -72,7 +83,7 @@ export default function WelcomePage() {
     }, [API_BASE]);
 
     return (
-        <div className="welcome-page-wrapper">
+        <div className="welcome-page-wrapper page-wrapper">
             <div className="welcome-wave-bg">
                 <svg viewBox="0 0 1440 220" fill="none" 
                     xmlns="http://www.w3.org/2000/svg" 

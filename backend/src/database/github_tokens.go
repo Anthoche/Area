@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -40,6 +41,17 @@ func GetGithubTokenForUser(id int64, userID int64) (*GithubToken, error) {
 	token, err := gorm.G[GithubToken](Db).Where("id = ? AND user_id = ?", id, userID).First(GetDBContext())
 	if err != nil {
 		return nil, fmt.Errorf("get github token for user: %w", err)
+	}
+	return &token, nil
+}
+
+// GetLatestGithubTokenForUser returns the most recently created token for a user.
+func GetLatestGithubTokenForUser(ctx context.Context, userID int64) (*GithubToken, error) {
+	var token GithubToken
+
+	token, err := gorm.G[GithubToken](Db).Where("user_id = ?", userID).Order("created_at DESC").First(GetDBContext())
+	if err != nil {
+		return nil, fmt.Errorf("get latest github token for user: %w", err)
 	}
 	return &token, nil
 }

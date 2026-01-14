@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/swaggest/swgui/v5emb"
+	"gorm.io/gorm"
 
 	"area/src/areas"
 	"area/src/auth"
@@ -54,6 +55,7 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/oauth/google/callback", googleHTTP.Callback())
 	mux.Handle("/oauth/google/mobile/login", googleHTTP.Login())
 	mux.Handle("/oauth/google/mobile/callback", googleHTTP.Callback())
+	mux.Handle("/oauth/status", server.oauthStatus())
 	mux.Handle("/oauth/github/login", githubHTTP.Login())
 	mux.Handle("/oauth/github/callback", githubHTTP.Callback())
 	mux.Handle("/oauth/github/mobile/login", githubMobileHTTP.LoginMobile())
@@ -214,6 +216,45 @@ func (h *Handler) Register() http.Handler {
 		}
 
 		writeJSON(w, http.StatusCreated, user)
+	})
+}
+
+// oauthStatus returns the latest OAuth token ids for the user.
+func (h *Handler) oauthStatus() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		user := r.Header.Get("X-User-ID")
+		if user == "" {
+			user = r.URL.Query().Get("user_id")
+		}
+		if user == "" {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "missing user id"})
+			return
+		}
+		userID, err := strconv.ParseInt(user, 10, 64)
+		if err != nil || userID <= 0 {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid user id"})
+			return
+		}
+
+		resp := map[string]any{"user_id": userID}
+		if token, err := database.GetLatestGoogleTokenForUser(r.Context(), userID); err == nil && token != nil {
+			resp["google_token_id"] = token.ID
+		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not fetch google token"})
+			return
+		}
+		if token, err := database.GetLatestGithubTokenForUser(r.Context(), userID); err == nil && token != nil {
+			resp["github_token_id"] = token.ID
+		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not fetch github token"})
+			return
+		}
+
+		writeJSON(w, http.StatusOK, resp)
 	})
 }
 

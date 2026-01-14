@@ -84,6 +84,7 @@ func (e *Executor) processOne(ctx context.Context) {
 		payload = []byte(`{}`)
 	}
 	payload = normalizeReactionPayload(payload, wf.ActionURL)
+	payload = decryptPayload(payload)
 
 	actionCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()

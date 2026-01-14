@@ -203,16 +203,36 @@ CI (GitHub Actions) runs `go build` + `go test` on push/PR.
 - Slack: `POST /actions/slack/message`, `/blocks`, `/message/update`, `/message/delete`, `/message/react`
 - Notion: `POST /actions/notion/page`, `/blocks`, `/database`, `/page/update`
 
-## 🌐 Frontend (React/Vite)
+## 🌐 Web (React+Vite)
+The KiKoNect web app is your main interface for building, managing, and monitoring automations (“Konects”) between your favorite services—all from your browser.
 
-```bash
-cd frontend/web
-npm install
-npm run dev          # http://localhost:5173
-```
-- API base URL: `VITE_API_URL` (fallback `http(s)://<host>:8080`).
-- Routes: `/` (login), `/register`.
-- Production: `npm run build` (served by nginx in docker-compose).
+### What the Web App Does
+- **Sign up and log in** securely with email, Google, or GitHub
+- **Connect your accounts** (Google, GitHub, Discord, Slack, Notion, and more)
+- **Browse and discover available automations** (“Konects”) and services
+- **Create new automations** by linking triggers (like “new email” or “new GitHub issue”) to actions (like “send Discord message”)
+- **Monitor your automations**: see status, last run, and any errors
+- **Edit or delete automations** at any time
+- **Mobile-friendly**: works on desktop and mobile browsers
+
+### How to Use the Web App
+1. **Start the backend and database** (see above or use Docker Compose)
+2. **Start the web app:**
+   ```bash
+   cd frontend/web
+   npm install
+   npm run dev
+   ```
+3. Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### What to Expect
+- **Welcome page**: Learn what KiKoNect can do and get started quickly
+- **Easy onboarding**: Guided steps to connect your accounts and set up your first automation
+- **Dashboard**: See all your automations at a glance, with clear status and controls
+- **Service catalog**: Explore all available integrations and what you can automate
+- **Responsive design**: Use KiKoNect comfortably on any device
+
+Just connect, configure, and automate!
 
 ## 📱 Mobile (Flutter)
 
@@ -230,11 +250,8 @@ npm run dev          # http://localhost:5173
 Contributions are welcome! Please follow these guidelines:
 
 - Read the `CONTRIBUTING.md` file for branch, test and PR rules.
-
 - Create a feature branch from `dev`: `git checkout -b feat/your-feature`.
-
 - Run tests and linters before submitting a PR:
-
 - Write clear PR descriptions and link any related issues.
 
 If you're adding a breaking change, please open an issue first to discuss the design.
