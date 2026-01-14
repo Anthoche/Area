@@ -11,19 +11,35 @@ class ServiceSelectionCard extends StatelessWidget {
     required this.onTap,
   });
 
+  Color _displayColor(Color base, Brightness brightness) {
+    final isDark = ThemeData.estimateBrightnessForColor(base) == Brightness.dark;
+    if (brightness == Brightness.dark && isDark) {
+      final hsl = HSLColor.fromColor(base);
+      final lightness = hsl.lightness < 0.6 ? 0.6 : hsl.lightness;
+      final saturation = hsl.saturation < 0.5 ? 0.5 : hsl.saturation;
+      return hsl
+          .withLightness(lightness)
+          .withSaturation(saturation)
+          .toColor();
+    }
+    return base;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final baseColor = service['color'] as Color? ?? colorScheme.primary;
+    final displayColor = _displayColor(baseColor, theme.brightness);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
-          color: (service['color'] as Color).withOpacity(0.1),
+          color: displayColor.withOpacity(0.18),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: (service['color'] as Color).withOpacity(0.3),
+            color: displayColor.withOpacity(0.4),
             width: 1,
           ),
         ),
@@ -50,7 +66,7 @@ class ServiceSelectionCard extends StatelessWidget {
                       service['icon'],
                       errorBuilder: (c, o, s) => const Icon(Icons.apps),
                     )
-                  : Icon(Icons.apps, color: service['color']),
+                  : Icon(Icons.apps, color: displayColor),
             ),
             const SizedBox(height: 12),
             Text(
@@ -58,7 +74,7 @@ class ServiceSelectionCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: service['color'],
+                color: displayColor,
               ),
             ),
           ],

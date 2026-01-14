@@ -38,8 +38,11 @@ export default function HomePage() {
     const [deleting, setDeleting] = useState(false);
     const [loading, setLoading] = useState(false);
     const [activeTypeFilters, setActiveTypeFilters] = useState([]);
+    const [allTypeFilter, setActiveAllTypeFilter] = useState(true);
     const [activeServiceFilters, setActiveServiceFilters] = useState([]);
     // Form state for creating/editing workflows
+    const [allServiceFilter, setActiveAllServiceFilter] = useState(true);
+    const [showAllTypes, setShowAllTypes] = useState(false);
     const [form, setForm] = useState({
         name: "My Konect",
         triggerType: "",
@@ -103,6 +106,8 @@ export default function HomePage() {
         const githubLogin = params.get("github_login");
         const githubEmail = params.get("github_email");
         const userIdFromQuery = params.get("user_id");
+        const existingEmail = localStorage.getItem("user_email") || "";
+        const canOverrideEmail = !existingEmail || existingEmail === "user@example.com";
         if (tokenId && (googleEmail || params.get("google_email"))) {
             localStorage.setItem("google_token_id", tokenId);
         } else if (tokenId && (githubLogin || githubEmail)) {
@@ -110,13 +115,17 @@ export default function HomePage() {
         }
         if (googleEmail) {
             localStorage.setItem("google_email", googleEmail);
-            localStorage.setItem("user_email", googleEmail);
+            if (canOverrideEmail) {
+                localStorage.setItem("user_email", googleEmail);
+            }
         }
         if (githubLogin) {
             localStorage.setItem("github_login", githubLogin);
         }
         if (githubEmail) {
-            localStorage.setItem("user_email", githubEmail);
+            if (canOverrideEmail) {
+                localStorage.setItem("user_email", githubEmail);
+            }
         }
         if (userIdFromQuery) {
             localStorage.setItem("user_id", userIdFromQuery);
@@ -124,10 +133,35 @@ export default function HomePage() {
         if (tokenId || googleEmail || githubLogin || githubEmail) {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
+        window.dispatchEvent(new Event("auth-updated"));
+        syncOauthStatus(userIdFromQuery || localStorage.getItem("user_id"));
         fetchAreas().then(() => fetchWorkflows());
     }, []);
 
     // Update payload preview when selected workflow or form changes
+    const syncOauthStatus = async (userId) => {
+        const resolvedId = Number(userId);
+        if (!resolvedId) {
+            return;
+        }
+        try {
+            const res = await fetch(`${API_BASE}/oauth/status?user_id=${resolvedId}`);
+            if (!res.ok) {
+                return;
+            }
+            const data = await res.json();
+            if (data?.google_token_id) {
+                localStorage.setItem("google_token_id", data.google_token_id);
+            }
+            if (data?.github_token_id) {
+                localStorage.setItem("github_token_id", data.github_token_id);
+            }
+            window.dispatchEvent(new Event("auth-updated"));
+        } catch (err) {
+            console.error("oauth status error:", err);
+        }
+    };
+
     useEffect(() => {
         if (selectedWorkflow) {
             setPayloadPreview(
@@ -425,16 +459,40 @@ export default function HomePage() {
 
     // Toggle type filter tag
     const toggleTypeFilter = (value) => {
-        setActiveTypeFilters((prev) =>
-            prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-        );
+        if (value === "all") {
+            setActiveAllTypeFilter(true);
+            return setActiveTypeFilters([]);
+        }
+        setActiveTypeFilters((prev) => {
+            const newList = prev.includes(value)
+                ? prev.filter((v) => v !== value)
+                : [...prev, value];
+            if (newList.length === 0) {
+                setActiveAllTypeFilter(true);
+            } else {
+                setActiveAllTypeFilter(false);
+            }
+            return newList;
+        });
     };
 
     // Toggle service filter tag
     const toggleServiceFilter = (value) => {
-        setActiveServiceFilters((prev) =>
-            prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-        );
+        if (value === "all") {
+            setActiveAllServiceFilter(true);
+            return setActiveServiceFilters([]);
+        }
+        setActiveServiceFilters((prev) => {
+            const newList = prev.includes(value)
+                ? prev.filter((v) => v !== value)
+                : [...prev, value];
+            if (newList.length === 0) {
+                setActiveAllServiceFilter(true);
+            } else {
+                setActiveAllServiceFilter(false);
+            }
+            return newList;
+        });
     };
 
     // Check if a workflow matches current active filters
@@ -565,7 +623,14 @@ export default function HomePage() {
                     <div className="filter-section">
                         <h3 className="filter-title">Type</h3>
                         <ul className="filter-buttons">
-                            {typeFiltersList.map((tag) => (
+                            <li key="all-filter">
+                                <FilterTag
+                                    label={"All"}
+                                    selected={allTypeFilter}
+                                    onClick={() => toggleTypeFilter("all")}
+                                />
+                            </li>
+                            {(showAllTypes ? typeFiltersList : typeFiltersList.slice(0, 2)).map((tag) => (
                                 <li key={tag.value}>
                                     <FilterTag
                                         label={tag.label}
@@ -574,11 +639,28 @@ export default function HomePage() {
                                     />
                                 </li>
                             ))}
+                            {typeFiltersList.length > 2 && (
+                                <li className="show-more-item">
+                                    <button
+                                        className="show-more-button"
+                                        onClick={() => setShowAllTypes(!showAllTypes)}
+                                    >
+                                        {showAllTypes ? "Show less" : "Show more"}
+                                    </button>
+                                </li>
+                            )}
                         </ul>
                     </div>
                     <div className="filter-section">
                         <h3 className="filter-title">Services</h3>
                         <ul className="filter-buttons">
+                            <li key="all-filter">
+                                <FilterTag
+                                    label={"All"}
+                                    selected={allServiceFilter}
+                                    onClick={() => toggleServiceFilter("all")}
+                                />
+                            </li>
                             {serviceFiltersList.map((tag) => (
                                 <li key={tag.value}>
                                     <FilterTag

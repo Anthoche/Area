@@ -25,9 +25,9 @@ export default function Footer() {
                     </ul>
                     <ul className="footer-section">
                         <li className="footer-section-title">Product</li>
-                        <li className="footer-section-item"><a href="#features">Features</a></li>
+                        <li className="footer-section-item"><a href="/#features">Features</a></li>
+                        <li className="footer-section-item"><a href="/#how-it-works">How it works</a></li>
                         <li className="footer-section-item"><a href="#">Services</a></li>
-                        <li className="footer-section-item"><a href="#">Pricing</a></li>
                         <li className="footer-section-item"><a href="#">Enterprise</a></li>
                     </ul>
                     <ul className="footer-section">

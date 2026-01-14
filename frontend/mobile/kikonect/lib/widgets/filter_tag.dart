@@ -16,12 +16,13 @@ class FilterTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final selectedColor = colorScheme.secondary;
     final backgroundColor =
-        isSelected ? colorScheme.primary : colorScheme.surfaceVariant;
+        isSelected ? selectedColor : colorScheme.surfaceVariant;
     final foregroundColor =
-        isSelected ? colorScheme.onPrimary : colorScheme.onSurface;
+        isSelected ? colorScheme.onSecondary : colorScheme.onSurface;
     final borderColor =
-        isSelected ? colorScheme.primary : colorScheme.outlineVariant;
+        isSelected ? selectedColor : colorScheme.outlineVariant;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: OutlinedButton(
