@@ -8,11 +8,10 @@
  *  - Follow step-by-step onboarding
  */
 
-"use client";
-import "./welcomepage.css";
-import "./hero-animations.css";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import "./welcomepage.css";
+import "./hero-animations.css";
 
 export default function HowItWorks() {
     const userId = Number(localStorage.getItem("user_id"));

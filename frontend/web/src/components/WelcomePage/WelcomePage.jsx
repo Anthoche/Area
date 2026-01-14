@@ -8,17 +8,15 @@
  *  - Access onboarding and key sections
  */
 
-"use client";
-
+import { Link } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import "./welcomepage.css";
-import "./hero-animations.css";
 import Navbar from "../Navbar.jsx";
 import Footer from "../Footer.jsx";
 import HowItWorks from "./HowItWorks.jsx";
 import PopUseCases from "./PopUseCases.jsx";
 import WhyUs from "./WhyUs.jsx";
-import { Link } from "react-router-dom";
+import "./welcomepage.css";
+import "./hero-animations.css";
 
 export default function WelcomePage() {
     const heroRef = useRef(null);

@@ -8,10 +8,9 @@
  *  - Get inspiration for workflow creation
  */
 
-"use client";
+import { useEffect, useRef, useState } from "react";
 import "./welcomepage.css";
 import "./hero-animations.css";
-import { useEffect, useRef, useState } from "react";
 
 export default function PopUseCases() {
     const sectionRef = useRef(null);

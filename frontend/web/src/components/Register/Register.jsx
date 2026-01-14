@@ -11,10 +11,10 @@
 
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import "./register.css";
 import logo from "../../../lib/assets/Kikonect_logo_no_text.png";
 import eyeOpen from "../../../lib/assets/eye_open.png";
 import eyeClosed from "../../../lib/assets/eye_closed.png";
+import "./register.css";
 
 /**
  * Resolve backend API base URL.
@@ -164,52 +164,52 @@ export default function Register() {
                         />
                         <label className={email ? "filled" : ""}>Email</label>
                     </div>
-            <div className="floating-input password-wrapper">
-                <input
-                    type={showPassword ? "text" :"password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
-                <label className={password ? "filled" : ""}>
-                    Password
-                </label>
-                <button
-                    type="button"
-                    className="toggle-password"
-                    onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
-                >
-                    <img
-                        src={showPassword ? eyeClosed : eyeOpen}
-                        alt={showPassword ? "Hide password" : "Show password"}
-                        className="eye-img"
-                    />
-                </button>
-            </div>
-            <div className="floating-input password-wrapper">
-                <input
-                    type={showConfirmPassword ? "text" :"password"}
-                    value={password}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    required
-                />
-                <label className={password ? "filled" : ""}>
-                    Confirm Password
-                </label>
-                <button
-                    type="button"
-                    className="toggle-password"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    tabIndex={-1}
-                >
-                    <img
-                        src={showConfirmPassword ? eyeClosed : eyeOpen}
-                        alt={showConfirmPassword ? "Hide password" : "Show password"}
-                        className="eye-img"
-                    />
-                </button>
-            </div>
+                    <div className="floating-input password-wrapper">
+                        <input
+                            type={showPassword ? "text" :"password"}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                        <label className={password ? "filled" : ""}>
+                            Password
+                        </label>
+                        <button
+                            type="button"
+                            className="toggle-password"
+                            onClick={() => setShowPassword(!showPassword)}
+                            tabIndex={-1}
+                        >
+                            <img
+                                src={showPassword ? eyeClosed : eyeOpen}
+                                alt={showPassword ? "Hide password" : "Show password"}
+                                className="eye-img"
+                            />
+                        </button>
+                    </div>
+                    <div className="floating-input password-wrapper">
+                        <input
+                            type={showConfirmPassword ? "text" :"password"}
+                            value={password}
+                            onChange={(e) => setConfirm(e.target.value)}
+                            required
+                        />
+                        <label className={password ? "filled" : ""}>
+                            Confirm Password
+                        </label>
+                        <button
+                            type="button"
+                            className="toggle-password"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            tabIndex={-1}
+                        >
+                            <img
+                                src={showConfirmPassword ? eyeClosed : eyeOpen}
+                                alt={showConfirmPassword ? "Hide password" : "Show password"}
+                                className="eye-img"
+                            />
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

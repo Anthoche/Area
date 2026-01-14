@@ -8,10 +8,9 @@
  *  - Learn why the service is trusted
  */
 
-"use client";
+import { useEffect, useRef, useState } from "react";
 import "./welcomepage.css";
 import "./hero-animations.css";
-import { useEffect, useRef, useState } from "react";
 
 export default function WhyUs() {
     const sectionRef = useRef(null);
