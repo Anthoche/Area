@@ -273,23 +273,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ],
                 ),
-                // Debug button for direct access.
                 const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const Homepage()),
-                    );
-                  },
-                  child: Text(
-                    "[DEV] Skip Login",
-                    style: TextStyle(
-                      color: colorScheme.error,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
