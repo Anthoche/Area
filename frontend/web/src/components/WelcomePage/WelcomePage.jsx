@@ -1,3 +1,13 @@
+/**
+ * @file WelcomePage.jsx
+ * @description
+ * Landing page with hero, features, and onboarding sections.
+ *
+ * Allows users to:
+ *  - Explore the platform's features
+ *  - Access onboarding and key sections
+ */
+
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -18,6 +28,7 @@ export default function WelcomePage() {
     const [iconVisible, setIconVisible] = useState(false);
     const [statsVisible, setStatsVisible] = useState(false);
 
+    // Animate hero section on mount
     useEffect(() => {
         setTimeout(() => setHeroVisible(true), 100);
         setTimeout(() => setIconVisible(true), 400);
@@ -25,12 +36,13 @@ export default function WelcomePage() {
     }, []);
     const userId = Number(localStorage.getItem("user_id"));
     const isLoggedIn = Number.isFinite(userId) && userId > 0;
+    
+    // State for platform statistics
     const [stats, setStats] = useState({
         userCount: null,
         serviceCount: null,
         actionReactionCount: null,
     });
-
     const API_BASE =
         import.meta.env.VITE_API_URL ||
         import.meta.env.API_URL ||
@@ -38,6 +50,7 @@ export default function WelcomePage() {
 
     useEffect(() => {
         let cancelled = false;
+        // Fetch platform statistics from backend
         const fetchStats = async () => {
             try {
                 const res = await fetch(`${API_BASE}/areas`);

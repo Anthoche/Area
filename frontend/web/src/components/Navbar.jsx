@@ -1,3 +1,13 @@
+/**
+ * @file Navbar.jsx
+ * @description
+ * Top navigation bar with logo, links, and user session controls.
+ *
+ * Allows users to:
+ *  - Navigate between main pages
+ *  - Access account and session controls
+ */
+
 import logo from "../../lib/assets/Kikonect_logo_no_text.png";
 import React, { useEffect, useState } from "react";
 

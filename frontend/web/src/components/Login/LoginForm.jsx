@@ -1,7 +1,20 @@
+/**
+ * @file LoginForm.jsx
+ * @description
+ * Login form UI for user authentication and OAuth options.
+ *
+ * Allows users to:
+ *  - Sign up using email
+ *  - Continue registration flow
+ *  - Authenticate using Google or GitHub OAuth
+ */
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import logoGoogle from "../../../lib/assets/G_logo.png";
 import logoGithub from "../../../lib/assets/github_logo.png";
+import eyeOpen from "../../../lib/assets/eye_open.png";
+import eyeClosed from "../../../lib/assets/eye_closed.png";
 
 export default function LoginForm({
     email,
@@ -19,6 +32,8 @@ export default function LoginForm({
         navigate("/createacc");
     };
 
+    const [showPassword, setShowPassword] = React.useState(false);
+
     return (
         <form onSubmit={handleSubmit}>
             <div className="floating-input">
@@ -33,9 +48,9 @@ export default function LoginForm({
                 </label>
             </div>
 
-            <div className="floating-input">
+            <div className="floating-input password-wrapper">
                 <input
-                    type="password"
+                    type={showPassword ? "text" :"password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -43,6 +58,18 @@ export default function LoginForm({
                 <label className={password ? "filled" : ""}>
                     Password
                 </label>
+                <button
+                    type="button"
+                    className="toggle-password"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                >
+                    <img
+                        src={showPassword ? eyeClosed : eyeOpen}
+                        alt={showPassword ? "Hide password" : "Show password"}
+                        className="eye-img"
+                    />
+                </button>
             </div>
 
             <div className="forgot-row">

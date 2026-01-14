@@ -195,6 +195,7 @@
     color: #ffffff;
     font-weight: bold;
     margin-top: -2px;
+    flex-shrink: 0;
 }
 
 @media (max-width: 800px) {

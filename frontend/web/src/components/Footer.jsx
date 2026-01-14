@@ -1,3 +1,13 @@
+/**
+ * @file Footer.jsx
+ * @description
+ * Footer component for site-wide branding and navigation links.
+ *
+ * Allows users to:
+ *  - Navigate to product, resources, and company info
+ *  - Access support and documentation links
+ */
+
 import logo from "../../lib/assets/Kikonect_logo_no_text.png";
 import React from "react";
 
