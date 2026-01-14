@@ -26,7 +26,7 @@ The application offers the following functionalities (high level user flow):
 - ⚙️ Workflows: manual, webhook, interval, and polling-based triggers.
 - 🚀 Execution: executor drains pending jobs and POSTs payloads to targets.
 - 🌐 HTTP API with permissive CORS for the web app.
-- 🔌 Integrations: Google, GitHub, Discord, Slack, Notion, Weather, Reddit, YouTube.
+- 🔌 Integrations: Google, GitHub, Discord, Slack, Notion, Weather, Reddit, YouTube, Air Quality, Crypto, NASA, Steam, Trello.
 - 📖 Auto‑generated API docs at `/docs/` and service catalog at `/about.json`.
 - 📦 Docker Compose stack (Postgres + API + web + mobile build).
 
@@ -65,16 +65,17 @@ Area/
 │   │       ├── App.jsx
 │   │       └── components/
 │   │
-│   └── mobile/                 # Flutter project (android/ios/lib/...)
-│       ├── pubspec.yaml
-│       ├── lib/                # Contain all the app code
-│       │    ├── main.dart      # Entry point of the app
-│       │    ├── app.dart       # App-level configurations (themes, routes, ...)
-│       │    ├── assets/        # Images, fonts, and other static assets
-│       │    ├── screens/       # Different screens of the app
-│       │    └─── widgets/      # Reusable UI components
-│       ├── test/               # Unit tests for the Flutter
-│       └── android/
+│   └── mobile/
+│       └── kikonect/           # Flutter project (android/ios/lib/...)
+│           ├── pubspec.yaml
+│           ├── lib/            # Contain all the app code
+│           │    ├── main.dart  # Entry point of the app
+│           │    ├── app.dart   # App-level configurations (themes, routes, ...)
+│           │    ├── assets/    # Images, fonts, and other static assets
+│           │    ├── screens/   # Different screens of the app
+│           │    └─── widgets/  # Reusable UI components
+│           ├── test/           # Unit tests for the Flutter
+│           └── android/
 ├── Reports/
 │   ├── Defense/
 │   └── Meeting/
@@ -100,7 +101,7 @@ The project is composed of **four main components** deployed with `docker-compos
 - Handles OAuth initialization on the client (using a `json-init` flow that stores `state` in `localStorage` to avoid cross-port cookie issues).
 
 ### **Mobile (Flutter)**
-- Built by the `client_mobile` service in Docker Compose, generating an APK.
+- Built from `frontend/mobile/kikonect` by the `client_mobile` service in Docker Compose, generating an APK.
 
 ### Important Execution Notes
 - **OAuth**: backend validates callback URL and exchanges code→token; frontend stores OAuth `state` in `localStorage` and posts the `code` back to backend.
@@ -129,10 +130,15 @@ Env vars (see `backend/.env`):
 - OAuth:
   - `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`
   - `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET`, `GITHUB_OAUTH_REDIRECT_URI`
+  - `GITHUB_MOBILE_OAUTH_CLIENT_ID`, `GITHUB_MOBILE_OAUTH_CLIENT_SECRET`, `GITHUB_MOBILE_OAUTH_REDIRECT_URI`
 - Bot/API tokens:
   - `DISCORD_BOT_TOKEN`
   - `SLACK_BOT_TOKEN`
   - `NOTION_TOKEN`
+  - `STEAM_API_KEY`
+  - `NASA_API_KEY`
+  - `TRELLO_API_KEY`
+  - `TRELLO_TOKEN`
 
 ### Run locally (without Docker)
 ```bash
@@ -210,7 +216,7 @@ npm run dev          # http://localhost:5173
 
 ## 📱 Mobile (Flutter)
 
-`frontend/mobile`: the `client_mobile` service in Docker Compose builds a release APK and copies it into the web container (`/usr/share/nginx/html/apk/client.apk`).
+`frontend/mobile/kikonect`: the `client_mobile` service in Docker Compose builds a release APK and copies it into the web container (`/usr/share/nginx/html/apk/client.apk`).
 
 ## 🔧 Useful Commands
 
