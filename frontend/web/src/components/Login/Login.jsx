@@ -119,7 +119,7 @@ export default function Login() {
                          * Attaches user_id when available to link accounts.
                          */
                         const id = userId || Number(localStorage.getItem("user_id"));
-                        const uiRedirect = encodeURIComponent("http://localhost:8081/home");
+                        const uiRedirect = encodeURIComponent(`${window.location.origin}/home`);
                         const baseUrl = `${API_BASE}/oauth/google/login?ui_redirect=${uiRedirect}`;
                         const url =
                             id && id > 0
@@ -133,7 +133,7 @@ export default function Login() {
                          * Same OAuth flow as Google, but for GitHub.
                          */
                         const id = userId || Number(localStorage.getItem("user_id"));
-                        const uiRedirect = encodeURIComponent("http://localhost:8081/home");
+                        const uiRedirect = encodeURIComponent(`${window.location.origin}/home`);
                         const baseUrl = `${API_BASE}/oauth/github/login?ui_redirect=${uiRedirect}`;
                         const url =
                             id && id > 0
