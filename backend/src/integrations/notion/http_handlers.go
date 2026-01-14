@@ -39,14 +39,11 @@ func (h *HTTPHandlers) Page() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON payload"})
 			return
 		}
-		if strings.TrimSpace(p.ParentPageID) == "" || strings.TrimSpace(p.Title) == "" {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "parent_page_id and title are required"})
+		if strings.TrimSpace(p.ParentPageID) == "" || strings.TrimSpace(p.Title) == "" || strings.TrimSpace(p.BotToken) == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "parent_page_id, title and bot_token are required"})
 			return
 		}
-		client := h.client
-		if strings.TrimSpace(p.BotToken) != "" {
-			client = NewClientWithToken(p.BotToken)
-		}
+		client := NewClientWithToken(p.BotToken)
 		if err := client.CreatePage(r.Context(), p.ParentPageID, p.Title, p.Content, p.Blocks); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
@@ -73,14 +70,11 @@ func (h *HTTPHandlers) AppendBlocks() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON payload"})
 			return
 		}
-		if strings.TrimSpace(p.BlockID) == "" || len(p.Blocks) == 0 {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "block_id and blocks are required"})
+		if strings.TrimSpace(p.BlockID) == "" || len(p.Blocks) == 0 || strings.TrimSpace(p.BotToken) == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "block_id, blocks and bot_token are required"})
 			return
 		}
-		client := h.client
-		if strings.TrimSpace(p.BotToken) != "" {
-			client = NewClientWithToken(p.BotToken)
-		}
+		client := NewClientWithToken(p.BotToken)
 		if err := client.AppendBlocks(r.Context(), p.BlockID, p.Blocks); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
@@ -108,14 +102,11 @@ func (h *HTTPHandlers) Database() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON payload"})
 			return
 		}
-		if strings.TrimSpace(p.DatabaseID) == "" || len(p.Properties) == 0 {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "database_id and properties are required"})
+		if strings.TrimSpace(p.DatabaseID) == "" || len(p.Properties) == 0 || strings.TrimSpace(p.BotToken) == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "database_id, properties and bot_token are required"})
 			return
 		}
-		client := h.client
-		if strings.TrimSpace(p.BotToken) != "" {
-			client = NewClientWithToken(p.BotToken)
-		}
+		client := NewClientWithToken(p.BotToken)
 		if err := client.CreateDatabaseRow(r.Context(), p.DatabaseID, p.Properties, p.Children); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
@@ -142,14 +133,11 @@ func (h *HTTPHandlers) UpdatePage() http.Handler {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON payload"})
 			return
 		}
-		if strings.TrimSpace(p.PageID) == "" || len(p.Properties) == 0 {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "page_id and properties are required"})
+		if strings.TrimSpace(p.PageID) == "" || len(p.Properties) == 0 || strings.TrimSpace(p.BotToken) == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "page_id, properties and bot_token are required"})
 			return
 		}
-		client := h.client
-		if strings.TrimSpace(p.BotToken) != "" {
-			client = NewClientWithToken(p.BotToken)
-		}
+		client := NewClientWithToken(p.BotToken)
 		if err := client.UpdatePage(r.Context(), p.PageID, p.Properties); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
