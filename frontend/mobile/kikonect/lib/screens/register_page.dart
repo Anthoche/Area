@@ -155,6 +155,14 @@ class _RegisterPageState extends State<RegisterPage> {
                         );
                         return;
                       }
+                      if (!isValidPassword(passwordController.text)) {
+                        showErrorDialog(
+                          context,
+                          "Password must be at least 8 characters, include a number and a special character.",
+                          buttonColor: colorScheme.primary,
+                        );
+                        return;
+                      }
                       if (!passwordMatch()) {
                         showErrorDialog(context, "Passwords do not match",
                             buttonColor: colorScheme.primary);
