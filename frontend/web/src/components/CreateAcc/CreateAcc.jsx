@@ -93,12 +93,15 @@ export default function CreateAcc() {
                 <form onSubmit={handleSubmit} className="reg-form">
                     <div className="floating-input">
                         <input
+                            id="createacc-email"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            autoComplete="email"
+                            placeholder="Email"
                             required
                         />
-                        <label className={email ? "filled" : ""}>Email</label>
+                        <label htmlFor="createacc-email" className="sr-only">Email</label>
                     </div>
 
                     <button type="submit" className="reg-btn">

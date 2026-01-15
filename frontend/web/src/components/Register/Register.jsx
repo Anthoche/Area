@@ -36,8 +36,8 @@ export default function Register() {
     const [password, setPassword] = useState("");
     const [confirm, setConfirm] = useState("");
     const [formError, setFormError] = useState("");
-        const [showPassword, setShowPassword] = React.useState(false);
-            const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+    const [showPassword, setShowPassword] = React.useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
 
     useEffect(() => {
@@ -139,46 +139,59 @@ export default function Register() {
                 <form onSubmit={handleSubmit} className="reg-form">
                     <div className="floating-input">
                         <input
+                            id="register-firstname"
                             type="text"
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
+                            autoComplete="given-name"
+                            placeholder="First Name"
                             required
                         />
-                        <label className={firstName ? "filled" : ""}>First Name</label>
+                        <label htmlFor="register-firstname" className="sr-only">First Name</label>
                     </div>
                     <div className="floating-input">
                         <input
+                            id="register-lastname"
                             type="text"
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
+                            autoComplete="family-name"
+                            placeholder="Last Name"
                             required
                         />
-                        <label className={lastName ? "filled" : ""}>Last Name</label>
+                        <label htmlFor="register-lastname" className="sr-only">Last Name</label>
                     </div>
                     <div className="floating-input">
                         <input
+                            id="register-email"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            autoComplete="email"
+                            placeholder="Email"
                             required
                         />
-                        <label className={email ? "filled" : ""}>Email</label>
+                        <label htmlFor="register-email" className="sr-only">Email</label>
                     </div>
                     <div className="floating-input password-wrapper">
                         <input
+                            id="register-password"
                             type={showPassword ? "text" :"password"}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            autoComplete="new-password"
+                            placeholder="Password"
                             required
                         />
-                        <label className={password ? "filled" : ""}>
+                        <label htmlFor="register-password" className="sr-only">
                             Password
                         </label>
                         <button
                             type="button"
                             className="toggle-password"
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                            aria-pressed={showPassword}
                             onClick={() => setShowPassword(!showPassword)}
-                            tabIndex={-1}
                         >
                             <img
                                 src={showPassword ? eyeClosed : eyeOpen}
@@ -189,19 +202,23 @@ export default function Register() {
                     </div>
                     <div className="floating-input password-wrapper">
                         <input
+                            id="register-confirm-password"
                             type={showConfirmPassword ? "text" :"password"}
                             value={confirm}
                             onChange={(e) => setConfirm(e.target.value)}
+                            autoComplete="new-password"
+                            placeholder="Confirm Password"
                             required
                         />
-                        <label className={confirm ? "filled" : ""}>
+                        <label htmlFor="register-confirm-password" className="sr-only">
                             Confirm Password
                         </label>
                         <button
                             type="button"
                             className="toggle-password"
+                            aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                            aria-pressed={showConfirmPassword}
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            tabIndex={-1}
                         >
                             <img
                                 src={showConfirmPassword ? eyeClosed : eyeOpen}

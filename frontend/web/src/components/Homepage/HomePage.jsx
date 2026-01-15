@@ -104,10 +104,21 @@ export default function HomePage() {
     // Redirect to /login if not logged in
     useEffect(() => {
         const userId = Number(localStorage.getItem("user_id"));
-        if (location.pathname === "/home" && (!Number.isFinite(userId) || userId <= 0)) {
+        const params = new URLSearchParams(location.search);
+        const hasOauthParams =
+            params.has("token_id") ||
+            params.has("user_id") ||
+            params.has("google_email") ||
+            params.has("github_login") ||
+            params.has("github_email");
+        if (
+            location.pathname === "/home" &&
+            !hasOauthParams &&
+            (!Number.isFinite(userId) || userId <= 0)
+        ) {
             navigate("/login", { replace: true });
         }
-    }, [navigate, location.pathname]);
+    }, [navigate, location.pathname, location.search]);
 
     // On component mount, check for OAuth tokens in URL and fetch areas/workflows
     useEffect(() => {
@@ -148,7 +159,7 @@ export default function HomePage() {
         syncOauthStatus(userIdFromQuery || localStorage.getItem("user_id"));
         fetchAreas().then(() => {
             const userId = Number(localStorage.getItem("user_id"));
-            if (!Number.isFinite(userId) || userId > 0) {
+            if (Number.isFinite(userId) && userId > 0) {
                 fetchWorkflows();
             }
         });
@@ -636,6 +647,7 @@ export default function HomePage() {
                     </div>
                 </div>
                 <div className="konects-filter home-page-section">
+                    <h2 className="sr-only">Filters</h2>
                     <div className="filter-section">
                         <h3 className="filter-title">Type</h3>
                         <ul className="filter-buttons">

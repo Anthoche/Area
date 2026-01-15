@@ -69,9 +69,9 @@
     top: 50%;
     left: 12px;
     transform: translateY(-50%);
-    background: white;
+    background: var(--bg-color);
     padding: 0 4px;
-    color: #777;
+    color: var(--text-secondary);
     transition: 0.2s ease;
     pointer-events: none;
     font-size: 14px;
@@ -81,7 +81,7 @@
 .floating-input label.filled {
     top: -8px;
     font-size: 12px;
-    color: #5a2bb3;
+    color: var(--text-primary);
 }
 
 .reg-btn {

@@ -38,31 +38,38 @@ export default function LoginForm({
         <form onSubmit={handleSubmit}>
             <div className="floating-input">
                 <input
+                    id="login-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    placeholder="Email"
                     required
                 />
-                <label className={email ? "filled" : ""}>
+                <label htmlFor="login-email" className="sr-only">
                     Email
                 </label>
             </div>
 
             <div className="floating-input password-wrapper">
                 <input
+                    id="login-password"
                     type={showPassword ? "text" :"password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    placeholder="Password"
                     required
                 />
-                <label className={password ? "filled" : ""}>
+                <label htmlFor="login-password" className="sr-only">
                     Password
                 </label>
                 <button
                     type="button"
                     className="toggle-password"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
                     onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
                 >
                     <img
                         src={showPassword ? eyeClosed : eyeOpen}
