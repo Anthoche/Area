@@ -9,6 +9,7 @@
  */
 
 import React, {useEffect, useMemo, useState} from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../Navbar.jsx";
 import Footer from "../Footer.jsx";
 import FilterTag from "./FilterTag.jsx";
@@ -22,6 +23,7 @@ const API_BASE =
     `${window.location.protocol}//${window.location.hostname}:8080`;
 
 export default function HomePage() {
+    const navigate = useNavigate();
     const [workflows, setWorkflows] = useState([]);
     const [areas, setAreas] = useState([]);
     const [triggers, setTriggers] = useState([]);
@@ -98,6 +100,14 @@ export default function HomePage() {
         );
     };
 
+    // Redirect to /login if not logged in
+    useEffect(() => {
+        const userId = Number(localStorage.getItem("user_id"));
+        if (!Number.isFinite(userId) || userId <= 0) {
+            navigate("/login", { replace: true });
+        }
+    }, [navigate]);
+    
     // On component mount, check for OAuth tokens in URL and fetch areas/workflows
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -135,7 +145,12 @@ export default function HomePage() {
         }
         window.dispatchEvent(new Event("auth-updated"));
         syncOauthStatus(userIdFromQuery || localStorage.getItem("user_id"));
-        fetchAreas().then(() => fetchWorkflows());
+        fetchAreas().then(() => {
+            const userId = Number(localStorage.getItem("user_id"));
+            if (!Number.isFinite(userId) || userId > 0) {
+                fetchWorkflows();
+            }
+        });
     }, []);
 
     // Update payload preview when selected workflow or form changes
