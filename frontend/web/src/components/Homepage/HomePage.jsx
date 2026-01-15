@@ -9,7 +9,7 @@
  */
 
 import React, {useEffect, useMemo, useState} from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../Navbar.jsx";
 import Footer from "../Footer.jsx";
 import FilterTag from "./FilterTag.jsx";
@@ -24,6 +24,7 @@ const API_BASE =
 
 export default function HomePage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [workflows, setWorkflows] = useState([]);
     const [areas, setAreas] = useState([]);
     const [triggers, setTriggers] = useState([]);
@@ -103,11 +104,11 @@ export default function HomePage() {
     // Redirect to /login if not logged in
     useEffect(() => {
         const userId = Number(localStorage.getItem("user_id"));
-        if (!Number.isFinite(userId) || userId <= 0) {
+        if (location.pathname === "/home" && (!Number.isFinite(userId) || userId <= 0)) {
             navigate("/login", { replace: true });
         }
-    }, [navigate]);
-    
+    }, [navigate, location.pathname]);
+
     // On component mount, check for OAuth tokens in URL and fetch areas/workflows
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
