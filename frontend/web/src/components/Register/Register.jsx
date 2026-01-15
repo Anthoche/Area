@@ -190,11 +190,11 @@ export default function Register() {
                     <div className="floating-input password-wrapper">
                         <input
                             type={showConfirmPassword ? "text" :"password"}
-                            value={password}
+                            value={confirm}
                             onChange={(e) => setConfirm(e.target.value)}
                             required
                         />
-                        <label className={password ? "filled" : ""}>
+                        <label className={confirm ? "filled" : ""}>
                             Confirm Password
                         </label>
                         <button
@@ -210,6 +210,9 @@ export default function Register() {
                             />
                         </button>
                     </div>
+                    <button type="submit" className="reg-btn">
+                        Register
+                    </button>
                 </form>
             </div>
         </div>
