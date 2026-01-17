@@ -242,6 +242,15 @@ The KiKoNect web app is your main interface for building, managing, and monitori
 
 Just connect, configure, and automate!
 
+### Testing with Cypress
+- Simply run the following command:
+   ```bash
+   npm run test
+   ```
+- Select your browser (Prefer "Electron")
+- In the newly opened window, select the test suite (Spec) for either the App page or the welcome page
+- That's it!
+
 ## 📱 Mobile (Flutter)
 
 `frontend/mobile/kikonect`: the `client_mobile` service in Docker Compose builds a release APK and copies it into the web container (`/usr/share/nginx/html/apk/client.apk`).
