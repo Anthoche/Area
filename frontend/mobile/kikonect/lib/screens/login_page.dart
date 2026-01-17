@@ -3,10 +3,10 @@ import 'dart:convert';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../services/app_config.dart';
 import '../services/oauth_service.dart';
 import '../utils/ui_feedback.dart';
 import '../utils/validators.dart';
@@ -159,7 +159,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _loginUser() async {
-    final url = Uri.parse("${dotenv.env['API_URL']}/login");
+    final url = Uri.parse("${AppConfig.baseUrl}/login");
 
     try {
       final res = await http.post(url,
@@ -206,7 +206,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: Center(
         child: SizedBox(

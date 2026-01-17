@@ -5,10 +5,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
+import 'app_config.dart';
+
 /// Handles OAuth login flows through the backend.
 class OAuthService {
-  static String get _backendBaseUrl =>
-      dotenv.env['API_URL'] ?? 'http://10.0.2.2:8080';
+  static String get _backendBaseUrl => AppConfig.baseUrl;
 
   static String get _redirectUri => dotenv.env['REDIRECT_URI'] ?? 'test';
   final _storage = const FlutterSecureStorage();

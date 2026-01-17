@@ -1,16 +1,14 @@
 import 'dart:convert';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import 'app_config.dart';
+
 /// Wraps calls to the backend API.
 class ApiService {
-  static final String _baseUrl =
-      dotenv.env['API_URL'] ?? 'http://10.0.2.2:8080';
-
   /// Returns the backend base URL.
-  static String get baseUrl => _baseUrl;
+  static String get baseUrl => AppConfig.baseUrl;
   final _storage = const FlutterSecureStorage();
 
   Future<Map<String, String>> _getHeaders() async {
@@ -25,7 +23,7 @@ class ApiService {
 
   /// Fetches the list of available services with their triggers and actions.
   Future<List<dynamic>> getServices() async {
-    final url = Uri.parse('$_baseUrl/areas');
+    final url = Uri.parse('${AppConfig.baseUrl}/areas');
     final headers = await _getHeaders();
 
     final response = await http.get(url, headers: headers);
@@ -56,7 +54,7 @@ class ApiService {
       throw Exception('Missing user id. Please login again.');
     }
 
-    final url = Uri.parse('$_baseUrl/workflows');
+    final url = Uri.parse('${AppConfig.baseUrl}/workflows');
     final headers = await _getHeaders();
 
     final response = await http.get(url, headers: headers);
@@ -75,7 +73,7 @@ class ApiService {
 
   /// Sends the created area configuration to the backend.
   Future<void> createArea(Map<String, dynamic> areaData) async {
-    final url = Uri.parse('$_baseUrl/workflows');
+    final url = Uri.parse('${AppConfig.baseUrl}/workflows');
     final headers = await _getHeaders();
 
     final response = await http.post(
@@ -93,7 +91,8 @@ class ApiService {
   /// Triggers a manual workflow run.
   Future<void> triggerWorkflow(
       int workflowId, Map<String, dynamic> payload) async {
-    final url = Uri.parse('$_baseUrl/workflows/$workflowId/trigger');
+    final url =
+        Uri.parse('${AppConfig.baseUrl}/workflows/$workflowId/trigger');
     final headers = await _getHeaders();
 
     final response = await http.post(
@@ -112,7 +111,7 @@ class ApiService {
   Future<void> setWorkflowEnabled(int workflowId, bool enabled) async {
     final action = enabled ? 'enable' : 'disable';
     final url =
-        Uri.parse('$_baseUrl/workflows/$workflowId/enabled?action=$action');
+        Uri.parse('${AppConfig.baseUrl}/workflows/$workflowId/enabled?action=$action');
     final headers = await _getHeaders();
 
     final response = await http.post(url, headers: headers);
@@ -124,7 +123,7 @@ class ApiService {
 
   /// Deletes a workflow.
   Future<void> deleteWorkflow(int workflowId) async {
-    final url = Uri.parse('$_baseUrl/workflows/$workflowId');
+    final url = Uri.parse('${AppConfig.baseUrl}/workflows/$workflowId');
     final headers = await _getHeaders();
 
     final response = await http.delete(url, headers: headers);
