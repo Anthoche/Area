@@ -208,6 +208,15 @@ npm run dev          # http://localhost:5173
 - Routes: `/` (login), `/register`.
 - Production: `npm run build` (served by nginx in docker-compose).
 
+### Testing with Cypress
+- Simply run the following command:
+   ```bash
+   npm run test
+   ```
+- Select your browser (Prefer "Electron")
+- In the newly opened window, select the test suite (Spec) for either the App page or the welcome page
+- That's it!
+
 ## 📱 Mobile (Flutter)
 
 `frontend/mobile`: the `client_mobile` service in Docker Compose builds a release APK and copies it into the web container (`/usr/share/nginx/html/apk/client.apk`).
