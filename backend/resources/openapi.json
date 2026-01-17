@@ -458,6 +458,66 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "Existing user id to attach the OAuth token",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to Google OAuth consent page"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth/google/mobile/login": {
+      "get": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "Google OAuth login (mobile)",
+        "description": "Initiate Google OAuth login flow for mobile clients",
+        "parameters": [
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "description": "OAuth redirect URI",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ui_redirect",
+            "in": "query",
+            "description": "UI redirect URL after OAuth completion",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "Existing user id to attach the OAuth token",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
           }
         ],
         "responses": {
@@ -548,17 +608,88 @@
         }
       }
     },
+    "/oauth/google/mobile/callback": {
+      "get": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "Google OAuth callback (mobile)",
+        "description": "Handle Google OAuth callback for mobile clients",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "description": "Authorization code from Google",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "description": "OAuth state parameter",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "description": "OAuth redirect URI",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OAuth callback processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token_id": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "email": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Redirect to UI application"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/oauth/google/exchange": {
       "post": {
         "tags": [
           "OAuth"
         ],
         "summary": "Exchange Google OAuth code",
-        "description": "Exchange Google OAuth authorization code for user data",
+        "description": "Exchange Google OAuth authorization code for token metadata",
         "requestBody": {
           "required": true,
           "content": {
-            "application/x-www-form-urlencoded": {
+            "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
@@ -569,27 +700,86 @@
                   "state": {
                     "type": "string",
                     "description": "OAuth state parameter"
+                  },
+                  "redirect_uri": {
+                    "type": "string",
+                    "description": "OAuth redirect URI"
                   }
                 },
                 "required": [
-                  "code",
-                  "state"
+                  "code"
                 ]
               }
             }
           }
         },
         "responses": {
-          "202": {
+          "200": {
             "description": "Code exchange successful",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
-                      "type": "string",
-                      "description": "User data from Google"
+                    "token_id": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "user_id": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "email": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth/google/start": {
+      "get": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "Google OAuth start",
+        "description": "Return an auth URL and state for Google OAuth",
+        "parameters": [
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "description": "OAuth redirect URI",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Auth URL response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "auth_url": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "type": "string"
                     }
                   }
                 }
@@ -986,6 +1176,33 @@
           "OAuth"
         ],
         "summary": "GitHub OAuth login",
+        "parameters": [
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "description": "OAuth redirect URI",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ui_redirect",
+            "in": "query",
+            "description": "UI redirect URL after OAuth completion",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "Existing user id to attach the OAuth token",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
         "responses": {
           "302": {
             "description": "Redirect to GitHub"
@@ -1002,6 +1219,115 @@
         "responses": {
           "200": {
             "description": "OAuth result"
+          }
+        }
+      }
+    },
+    "/oauth/github/mobile/login": {
+      "get": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "GitHub OAuth login (mobile)",
+        "parameters": [
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "description": "OAuth redirect URI",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ui_redirect",
+            "in": "query",
+            "description": "UI redirect URL after OAuth completion",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "Existing user id to attach the OAuth token",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to GitHub"
+          }
+        }
+      }
+    },
+    "/oauth/github/mobile/callback": {
+      "get": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "GitHub OAuth callback (mobile)",
+        "responses": {
+          "200": {
+            "description": "OAuth result"
+          }
+        }
+      }
+    },
+    "/oauth/status": {
+      "get": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "OAuth token status",
+        "description": "Return the latest token ids for a user",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OAuth status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "google_token_id": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "github_token_id": {
+                      "type": "integer",
+                      "format": "int64"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1522,6 +1848,93 @@
         }
       }
     },
+    "/actions/trello/card": {
+      "post": {
+        "tags": [
+          "Trello Actions"
+        ],
+        "summary": "Create Trello card",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/trello/card/move": {
+      "post": {
+        "tags": [
+          "Trello Actions"
+        ],
+        "summary": "Move Trello card",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Moved"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/actions/trello/list": {
+      "post": {
+        "tags": [
+          "Trello Actions"
+        ],
+        "summary": "Create Trello list",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Invalid"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
     "/resources/openapi.json": {
       "get": {
         "tags": [
@@ -1624,7 +2037,25 @@
             "enum": [
               "manual",
               "webhook",
-              "interval"
+              "interval",
+              "gmail_inbound",
+              "github_commit",
+              "github_pull_request",
+              "github_issue",
+              "weather_temp",
+              "weather_report",
+              "reddit_new_post",
+              "youtube_new_video",
+              "air_quality_aqi_threshold",
+              "air_quality_pm25_threshold",
+              "crypto_price_threshold",
+              "crypto_percent_change",
+              "nasa_apod",
+              "nasa_mars_photo",
+              "nasa_neo_close_approach",
+              "steam_player_online",
+              "steam_game_sale",
+              "steam_price_change"
             ],
             "example": "manual"
           },
@@ -1665,7 +2096,25 @@
             "enum": [
               "manual",
               "webhook",
-              "interval"
+              "interval",
+              "gmail_inbound",
+              "github_commit",
+              "github_pull_request",
+              "github_issue",
+              "weather_temp",
+              "weather_report",
+              "reddit_new_post",
+              "youtube_new_video",
+              "air_quality_aqi_threshold",
+              "air_quality_pm25_threshold",
+              "crypto_price_threshold",
+              "crypto_percent_change",
+              "nasa_apod",
+              "nasa_mars_photo",
+              "nasa_neo_close_approach",
+              "steam_player_online",
+              "steam_game_sale",
+              "steam_price_change"
             ],
             "example": "manual"
           },

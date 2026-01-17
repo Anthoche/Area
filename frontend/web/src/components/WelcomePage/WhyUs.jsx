@@ -1,11 +1,21 @@
-"use client";
+/**
+ * @file WhyUs.jsx
+ * @description
+ * Section highlighting platform trust and value proposition.
+ *
+ * Allows users to:
+ *  - Understand platform benefits
+ *  - Learn why the service is trusted
+ */
+
+import { useEffect, useRef, useState } from "react";
 import "./welcomepage.css";
 import "./hero-animations.css";
-import { useEffect, useRef, useState } from "react";
 
 export default function WhyUs() {
     const sectionRef = useRef(null);
     const [visible, setVisible] = useState(false);
+    // Observe section visibility for animations
     useEffect(() => {
         const observer = new window.IntersectionObserver(
             ([entry]) => setVisible(entry.isIntersecting),

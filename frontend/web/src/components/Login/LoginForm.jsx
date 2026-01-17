@@ -1,7 +1,20 @@
+/**
+ * @file LoginForm.jsx
+ * @description
+ * Login form UI for user authentication and OAuth options.
+ *
+ * Allows users to:
+ *  - Sign up using email
+ *  - Continue registration flow
+ *  - Authenticate using Google or GitHub OAuth
+ */
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import logoGoogle from "../../../lib/assets/G_logo.png";
 import logoGithub from "../../../lib/assets/github_logo.png";
+import eyeOpen from "../../../lib/assets/eye_open.png";
+import eyeClosed from "../../../lib/assets/eye_closed.png";
 
 export default function LoginForm({
     email,
@@ -19,30 +32,51 @@ export default function LoginForm({
         navigate("/createacc");
     };
 
+    const [showPassword, setShowPassword] = React.useState(false);
+
     return (
         <form onSubmit={handleSubmit}>
             <div className="floating-input">
                 <input
+                    id="login-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    placeholder="Email"
                     required
                 />
-                <label className={email ? "filled" : ""}>
+                <label htmlFor="login-email" className="sr-only">
                     Email
                 </label>
             </div>
 
-            <div className="floating-input">
+            <div className="floating-input password-wrapper">
                 <input
-                    type="password"
+                    id="login-password"
+                    type={showPassword ? "text" :"password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    placeholder="Password"
                     required
                 />
-                <label className={password ? "filled" : ""}>
+                <label htmlFor="login-password" className="sr-only">
                     Password
                 </label>
+                <button
+                    type="button"
+                    className="toggle-password"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword(!showPassword)}
+                >
+                    <img
+                        src={showPassword ? eyeClosed : eyeOpen}
+                        alt={showPassword ? "Hide password" : "Show password"}
+                        className="eye-img"
+                    />
+                </button>
             </div>
 
             <div className="forgot-row">

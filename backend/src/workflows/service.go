@@ -105,6 +105,85 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 		if err != nil || (strings.TrimSpace(cfg.ChannelID) == "" && strings.TrimSpace(cfg.Channel) == "") {
 			return nil, errors.New("youtube_new_video requires channel")
 		}
+	case "steam_player_online":
+		cfg, err := steamPlayerOnlineConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.SteamID) == "" {
+			return nil, errors.New("steam_player_online requires steam_id")
+		}
+	case "steam_game_sale":
+		cfg, err := steamGameSaleConfigFromJSON(triggerConfig)
+		if err != nil || cfg.AppID <= 0 {
+			return nil, errors.New("steam_game_sale requires app_id")
+		}
+	case "steam_price_change":
+		cfg, err := steamPriceChangeConfigFromJSON(triggerConfig)
+		if err != nil || cfg.AppID <= 0 {
+			return nil, errors.New("steam_price_change requires app_id")
+		}
+	case "crypto_price_threshold":
+		cfg, err := cryptoPriceThresholdConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.CoinID) == "" || cfg.Threshold == 0 || cfg.Direction == "" {
+			return nil, errors.New("crypto_price_threshold requires coin_id, threshold and direction")
+		}
+		switch strings.ToLower(cfg.Direction) {
+		case "above", "below":
+		default:
+			return nil, errors.New("crypto_price_threshold direction must be above or below")
+		}
+	case "crypto_percent_change":
+		cfg, err := cryptoPercentChangeConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.CoinID) == "" || cfg.Percent == 0 || cfg.Period == "" {
+			return nil, errors.New("crypto_percent_change requires coin_id, percent and period")
+		}
+		switch strings.ToLower(cfg.Period) {
+		case "1h", "24h":
+		default:
+			return nil, errors.New("crypto_percent_change period must be 1h or 24h")
+		}
+		switch strings.ToLower(strings.TrimSpace(cfg.Direction)) {
+		case "", "any", "above", "below":
+		default:
+			return nil, errors.New("crypto_percent_change direction must be above, below, or any")
+		}
+	case "nasa_apod":
+		if _, err := nasaApodConfigFromJSON(triggerConfig); err != nil {
+			return nil, errors.New("nasa_apod config is invalid")
+		}
+	case "nasa_mars_photo":
+		cfg, err := nasaMarsPhotoConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.Rover) == "" {
+			return nil, errors.New("nasa_mars_photo requires rover")
+		}
+	case "nasa_neo_close_approach":
+		cfg, err := nasaNeoConfigFromJSON(triggerConfig)
+		if err != nil || cfg.ThresholdKM <= 0 {
+			return nil, errors.New("nasa_neo_close_approach requires threshold_km")
+		}
+	case "air_quality_aqi_threshold":
+		cfg, err := airQualityAQIConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.City) == "" || cfg.Threshold == 0 || cfg.Direction == "" {
+			return nil, errors.New("air_quality_aqi_threshold requires city, threshold and direction")
+		}
+		switch strings.ToLower(cfg.Direction) {
+		case "above", "below":
+		default:
+			return nil, errors.New("air_quality_aqi_threshold direction must be above or below")
+		}
+		switch strings.ToLower(cfg.Index) {
+		case "", "us_aqi", "european_aqi":
+		default:
+			return nil, errors.New("air_quality_aqi_threshold index must be us_aqi or european_aqi")
+		}
+	case "air_quality_pm25_threshold":
+		cfg, err := airQualityPM25ConfigFromJSON(triggerConfig)
+		if err != nil || strings.TrimSpace(cfg.City) == "" || cfg.Threshold == 0 || cfg.Direction == "" {
+			return nil, errors.New("air_quality_pm25_threshold requires city, threshold and direction")
+		}
+		switch strings.ToLower(cfg.Direction) {
+		case "above", "below":
+		default:
+			return nil, errors.New("air_quality_pm25_threshold direction must be above or below")
+		}
 	default:
 		return nil, fmt.Errorf("unsupported trigger_type %s", triggerType)
 	}
@@ -112,6 +191,7 @@ func (s *Service) CreateWorkflow(ctx context.Context, name, triggerType, actionU
 	if err != nil {
 		return nil, err
 	}
+	triggerConfig = encryptTriggerConfig(triggerConfig)
 	return s.Store.CreateWorkflow(ctx, userID, name, triggerType, actionURL, triggerConfig)
 }
 
@@ -213,6 +293,56 @@ func RedditNewPostConfigFromJSON(raw json.RawMessage) (RedditNewPostConfig, erro
 // YouTubeNewVideoConfigFromJSON exposes parsing for youtube_new_video trigger config.
 func YouTubeNewVideoConfigFromJSON(raw json.RawMessage) (YouTubeNewVideoConfig, error) {
 	return youtubeNewVideoConfigFromJSON(raw)
+}
+
+// SteamPlayerOnlineConfigFromJSON exposes parsing for steam_player_online trigger config.
+func SteamPlayerOnlineConfigFromJSON(raw json.RawMessage) (SteamPlayerOnlineConfig, error) {
+	return steamPlayerOnlineConfigFromJSON(raw)
+}
+
+// SteamGameSaleConfigFromJSON exposes parsing for steam_game_sale trigger config.
+func SteamGameSaleConfigFromJSON(raw json.RawMessage) (SteamGameSaleConfig, error) {
+	return steamGameSaleConfigFromJSON(raw)
+}
+
+// SteamPriceChangeConfigFromJSON exposes parsing for steam_price_change trigger config.
+func SteamPriceChangeConfigFromJSON(raw json.RawMessage) (SteamPriceChangeConfig, error) {
+	return steamPriceChangeConfigFromJSON(raw)
+}
+
+// CryptoPriceThresholdConfigFromJSON exposes parsing for crypto_price_threshold trigger config.
+func CryptoPriceThresholdConfigFromJSON(raw json.RawMessage) (CryptoPriceThresholdConfig, error) {
+	return cryptoPriceThresholdConfigFromJSON(raw)
+}
+
+// CryptoPercentChangeConfigFromJSON exposes parsing for crypto_percent_change trigger config.
+func CryptoPercentChangeConfigFromJSON(raw json.RawMessage) (CryptoPercentChangeConfig, error) {
+	return cryptoPercentChangeConfigFromJSON(raw)
+}
+
+// NasaApodConfigFromJSON exposes parsing for nasa_apod trigger config.
+func NasaApodConfigFromJSON(raw json.RawMessage) (NasaApodConfig, error) {
+	return nasaApodConfigFromJSON(raw)
+}
+
+// NasaMarsPhotoConfigFromJSON exposes parsing for nasa_mars_photo trigger config.
+func NasaMarsPhotoConfigFromJSON(raw json.RawMessage) (NasaMarsPhotoConfig, error) {
+	return nasaMarsPhotoConfigFromJSON(raw)
+}
+
+// NasaNeoConfigFromJSON exposes parsing for nasa_neo_close_approach trigger config.
+func NasaNeoConfigFromJSON(raw json.RawMessage) (NasaNeoConfig, error) {
+	return nasaNeoConfigFromJSON(raw)
+}
+
+// AirQualityAQIConfigFromJSON exposes parsing for air_quality_aqi_threshold trigger config.
+func AirQualityAQIConfigFromJSON(raw json.RawMessage) (AirQualityAQIConfig, error) {
+	return airQualityAQIConfigFromJSON(raw)
+}
+
+// AirQualityPM25ConfigFromJSON exposes parsing for air_quality_pm25_threshold trigger config.
+func AirQualityPM25ConfigFromJSON(raw json.RawMessage) (AirQualityPM25Config, error) {
+	return airQualityPM25ConfigFromJSON(raw)
 }
 
 type ctxUserIDKey struct{}

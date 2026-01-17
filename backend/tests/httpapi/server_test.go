@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"area/src/auth"
+	"area/src/database"
 	"area/src/httpapi"
 	"bytes"
 	"encoding/json"
@@ -10,6 +11,10 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func TestEnsureNoTrailingData_OK(t *testing.T) {
@@ -90,12 +95,12 @@ func TestRegister_MissingFields(t *testing.T) {
 
 func TestAbout_OK(t *testing.T) {
 	envs := map[string]string{
-		"GOOGLE_OAUTH_CLIENT_ID":     "x",
-		"GOOGLE_OAUTH_CLIENT_SECRET": "x",
-		"GOOGLE_OAUTH_REDIRECT_URI":  "http://localhost/callback",
-		"GITHUB_OAUTH_CLIENT_ID":     "x",
-		"GITHUB_OAUTH_CLIENT_SECRET": "x",
-		"GITHUB_OAUTH_REDIRECT_URI":  "http://localhost/callback",
+		"GOOGLE_OAUTH_CLIENT_ID":            "x",
+		"GOOGLE_OAUTH_CLIENT_SECRET":        "x",
+		"GOOGLE_OAUTH_REDIRECT_URI":         "http://localhost/callback",
+		"GITHUB_OAUTH_CLIENT_ID":            "x",
+		"GITHUB_OAUTH_CLIENT_SECRET":        "x",
+		"GITHUB_OAUTH_REDIRECT_URI":         "http://localhost/callback",
 		"GITHUB_MOBILE_OAUTH_CLIENT_ID":     "x",
 		"GITHUB_MOBILE_OAUTH_CLIENT_SECRET": "x",
 		"GITHUB_MOBILE_OAUTH_REDIRECT_URI":  "http://localhost/callback",
@@ -118,6 +123,31 @@ func TestAbout_OK(t *testing.T) {
 			_ = os.Setenv(k, *v)
 		}
 	})
+
+	mockDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock.New: %v", err)
+	}
+	gormDB, err := gorm.Open(postgres.New(postgres.Config{
+		Conn: mockDB,
+	}), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("gorm.Open: %v", err)
+	}
+	originalDB := database.Db
+	database.SetDBForTesting(gormDB)
+	t.Cleanup(func() {
+		database.SetDBForTesting(originalDB)
+		mockDB.Close()
+	})
+
+	mock.ExpectQuery(`^SELECT \* FROM "area_services" ORDER BY .*id$`).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "enabled", "more_info", "oauth_scopes", "created_at", "updated_at"}).
+			AddRow("core", "Core", true, "", nil, nil, nil))
+	mock.ExpectQuery(`^SELECT \* FROM "area_capabilities" ORDER BY .*id$`).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "service_id", "kind", "name", "description", "action_url", "default_payload", "created_at", "updated_at"}))
+	mock.ExpectQuery(`^SELECT \* FROM "area_fields" ORDER BY .*id$`).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "service_id", "capability_id", "key", "type", "required", "description", "example", "created_at", "updated_at"}))
 
 	mux := httpapi.NewMux(nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/about.json", nil)
@@ -156,5 +186,9 @@ func TestAbout_OK(t *testing.T) {
 	}
 	if payload.Server.Services[0].Name == "" {
 		t.Fatalf("expected service name to be set")
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
 	}
 }

@@ -2,23 +2,55 @@ import 'package:flutter/material.dart';
 
 /// Centralized light/dark themes for the app.
 class AppTheme {
-  static const Color _seedColor = Color(0xFF7209B7);
-  static const Color _secondaryColor = Color(0xFF4CC9F0);
-  static const Color _tertiaryColor = Color(0xFFF72585);
+  static const Color _accentColor = Color(0xFF48179C);
+  static const Color _secondaryColor = Color(0xFF2563EB);
+  static const Color _tertiaryColor = Color(0xFF6A5CFF);
+
+  static const Color _lightBackground = Color(0xFFFFFFFF);
+  static const Color _lightSurface = Color(0xFFFFFFFF);
+  static const Color _lightSurfaceVariant = Color(0xFFF7FAFC);
+  static const Color _lightOutline = Color(0xFFEBE6E7);
+  static const Color _lightOnSurface = Color(0xFF111827);
+  static const Color _lightOnSurfaceVariant = Color(0xFF4A5565);
+
+  static const Color _darkBackground = Color(0xFF101828);
+  static const Color _darkSurface = Color(0xFF18233A);
+  static const Color _darkSurfaceVariant = Color(0xFF1F2A44);
+  static const Color _darkOutline = Color(0xFF575A6E);
+  static const Color _darkOnSurface = Color(0xFFFFFFFF);
+  static const Color _darkOnSurfaceVariant = Color(0xFFA9B4C5);
 
   static ThemeData light() {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: _seedColor,
-      primary: _seedColor,
-      secondary: _secondaryColor,
-      tertiary: _tertiaryColor,
+    final baseScheme = ColorScheme.fromSeed(
+      seedColor: _accentColor,
       brightness: Brightness.light,
+    );
+
+    final colorScheme = baseScheme.copyWith(
+      primary: _accentColor,
+      onPrimary: Colors.white,
+      primaryContainer: const Color(0xFFD9C7FF),
+      onPrimaryContainer: _accentColor,
+      secondary: _secondaryColor,
+      onSecondary: Colors.white,
+      secondaryContainer: const Color(0xFFEFF6FF),
+      onSecondaryContainer: _secondaryColor,
+      tertiary: _tertiaryColor,
+      onTertiary: Colors.white,
+      background: _lightBackground,
+      onBackground: _lightOnSurface,
+      surface: _lightSurface,
+      onSurface: _lightOnSurface,
+      surfaceVariant: _lightSurfaceVariant,
+      onSurfaceVariant: _lightOnSurfaceVariant,
+      outline: _lightOutline,
+      outlineVariant: _lightOutline,
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+      scaffoldBackgroundColor: colorScheme.background,
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
@@ -76,20 +108,29 @@ class AppTheme {
 
   static ThemeData dark() {
     final baseScheme = ColorScheme.fromSeed(
-      seedColor: _seedColor,
-      primary: const Color(0xFFB79CFF),
-      secondary: const Color(0xFF5FD3FF),
-      tertiary: const Color(0xFFFF7AB8),
+      seedColor: _accentColor,
       brightness: Brightness.dark,
     );
 
     final colorScheme = baseScheme.copyWith(
-      background: const Color(0xFF111216),
-      surface: const Color(0xFF191C22),
-      surfaceVariant: const Color(0xFF262A33),
-      outline: const Color(0xFF3E4450),
-      outlineVariant: const Color(0xFF2F343E),
-      error: const Color(0xFFFF6B6B),
+      primary: _accentColor,
+      onPrimary: Colors.white,
+      primaryContainer: const Color(0xFF3A1280),
+      onPrimaryContainer: Colors.white,
+      secondary: _secondaryColor,
+      onSecondary: Colors.white,
+      secondaryContainer: const Color(0xFF1D4ED8),
+      onSecondaryContainer: Colors.white,
+      tertiary: _tertiaryColor,
+      onTertiary: Colors.white,
+      background: _darkBackground,
+      onBackground: _darkOnSurface,
+      surface: _darkSurface,
+      onSurface: _darkOnSurface,
+      surfaceVariant: _darkSurfaceVariant,
+      onSurfaceVariant: _darkOnSurfaceVariant,
+      outline: _darkOutline,
+      outlineVariant: _darkOutline,
     );
 
     return ThemeData(

@@ -25,6 +25,11 @@ class FakeApiService extends ApiService {
   Future<List<dynamic>> getWorkflows() async {
     return workflows;
   }
+
+  @override
+  Future<List<dynamic>> getServices() async {
+    return [];
+  }
 }
 
 void main() {

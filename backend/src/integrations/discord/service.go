@@ -22,8 +22,13 @@ type Client struct {
 
 // NewClient builds a Discord API client.
 func NewClient() *Client {
+	return NewClientWithToken(os.Getenv("DISCORD_BOT_TOKEN"))
+}
+
+// NewClientWithToken builds a Discord API client with an explicit token.
+func NewClientWithToken(token string) *Client {
 	return &Client{
-		token:  strings.TrimSpace(os.Getenv("DISCORD_BOT_TOKEN")),
+		token:  strings.TrimSpace(token),
 		client: &http.Client{Timeout: 10 * time.Second},
 	}
 }

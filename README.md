@@ -26,9 +26,17 @@ The application offers the following functionalities (high level user flow):
 - ⚙️ Workflows: manual, webhook, interval, and polling-based triggers.
 - 🚀 Execution: executor drains pending jobs and POSTs payloads to targets.
 - 🌐 HTTP API with permissive CORS for the web app.
-- 🔌 Integrations: Google, GitHub, Discord, Slack, Notion, Weather, Reddit, YouTube.
+- 🔌 Integrations: Google, GitHub, Discord, Slack, Notion, Weather, Reddit, YouTube, Air Quality, Crypto, NASA, Steam, Trello.
 - 📖 Auto‑generated API docs at `/docs/` and service catalog at `/about.json`.
 - 📦 Docker Compose stack (Postgres + API + web + mobile build).
+
+## 📚 Wiki
+
+- Main wiki: https://github.com/Anthoche/Area/wiki
+- Areas catalog: https://github.com/Anthoche/Area/wiki/Areas
+- Comparative study: https://github.com/Anthoche/Area/wiki/Comparative-Study
+- Database schema: https://github.com/Anthoche/Area/wiki/Database-Schema
+- Interaction diagrams: https://github.com/Anthoche/Area/wiki/Interaction-Diagrams
 
 ## 🛠️ Stack
 
@@ -65,16 +73,17 @@ Area/
 │   │       ├── App.jsx
 │   │       └── components/
 │   │
-│   └── mobile/                 # Flutter project (android/ios/lib/...)
-│       ├── pubspec.yaml
-│       ├── lib/                # Contain all the app code
-│       │    ├── main.dart      # Entry point of the app
-│       │    ├── app.dart       # App-level configurations (themes, routes, ...)
-│       │    ├── assets/        # Images, fonts, and other static assets
-│       │    ├── screens/       # Different screens of the app
-│       │    └─── widgets/      # Reusable UI components
-│       ├── test/               # Unit tests for the Flutter
-│       └── android/
+│   └── mobile/
+│       └── kikonect/           # Flutter project (android/ios/lib/...)
+│           ├── pubspec.yaml
+│           ├── lib/            # Contain all the app code
+│           │    ├── main.dart  # Entry point of the app
+│           │    ├── app.dart   # App-level configurations (themes, routes, ...)
+│           │    ├── assets/    # Images, fonts, and other static assets
+│           │    ├── screens/   # Different screens of the app
+│           │    └─── widgets/  # Reusable UI components
+│           ├── test/           # Unit tests for the Flutter
+│           └── android/
 ├── Reports/
 │   ├── Defense/
 │   └── Meeting/
@@ -100,7 +109,7 @@ The project is composed of **four main components** deployed with `docker-compos
 - Handles OAuth initialization on the client (using a `json-init` flow that stores `state` in `localStorage` to avoid cross-port cookie issues).
 
 ### **Mobile (Flutter)**
-- Built by the `client_mobile` service in Docker Compose, generating an APK.
+- Built from `frontend/mobile/kikonect` by the `client_mobile` service in Docker Compose, generating an APK.
 
 ### Important Execution Notes
 - **OAuth**: backend validates callback URL and exchanges code→token; frontend stores OAuth `state` in `localStorage` and posts the `code` back to backend.
@@ -129,10 +138,15 @@ Env vars (see `backend/.env`):
 - OAuth:
   - `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`
   - `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET`, `GITHUB_OAUTH_REDIRECT_URI`
+  - `GITHUB_MOBILE_OAUTH_CLIENT_ID`, `GITHUB_MOBILE_OAUTH_CLIENT_SECRET`, `GITHUB_MOBILE_OAUTH_REDIRECT_URI`
 - Bot/API tokens:
   - `DISCORD_BOT_TOKEN`
   - `SLACK_BOT_TOKEN`
   - `NOTION_TOKEN`
+  - `STEAM_API_KEY`
+  - `NASA_API_KEY`
+  - `TRELLO_API_KEY`
+  - `TRELLO_TOKEN`
 
 ### Run locally (without Docker)
 ```bash
@@ -197,20 +211,49 @@ CI (GitHub Actions) runs `go build` + `go test` on push/PR.
 - Slack: `POST /actions/slack/message`, `/blocks`, `/message/update`, `/message/delete`, `/message/react`
 - Notion: `POST /actions/notion/page`, `/blocks`, `/database`, `/page/update`
 
-## 🌐 Frontend (React/Vite)
+## 🌐 Web (React+Vite)
+The KiKoNect web app is your main interface for building, managing, and monitoring automations (“Konects”) between your favorite services—all from your browser.
 
-```bash
-cd frontend/web
-npm install
-npm run dev          # http://localhost:5173
-```
-- API base URL: `VITE_API_URL` (fallback `http(s)://<host>:8080`).
-- Routes: `/` (login), `/register`.
-- Production: `npm run build` (served by nginx in docker-compose).
+### What the Web App Does
+- **Sign up and log in** securely with email, Google, or GitHub
+- **Connect your accounts** (Google, GitHub, Discord, Slack, Notion, and more)
+- **Browse and discover available automations** (“Konects”) and services
+- **Create new automations** by linking triggers (like “new email” or “new GitHub issue”) to actions (like “send Discord message”)
+- **Monitor your automations**: see status, last run, and any errors
+- **Edit or delete automations** at any time
+- **Mobile-friendly**: works on desktop and mobile browsers
+
+### How to Use the Web App
+1. **Start the backend and database** (see above or use Docker Compose)
+2. **Start the web app:**
+   ```bash
+   cd frontend/web
+   npm install
+   npm run dev
+   ```
+3. Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### What to Expect
+- **Welcome page**: Learn what KiKoNect can do and get started quickly
+- **Easy onboarding**: Guided steps to connect your accounts and set up your first automation
+- **Dashboard**: See all your automations at a glance, with clear status and controls
+- **Service catalog**: Explore all available integrations and what you can automate
+- **Responsive design**: Use KiKoNect comfortably on any device
+
+Just connect, configure, and automate!
+
+### Testing with Cypress
+- Simply run the following command:
+   ```bash
+   npm run test
+   ```
+- Select your browser (Prefer "Electron")
+- In the newly opened window, select the test suite (Spec) for either the App page or the welcome page
+- That's it!
 
 ## 📱 Mobile (Flutter)
 
-`frontend/mobile`: the `client_mobile` service in Docker Compose builds a release APK and copies it into the web container (`/usr/share/nginx/html/apk/client.apk`).
+`frontend/mobile/kikonect`: the `client_mobile` service in Docker Compose builds a release APK and copies it into the web container (`/usr/share/nginx/html/apk/client.apk`).
 
 ## 🔧 Useful Commands
 
@@ -224,11 +267,8 @@ npm run dev          # http://localhost:5173
 Contributions are welcome! Please follow these guidelines:
 
 - Read the `CONTRIBUTING.md` file for branch, test and PR rules.
-
 - Create a feature branch from `dev`: `git checkout -b feat/your-feature`.
-
 - Run tests and linters before submitting a PR:
-
 - Write clear PR descriptions and link any related issues.
 
 If you're adding a breaking change, please open an issue first to discuss the design.

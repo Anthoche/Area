@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,6 +15,8 @@ import (
 	"time"
 
 	"area/src/database"
+
+	"gorm.io/gorm"
 )
 
 // OAuthToken stores the access credentials we use to call Google APIs.
@@ -66,6 +69,15 @@ func (c *Client) ExchangeAndStore(ctx context.Context, code string, redirectURI 
 		return -1, 0, "", err
 	}
 	email, _ := c.fetchEmail(ctx, tokenResp.AccessToken)
+	if userID != nil {
+		if _, err := database.GetUserByID(*userID); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				userID = nil
+			} else {
+				return -1, 0, "", err
+			}
+		}
+	}
 	if userID == nil && email != "" {
 		if u, err := database.GetUserByEmail(email); err == nil {
 			id := int64(u.ID)

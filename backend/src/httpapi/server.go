@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/swaggest/swgui/v5emb"
+	"gorm.io/gorm"
 
 	"area/src/areas"
 	"area/src/auth"
@@ -22,6 +23,7 @@ import (
 	goog "area/src/integrations/google"
 	"area/src/integrations/notion"
 	"area/src/integrations/slack"
+	"area/src/integrations/trello"
 	"area/src/workflows"
 )
 
@@ -38,6 +40,7 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	discordHTTP := discord.NewHTTPHandlers(nil)
 	slackHTTP := slack.NewHTTPHandlers(nil)
 	notionHTTP := notion.NewHTTPHandlers(nil)
+	trelloHTTP := trello.NewHTTPHandlers(nil)
 	mux := http.NewServeMux()
 	mux.Handle("/login", server.Login())
 	mux.Handle("/register", server.Register())
@@ -52,6 +55,7 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/oauth/google/callback", googleHTTP.Callback())
 	mux.Handle("/oauth/google/mobile/login", googleHTTP.Login())
 	mux.Handle("/oauth/google/mobile/callback", googleHTTP.Callback())
+	mux.Handle("/oauth/status", server.oauthStatus())
 	mux.Handle("/oauth/github/login", githubHTTP.Login())
 	mux.Handle("/oauth/github/callback", githubHTTP.Callback())
 	mux.Handle("/oauth/github/mobile/login", githubMobileHTTP.LoginMobile())
@@ -74,6 +78,9 @@ func NewMux(authService *auth.Service, wfService *workflows.Service) http.Handle
 	mux.Handle("/actions/notion/blocks", notionHTTP.AppendBlocks())
 	mux.Handle("/actions/notion/database", notionHTTP.Database())
 	mux.Handle("/actions/notion/page/update", notionHTTP.UpdatePage())
+	mux.Handle("/actions/trello/card", trelloHTTP.CreateCard())
+	mux.Handle("/actions/trello/card/move", trelloHTTP.MoveCard())
+	mux.Handle("/actions/trello/list", trelloHTTP.CreateList())
 	mux.Handle("/about.json", server.about())
 	mux.Handle("/areas", server.listAreas())
 	mux.Handle("/resources/openapi.json", server.openAPISpec())
@@ -212,6 +219,45 @@ func (h *Handler) Register() http.Handler {
 	})
 }
 
+// oauthStatus returns the latest OAuth token ids for the user.
+func (h *Handler) oauthStatus() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		user := r.Header.Get("X-User-ID")
+		if user == "" {
+			user = r.URL.Query().Get("user_id")
+		}
+		if user == "" {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "missing user id"})
+			return
+		}
+		userID, err := strconv.ParseInt(user, 10, 64)
+		if err != nil || userID <= 0 {
+			writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid user id"})
+			return
+		}
+
+		resp := map[string]any{"user_id": userID}
+		if token, err := database.GetLatestGoogleTokenForUser(r.Context(), userID); err == nil && token != nil {
+			resp["google_token_id"] = token.ID
+		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not fetch google token"})
+			return
+		}
+		if token, err := database.GetLatestGithubTokenForUser(r.Context(), userID); err == nil && token != nil {
+			resp["github_token_id"] = token.ID
+		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "could not fetch github token"})
+			return
+		}
+
+		writeJSON(w, http.StatusOK, resp)
+	})
+}
+
 // Health serves a simple Health-check endpoint.
 func (h *Handler) Health() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -230,7 +276,30 @@ func (h *Handler) listAreas() http.Handler {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		services := areas.List()
+		var services []areas.Service
+		if serviceID := r.URL.Query().Get("service_id"); serviceID != "" {
+			svc, err := areas.Get(r.Context(), serviceID)
+			if err != nil {
+				writeJSON(w, http.StatusNotFound, errorResponse{Error: "service not found"})
+				return
+			}
+			services = []areas.Service{*svc}
+		} else if serviceID := r.URL.Query().Get("id"); serviceID != "" {
+			svc, err := areas.Get(r.Context(), serviceID)
+			if err != nil {
+				writeJSON(w, http.StatusNotFound, errorResponse{Error: "service not found"})
+				return
+			}
+			services = []areas.Service{*svc}
+		} else {
+			var err error
+			services, err = areas.List(r.Context())
+			if err != nil {
+				writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+				return
+			}
+		}
+		w.Header().Set("Cache-Control", "no-store")
 		var userCount int64
 		if count, err := database.CountUsers(); err == nil {
 			userCount = count
@@ -285,7 +354,12 @@ func (h *Handler) about() http.Handler {
 		if err != nil {
 			host = r.RemoteAddr
 		}
-		services := areas.List()
+		services, err := areas.List(r.Context())
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+			return
+		}
+		w.Header().Set("Cache-Control", "no-store")
 		out := aboutResponse{}
 		out.Client.Host = host
 		out.Server.CurrentTime = time.Now().Unix()

@@ -1,4 +1,14 @@
-import logo from "../../../lib/assets/Kikonect_logo_no_text.png";
+/**
+ * @file Footer.jsx
+ * @description
+ * Footer component for site-wide branding and navigation links.
+ *
+ * Allows users to:
+ *  - Navigate to product, resources, and company info
+ *  - Access support and documentation links
+ */
+
+import logo from "../../lib/assets/Kikonect_logo_no_text.png";
 import React from "react";
 
 export default function Footer() {
@@ -15,9 +25,9 @@ export default function Footer() {
                     </ul>
                     <ul className="footer-section">
                         <li className="footer-section-title">Product</li>
-                        <li className="footer-section-item"><a href="#features">Features</a></li>
+                        <li className="footer-section-item"><a href="/#features">Features</a></li>
+                        <li className="footer-section-item"><a href="/#how-it-works">How it works</a></li>
                         <li className="footer-section-item"><a href="#">Services</a></li>
-                        <li className="footer-section-item"><a href="#">Pricing</a></li>
                         <li className="footer-section-item"><a href="#">Enterprise</a></li>
                     </ul>
                     <ul className="footer-section">

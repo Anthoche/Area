@@ -69,9 +69,9 @@
     top: 50%;
     left: 12px;
     transform: translateY(-50%);
-    background: white;
+    background: var(--bg-color);
     padding: 0 4px;
-    color: #777;
+    color: var(--text-secondary);
     transition: 0.2s ease;
     pointer-events: none;
     font-size: 14px;
@@ -81,7 +81,7 @@
 .floating-input label.filled {
     top: -8px;
     font-size: 12px;
-    color: #5a2bb3;
+    color: var(--text-primary);
 }
 
 .reg-btn {
@@ -103,4 +103,62 @@
 
 .reg-btn:hover {
     background: #d9c7ff;
+}
+
+
+.toggle-password {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+}
+
+.floating-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.floating-input input {
+    flex: 1;
+}
+
+.password-wrapper {
+    position: relative;
+}
+
+.password-wrapper input {
+    width: 100%;
+    padding-right: 35px;
+    box-sizing: border-box;
+}
+
+.password-wrapper label {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    transition: 0.2s all;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.eye-img {
+    height: 20px;
+    width: 20px;
+    object-fit: contain;
 }
