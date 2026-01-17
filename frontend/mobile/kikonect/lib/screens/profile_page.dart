@@ -4,6 +4,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../services/app_config.dart';
 import '../services/oauth_service.dart';
 import '../utils/ui_feedback.dart';
 import 'login_page.dart';
@@ -23,6 +24,8 @@ class _ProfilePageState extends State<ProfilePage> {
   final _appLinks = AppLinks();
   StreamSubscription? _sub;
   final Set<String> _busy = {};
+  final TextEditingController _serverUrlController = TextEditingController();
+  bool _savingServerUrl = false;
   bool _loading = true;
   Map<String, String?> _tokens = {};
 
@@ -31,11 +34,13 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     _loadTokens();
     _initDeepLinks();
+    _serverUrlController.text = AppConfig.baseUrl;
   }
 
   @override
   void dispose() {
     _sub?.cancel();
+    _serverUrlController.dispose();
     super.dispose();
   }
 
@@ -131,7 +136,15 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _logout() async {
-    await _storage.deleteAll();
+    const keys = [
+      'jwt_token',
+      'user_id',
+      'google_token_id',
+      'github_token_id',
+    ];
+    for (final key in keys) {
+      await _storage.delete(key: key);
+    }
     if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
@@ -141,9 +154,52 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _saveServerUrl() async {
+    final raw = _serverUrlController.text.trim();
+    final error = _validateServerUrl(raw);
+    if (error != null) {
+      showAppSnackBar(context, error, isError: true);
+      return;
+    }
+    setState(() => _savingServerUrl = true);
+    await AppConfig.setBaseUrl(raw);
+    if (mounted) {
+      setState(() {
+        _savingServerUrl = false;
+        _serverUrlController.text = AppConfig.baseUrl;
+      });
+      showAppSnackBar(context, "Server updated.");
+    }
+  }
+
+  Future<void> _resetServerUrl() async {
+    setState(() => _savingServerUrl = true);
+    await AppConfig.setBaseUrl(null);
+    if (mounted) {
+      setState(() {
+        _savingServerUrl = false;
+        _serverUrlController.text = AppConfig.baseUrl;
+      });
+      showAppSnackBar(context, "Server reset to default.");
+    }
+  }
+
+  String? _validateServerUrl(String value) {
+    if (value.isEmpty) return "Server URL is required.";
+    final uri = Uri.tryParse(value);
+    if (uri == null || uri.host.isEmpty) {
+      return "Enter a valid URL.";
+    }
+    if (uri.scheme != 'http' && uri.scheme != 'https') {
+      return "Use http or https.";
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final themeController = ThemeScope.of(context);
     return Scaffold(
       appBar: AppBar(
@@ -303,7 +359,92 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   );
                 }),
+                const SizedBox(height: 24),
+                Text(
+                  "Server",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
                 const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: colorScheme.outlineVariant),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Application server",
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _serverUrlController,
+                        keyboardType: TextInputType.url,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        decoration: InputDecoration(
+                          hintText: "http://10.0.2.2:8080",
+                          filled: true,
+                          fillColor: theme.inputDecorationTheme.fillColor ??
+                              colorScheme.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: colorScheme.primary,
+                                foregroundColor: colorScheme.onPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              onPressed:
+                                  _savingServerUrl ? null : _saveServerUrl,
+                              child: Text(
+                                _savingServerUrl ? "Saving..." : "Save",
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          TextButton(
+                            onPressed:
+                                _savingServerUrl ? null : _resetServerUrl,
+                            child: const Text("Reset"),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Use http or https, for example http://10.0.2.2:8080.",
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorScheme.error,

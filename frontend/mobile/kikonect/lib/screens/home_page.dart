@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import '../services/app_config.dart';
 import '../services/api_service.dart';
 import '../utils/ui_feedback.dart';
 import '../widgets/filter_tag.dart';
@@ -22,6 +23,7 @@ class Homepage extends StatefulWidget {
 
 class _HomepageState extends State<Homepage> {
   late final ApiService _apiService;
+  late final VoidCallback _baseUrlListener;
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _activeFilters = {};
   final Set<int> _triggering = {};
@@ -36,10 +38,13 @@ class _HomepageState extends State<Homepage> {
     _apiService = widget.apiService ?? ApiService();
     _loadWorkflows();
     _loadServices();
+    _baseUrlListener = _handleBaseUrlChange;
+    AppConfig.baseUrlListenable.addListener(_baseUrlListener);
   }
 
   @override
   void dispose() {
+    AppConfig.baseUrlListenable.removeListener(_baseUrlListener);
     _searchController.dispose();
     super.dispose();
   }
@@ -81,6 +86,19 @@ class _HomepageState extends State<Homepage> {
         });
       }
     } catch (_) {}
+  }
+
+  void _handleBaseUrlChange() {
+    if (!mounted) return;
+    _searchController.clear();
+    setState(() {
+      _activeFilters.clear();
+      _workflows = [];
+      _services = [];
+      _error = null;
+    });
+    _loadWorkflows();
+    _loadServices();
   }
 
   List<String> get _availableFilters {

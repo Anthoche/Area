@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../services/app_config.dart';
 import '../utils/ui_feedback.dart';
 import '../utils/validators.dart';
 import '../widgets/app_text_field.dart';
@@ -40,7 +40,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   /// Sends the collected profile data to the backend registration endpoint.
   Future<void> registerUser() async {
-    final apiUrl = dotenv.env['API_URL'];
+    final apiUrl = AppConfig.baseUrl;
     final url = Uri.parse("$apiUrl/register");
     final body = {
       "firstname": firstNameController.text,
